@@ -1,135 +1,195 @@
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import "../styles/login.css";
 
 export default function Login() {
-  const [rut, setRut] = useState("");
-  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
   const [showPass, setShowPass] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleLogin = (e) => {
     e.preventDefault();
 
-    // EJEMPLO: llamada al backend
-    const res = await fetch("http://localhost:4000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ rut, password }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) return alert(data.message || "Error al iniciar sesión");
-
-    alert("Login OK");
-    // aquí podrías navegar a /dashboard
-  };
-
-  const handleGoogleLogin = () => {
-    // Redirige al backend para OAuth con Google
-    window.location.href = "http://localhost:4000/api/auth/google";
+    // “Simulación” de sesión: por ahora siempre entra como académico
+    localStorage.setItem("role", "academico");
+    navigate("/academico/dashboard");
   };
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        {/* IZQUIERDA */}
-        <section className="login-left">
-          <div className="logo-wrap">
-            {/* tu logo arriba */}
-            <img
-              className="top-logo"
-              src="/assets/logo-uta.png"
-              alt="Logo"
-            />
-          </div>
-
-          <form className="login-form" onSubmit={handleSubmit}>
-            <label className="label">Rut*</label>
-            <input
-              className="input"
-              value={rut}
-              onChange={(e) => setRut(e.target.value)}
-              placeholder="20.216.446-3"
-              autoComplete="username"
-            />
-
-            <label className="label">Clave*</label>
-            <div className="password-row">
-              <input
-                className="input"
-                type={showPass ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="************"
-                autoComplete="current-password"
+    <div
+      className="min-vh-100 d-flex align-items-center justify-content-center px-3"
+      style={{ background: "var(--bg)" }}
+    >
+      <div
+        className="w-100"
+        style={{
+          maxWidth: 1050,
+          background: "var(--card)",
+          border: "1px solid var(--border)",
+          borderRadius: 18,
+          overflow: "hidden",
+        }}
+      >
+        <div className="row g-0">
+          {/* IZQUIERDA: FORM */}
+          <div className="col-12 col-lg-6 p-4 p-lg-5">
+            <div className="d-flex align-items-center gap-3 mb-4">
+              <img
+                src="/logo_UTA.png"
+                alt="UTA"
+                style={{ width: 54, height: 54, objectFit: "contain" }}
               />
+
+              <div>
+                <div
+                  className="fw-bold"
+                  style={{ color: "#daa136", fontSize: 18 }}
+                >
+                  Sistema de Acreditación
+                </div>
+                <div style={{ color: "var(--muted)" }}>
+                  Ingreso (solo visual)
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleLogin}>
+              <div className="mb-3">
+                <label className="form-label" style={{ color: "var(--muted)" }}>
+                  Rut*
+                </label>
+                <input
+                  className="form-control input-dark"
+                  placeholder="20.123.456-7"
+                />
+              </div>
+
+              <div className="mb-2">
+                <label className="form-label" style={{ color: "var(--muted)" }}>
+                  Clave*
+                </label>
+
+                <div className="input-group">
+                  <input
+                    type={showPass ? "text" : "password"}
+                    className="form-control input-dark"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    className="input-group-text input-dark"
+                    onClick={() => setShowPass((v) => !v)}
+                    style={{ cursor: "pointer" }}
+                    aria-label="Mostrar/Ocultar clave"
+                    title="Mostrar/Ocultar clave"
+                  >
+                    <i className={`bi ${showPass ? "bi-eye-slash" : "bi-eye"}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <a href="#" style={{ color: "#daa136", fontSize: 14 }}>
+                  ¿Olvidó su clave?
+                </a>
+              </div>
+
               <button
-                type="button"
-                className="icon-btn"
-                onClick={() => setShowPass((v) => !v)}
-                aria-label="Mostrar/ocultar clave"
-                title="Mostrar/ocultar clave"
+                className="btn w-100 py-2"
+                type="submit"
+                style={{
+                  background: "#daa136",
+                  color: "#0c1222",
+                  fontWeight: 700,
+                  borderRadius: 10,
+                }}
               >
-                {showPass ? "🙈" : "👁️"}
+                Iniciar sesión
               </button>
-            </div>
 
-            <a className="forgot" href="/recuperar">
-              ¿Olvidó su clave?
-            </a>
+              <div className="text-center my-3" style={{ color: "var(--muted)" }}>
+                o iniciar sesión con
+              </div>
 
-            <button className="btn btn-primary" type="submit">
-              Iniciar sesión
-            </button>
+              <button
+                className="btn w-100 py-2"
+                type="button"
+                onClick={handleLogin}
+                style={{
+                  background: "#b02b2b",
+                  color: "#fff",
+                  fontWeight: 700,
+                  borderRadius: 10,
+                }}
+              >
+                Gmail Institucional
+              </button>
 
-            <div className="divider">
-              <span>o iniciar sesión con</span>
-            </div>
-
-            <button
-              className="btn btn-google"
-              type="button"
-              onClick={handleGoogleLogin}
-            >
-              Gmail Institucional
-            </button>
-
-            {/* si quieres un segundo botón azul como en la imagen */}
-            <button className="btn btn-secondary" type="button">
-              Iniciar sesión
-            </button>
-          </form>
-        </section>
-
-        {/* DERECHA */}
-        <aside className="login-right">
-          <h3 className="right-title">Plataformas de Apoyo a la Docencia</h3>
-
-          <div className="right-logos">
-            <img className="right-logo" src="/assets/dido.png" alt="DIDO" />
-            <img className="right-logo" src="/assets/utamed.png" alt="UTA med" />
+              <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
+                *Por ahora no valida credenciales, solo navega al Dashboard.
+              </div>
+            </form>
           </div>
 
-          <hr className="hr" />
+          {/* DERECHA: INFO */}
+          <div
+            className="col-12 col-lg-6 p-4 p-lg-5"
+            style={{
+              borderLeft: "1px solid var(--border)",
+              background: "rgba(0,0,0,.12)",
+            }}
+          >
+            <div className="mb-4">
+              <div className="fw-bold mb-2" style={{ color: "#daa136" }}>
+                Plataformas de Apoyo a la Docencia
+              </div>
 
-          <h4 className="right-subtitle">Política de Privacidad</h4>
-          <p className="right-text">
-            Conoce las políticas de privacidad del sitio web de la Universidad de Tarapacá.
-            <a className="right-link" href="/privacidad"> Leer más</a>
-          </p>
+              <div className="d-flex gap-2 flex-wrap">
+                <span
+                  className="px-3 py-2 rounded"
+                  style={{
+                    border: "1px solid var(--border)",
+                    color: "var(--text)",
+                    background: "rgba(255,255,255,.04)",
+                  }}
+                >
+                  DIDO
+                </span>
+                <span
+                  className="px-3 py-2 rounded"
+                  style={{
+                    border: "1px solid var(--border)",
+                    color: "var(--text)",
+                    background: "rgba(255,255,255,.04)",
+                  }}
+                >
+                  UTA Med
+                </span>
+              </div>
+            </div>
 
-          <hr className="hr" />
+            <div className="mb-4">
+              <div className="fw-bold mb-2" style={{ color: "#daa136" }}>
+                Política de Privacidad
+              </div>
+              <div style={{ color: "var(--muted)" }}>
+                Conoce las políticas de privacidad del sitio web de la Universidad.
+                <span className="ms-2" style={{ color: "#daa136" }}>Leer más</span>
+              </div>
+            </div>
 
-          <h4 className="right-subtitle">Solicita Ayuda</h4>
-          <p className="right-text">
-            <strong>Correo:</strong>{" "}
-            <a className="right-link" href="/contactos">Ver Contactos</a>
-          </p>
-          <p className="right-text">
-            <strong>Horario:</strong> Lunes a Jueves 08:30AM - 05:30PM <br />
-            Viernes 08:30AM - 04:30PM
-          </p>
-        </aside>
+            <div>
+              <div className="fw-bold mb-2" style={{ color: "#daa136" }}>
+                Solicita Ayuda
+              </div>
+              <div style={{ color: "var(--muted)" }}>
+                Correo: <span style={{ color: "#daa136" }}>Ver Contactos</span>
+                <br />
+                Horario: Lunes a Jueves 08:30 - 17:30
+                <br />
+                Viernes 08:30 - 16:30
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
