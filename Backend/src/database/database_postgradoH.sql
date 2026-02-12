@@ -2,6 +2,20 @@ CREATE DATABASE postgrado_historia;
 
 USE postgrado_historia; 
 
+CREATE TABLE rol (
+    rol_id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL UNIQUE
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE rol_academico (
+    rolaca_id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo_academico VARCHAR(100) NOT NULL UNIQUE
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE usuario(
 	usuario_id INT AUTO_INCREMENT PRIMARY KEY,
     rut VARCHAR(15) UNIQUE NOT NULL,
@@ -22,25 +36,13 @@ CREATE TABLE usuario(
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
-
-CREATE TABLE rol (
-    rol_id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE
-)ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE rol_academico (
-    rolaca_id INT AUTO_INCREMENT PRIMARY KEY,
-    tipo_academico VARCHAR(100) NOT NULL UNIQUE
-)ENGINE=InnoDB
-DEFAULT CHARSET=utf8mb4
-COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE grado_academico (
     grado_id INT AUTO_INCREMENT PRIMARY KEY,
     grado_academico VARCHAR(100) NOT NULL 
-);
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE titulacion (
     titulo_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -53,7 +55,10 @@ CREATE TABLE titulacion (
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE,
     FOREIGN KEY (grado_id) REFERENCES grado_academico(grado_id)
-);
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE publicaciones (
     publicacion_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -70,11 +75,17 @@ CREATE TABLE publicaciones (
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE,
     FOREIGN KEY (categoria_id) REFERENCES categoria(categoria_id)
-);
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE categoria (
     categoria_id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL
-);
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE libro (
     libro_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -89,7 +100,10 @@ CREATE TABLE libro (
     
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
-);
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE cap_libro (
     cap_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -105,7 +119,10 @@ CREATE TABLE cap_libro (
     
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
-);
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE tesis (
     tesis_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -118,7 +135,10 @@ CREATE TABLE tesis (
     
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
-);
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE investigacion (
     investigacion_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -130,7 +150,10 @@ CREATE TABLE investigacion (
     
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
-);
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE patente (
     patente_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -143,5 +166,6 @@ CREATE TABLE patente (
     
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
-);
-
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;

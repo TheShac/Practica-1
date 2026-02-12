@@ -1,16 +1,51 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
+import { loginRequest } from "../services/api.js"; // ajusta ruta si tu Login está en otra carpeta
 
 export default function Login() {
   const navigate = useNavigate();
+
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-    // “Simulación” de sesión: por ahora siempre entra como académico
-    localStorage.setItem("role", "academico");
-    navigate("/academico/dashboard");
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+
+    try {
+      const { token, user } = await loginRequest({ identifier, password });
+
+      // Guardar sesión
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(user));
+
+      // Por compatibilidad con tu UI previa
+      localStorage.setItem("role", user.rol?.toLowerCase() || "");
+
+      // Redirección según rol (por ahora todo al panel académico)
+      if (user.rol === "Academico") {
+        navigate("/academico/dashboard");
+      } else if (user.rol === "Secretaria") {
+        // cuando tengas layout secretaria:
+        // navigate("/secretaria/dashboard");
+        navigate("/academico/dashboard");
+      } else if (user.rol === "Admin") {
+        // cuando tengas panel admin:
+        // navigate("/admin/dashboard");
+        navigate("/academico/dashboard");
+      } else {
+        navigate("/academico/dashboard");
+      }
+    } catch (err) {
+      setError(err.message || "No se pudo iniciar sesión");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -29,7 +64,7 @@ export default function Login() {
         }}
       >
         <div className="row g-0">
-          {/* IZQUIERDA: FORM */}
+          {/* IZQUIERDA */}
           <div className="col-12 col-lg-6 p-4 p-lg-5">
             <div className="d-flex align-items-center gap-3 mb-4">
               <img
@@ -39,26 +74,40 @@ export default function Login() {
               />
 
               <div>
-                <div
-                  className="fw-bold"
-                  style={{ color: "#daa136", fontSize: 18 }}
-                >
+                <div className="fw-bold" style={{ color: "#daa136", fontSize: 18 }}>
                   Sistema de Acreditación
                 </div>
-                <div style={{ color: "var(--muted)" }}>
-                  Ingreso (solo visual)
-                </div>
+                <div style={{ color: "var(--muted)" }}>Ingreso</div>
               </div>
             </div>
+
+            {/* Error */}
+            {error && (
+              <div
+                className="alert py-2"
+                style={{
+                  background: "rgba(220,53,69,.12)",
+                  border: "1px solid rgba(220,53,69,.35)",
+                  color: "#fff",
+                  borderRadius: 12,
+                }}
+              >
+                <i className="bi bi-exclamation-triangle me-2" />
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleLogin}>
               <div className="mb-3">
                 <label className="form-label" style={{ color: "var(--muted)" }}>
-                  Rut*
+                  Rut o correo*
                 </label>
                 <input
                   className="form-control input-dark"
-                  placeholder="20.123.456-7"
+                  placeholder="20.123.456-7 o correo@uta.cl"
+                  value={identifier}
+                  onChange={(e) => setIdentifier(e.target.value)}
+                  autoComplete="username"
                 />
               </div>
 
@@ -72,6 +121,9 @@ export default function Login() {
                     type={showPass ? "text" : "password"}
                     className="form-control input-dark"
                     placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -95,14 +147,16 @@ export default function Login() {
               <button
                 className="btn w-100 py-2"
                 type="submit"
+                disabled={loading}
                 style={{
                   background: "#daa136",
                   color: "#0c1222",
                   fontWeight: 700,
                   borderRadius: 10,
+                  opacity: loading ? 0.8 : 1,
                 }}
               >
-                Iniciar sesión
+                {loading ? "Ingresando..." : "Iniciar sesión"}
               </button>
 
               <div className="text-center my-3" style={{ color: "var(--muted)" }}>
@@ -112,24 +166,27 @@ export default function Login() {
               <button
                 className="btn w-100 py-2"
                 type="button"
-                onClick={handleLogin}
+                disabled
                 style={{
                   background: "#b02b2b",
                   color: "#fff",
                   fontWeight: 700,
                   borderRadius: 10,
+                  opacity: 0.65,
+                  cursor: "not-allowed",
                 }}
+                title="Más adelante"
               >
                 Gmail Institucional
               </button>
 
               <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
-                *Por ahora no valida credenciales, solo navega al Dashboard.
+                *Conecta con tu API: <code style={{ color: "#daa136" }}>{import.meta.env.VITE_API_URL}</code>
               </div>
             </form>
           </div>
 
-          {/* DERECHA: INFO */}
+          {/* DERECHA */}
           <div
             className="col-12 col-lg-6 p-4 p-lg-5"
             style={{
@@ -172,7 +229,9 @@ export default function Login() {
               </div>
               <div style={{ color: "var(--muted)" }}>
                 Conoce las políticas de privacidad del sitio web de la Universidad.
-                <span className="ms-2" style={{ color: "#daa136" }}>Leer más</span>
+                <span className="ms-2" style={{ color: "#daa136" }}>
+                  Leer más
+                </span>
               </div>
             </div>
 
