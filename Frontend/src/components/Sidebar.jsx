@@ -1,6 +1,55 @@
 import { NavLink } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 
 export default function Sidebar({ collapsed }) {
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const raw = localStorage.getItem("user");
+    if (raw) {
+      try {
+        setUser(JSON.parse(raw));
+      } catch {
+        setUser(null);
+      }
+    }
+  }, []);
+
+  const rol = user?.rol || "Academico";
+
+  const menu = useMemo(() => {
+    // Menú Académico (actual)
+    const academico = [
+      { to: "/academico/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
+      { to: "/academico/perfil", icon: "bi-person", label: "Perfil" },
+      { type: "section", label: "ACADÉMICO" },
+      { to: "/academico/tesis", icon: "bi-journal-text", label: "Tesis" },
+      { to: "/academico/publicaciones", icon: "bi-file-earmark-text", label: "Publicaciones" },
+    ];
+
+    // Menú Secretaria (ejemplo, lo afinamos cuando diseñes sus vistas)
+    const secretaria = [
+      { to: "/secretaria/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
+      { type: "section", label: "SECRETARÍA" },
+      { to: "/secretaria/academicos", icon: "bi-people", label: "Académicos" },
+      { to: "/secretaria/reportes", icon: "bi-clipboard-data", label: "Reportes" },
+    ];
+
+    // Menú Admin (ejemplo)
+    const admin = [
+      { to: "/admin/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
+      { type: "section", label: "ADMIN" },
+      { to: "/admin/usuarios", icon: "bi-person-gear", label: "Usuarios" },
+      { to: "/admin/roles", icon: "bi-shield-lock", label: "Roles" },
+    ];
+
+    if (rol === "Secretaria") return secretaria;
+    if (rol === "Admin") return admin;
+    return academico;
+  }, [rol]);
+
+  const title = rol === "Secretaria" ? "Secretaría" : rol === "Admin" ? "Admin" : "Académico";
+
   return (
     <aside
       style={{
@@ -16,32 +65,16 @@ export default function Sidebar({ collapsed }) {
         <img
           src="/logo_UTA.png"
           alt="UTA"
-          style={{
-            width: 42,
-            height: 42,
-            objectFit: "contain",
-          }}
+          style={{ width: 42, height: 42, objectFit: "contain" }}
         />
 
         {!collapsed && (
           <div>
-            <div
-              style={{
-                color: "#daa136",
-                fontWeight: 700,
-                fontSize: "16px",
-              }}
-            >
-              Académico
+            <div style={{ color: "#daa136", fontWeight: 700, fontSize: "16px" }}>
+              {title}
             </div>
-
-            <div
-              style={{
-                color: "#daa136",
-                fontSize: "13px",
-              }}
-            >
-              Portal Académico
+            <div style={{ color: "#daa136", fontSize: "13px" }}>
+              Portal {title}
             </div>
           </div>
         )}
@@ -49,74 +82,45 @@ export default function Sidebar({ collapsed }) {
 
       {/* MENU */}
       <nav className="d-flex flex-column gap-2">
-
-        <NavLink
-          to="/academico/dashboard"
-          className={({ isActive }) =>
-            `d-flex align-items-center gap-2 px-3 py-2 rounded ${
-              isActive ? "bg-secondary bg-opacity-50" : ""
-            }`
+        {menu.map((item, idx) => {
+          if (item.type === "section") {
+            return (
+              !collapsed && (
+                <div
+                  key={`sec-${idx}`}
+                  style={{
+                    marginTop: "15px",
+                    marginBottom: "5px",
+                    fontSize: "11px",
+                    letterSpacing: "1px",
+                    color: "#daa136",
+                    fontWeight: 600,
+                    paddingLeft: 10,
+                  }}
+                >
+                  {item.label}
+                </div>
+              )
+            );
           }
-          style={{ color: "#fff", textDecoration: "none" }}
-        >
-          <i className="bi bi-speedometer2" />
-          {!collapsed && <span>Dashboard</span>}
-        </NavLink>
 
-        <NavLink
-          to="/academico/perfil"
-          className={({ isActive }) =>
-            `d-flex align-items-center gap-2 px-3 py-2 rounded ${
-              isActive ? "bg-secondary bg-opacity-50" : ""
-            }`
-          }
-          style={{ color: "#fff", textDecoration: "none" }}
-        >
-          <i className="bi bi-person" />
-          {!collapsed && <span>Perfil</span>}
-        </NavLink>
-
-        {!collapsed && (
-          <div
-            style={{
-              marginTop: "15px",
-              marginBottom: "5px",
-              fontSize: "14px",
-              letterSpacing: "1px",
-              color: "#daa136",
-              fontWeight: 600,
-            }}
-          >
-            ACADÉMICO
-          </div>
-        )}
-
-        <NavLink
-          to="/academico/tesis"
-          className={({ isActive }) =>
-            `d-flex align-items-center gap-2 px-3 py-2 rounded ${
-              isActive ? "bg-secondary bg-opacity-50" : ""
-            }`
-          }
-          style={{ color: "#fff", textDecoration: "none" }}
-        >
-          <i className="bi bi-journal-text" />
-          {!collapsed && <span>Tesis</span>}
-        </NavLink>
-
-        <NavLink
-          to="/academico/publicaciones"
-          className={({ isActive }) =>
-            `d-flex align-items-center gap-2 px-3 py-2 rounded ${
-              isActive ? "bg-secondary bg-opacity-50" : ""
-            }`
-          }
-          style={{ color: "#fff", textDecoration: "none" }}
-        >
-          <i className="bi bi-file-earmark-text" />
-          {!collapsed && <span>Publicaciones</span>}
-        </NavLink>
-
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                `d-flex align-items-center gap-2 px-3 py-2 rounded ${
+                  isActive ? "bg-secondary bg-opacity-50" : ""
+                }`
+              }
+              style={{ color: "#fff", textDecoration: "none" }}
+              title={collapsed ? item.label : undefined}
+            >
+              <i className={`bi ${item.icon}`} />
+              {!collapsed && <span>{item.label}</span>}
+            </NavLink>
+          );
+        })}
       </nav>
     </aside>
   );

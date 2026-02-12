@@ -1,6 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { loginRequest } from "../services/api.js"; // ajusta ruta si tu Login está en otra carpeta
+
+import { loginRequest } from "../services/api.js";
+import { formatRut, looksLikeEmail } from "../utils/rut.js";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -12,6 +14,12 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const redirectByRole = (rol) => {
+    if (rol === "Admin") return navigate("/admin/dashboard");
+    if (rol === "Secretaria") return navigate("/secretaria/dashboard");
+    return navigate("/academico/dashboard"); // default Academico
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
@@ -20,27 +28,11 @@ export default function Login() {
     try {
       const { token, user } = await loginRequest({ identifier, password });
 
-      // Guardar sesión
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
-
-      // Por compatibilidad con tu UI previa
       localStorage.setItem("role", user.rol?.toLowerCase() || "");
 
-      // Redirección según rol (por ahora todo al panel académico)
-      if (user.rol === "Academico") {
-        navigate("/academico/dashboard");
-      } else if (user.rol === "Secretaria") {
-        // cuando tengas layout secretaria:
-        // navigate("/secretaria/dashboard");
-        navigate("/academico/dashboard");
-      } else if (user.rol === "Admin") {
-        // cuando tengas panel admin:
-        // navigate("/admin/dashboard");
-        navigate("/academico/dashboard");
-      } else {
-        navigate("/academico/dashboard");
-      }
+      redirectByRole(user.rol);
     } catch (err) {
       setError(err.message || "No se pudo iniciar sesión");
     } finally {
@@ -81,7 +73,6 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Error */}
             {error && (
               <div
                 className="alert py-2"
@@ -104,9 +95,23 @@ export default function Login() {
                 </label>
                 <input
                   className="form-control input-dark"
-                  placeholder="20.123.456-7 o correo@uta.cl"
+                  placeholder="12.345.678-9 o correo@uta.cl"
                   value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+
+                    if (looksLikeEmail(raw)) {
+                      setIdentifier(raw);
+                      return;
+                    }
+
+                    setIdentifier(formatRut(raw));
+                  }}
+                  onBlur={() => {
+                    if (!looksLikeEmail(identifier)) {
+                      setIdentifier(formatRut(identifier));
+                    }
+                  }}
                   autoComplete="username"
                 />
               </div>
@@ -153,7 +158,7 @@ export default function Login() {
                   color: "#0c1222",
                   fontWeight: 700,
                   borderRadius: 10,
-                  opacity: loading ? 0.8 : 1,
+                  opacity: loading ? 0.85 : 1,
                 }}
               >
                 {loading ? "Ingresando..." : "Iniciar sesión"}
@@ -181,8 +186,10 @@ export default function Login() {
               </button>
 
               <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
-                *Conecta con tu API: <code style={{ color: "#daa136" }}>{import.meta.env.VITE_API_URL}</code>
+                Cuenta Secretaria: secretaria@uta.cl / Secretaria123* <br/>
+                Cuenta Academico: academico@uta.cl / Academico123*
               </div>
+              
             </form>
           </div>
 
