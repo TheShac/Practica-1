@@ -18,7 +18,7 @@ export default function Sidebar({ collapsed }) {
   const rol = user?.rol || "Academico";
 
   const menu = useMemo(() => {
-    // Menú Académico (actual)
+    // Menú Académico
     const academico = [
       { to: "/academico/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
       { to: "/academico/perfil", icon: "bi-person", label: "Perfil" },
@@ -27,7 +27,7 @@ export default function Sidebar({ collapsed }) {
       { to: "/academico/publicaciones", icon: "bi-file-earmark-text", label: "Publicaciones" },
     ];
 
-    // Menú Secretaria (ejemplo, lo afinamos cuando diseñes sus vistas)
+    // Menú Secretaria
     const secretaria = [
       { to: "/secretaria/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
       { type: "section", label: "SECRETARÍA" },
@@ -35,7 +35,7 @@ export default function Sidebar({ collapsed }) {
       { to: "/secretaria/reportes", icon: "bi-clipboard-data", label: "Reportes" },
     ];
 
-    // Menú Admin (ejemplo)
+    // Menú Admin
     const admin = [
       { to: "/admin/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
       { type: "section", label: "ADMIN" },
@@ -60,7 +60,6 @@ export default function Sidebar({ collapsed }) {
         padding: "20px 15px",
       }}
     >
-      {/* LOGO + TITULO */}
       <div className="d-flex align-items-center gap-2 mb-4">
         <img
           src="/logo_UTA.png"
