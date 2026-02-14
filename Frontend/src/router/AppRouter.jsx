@@ -9,6 +9,8 @@ import Dashboard from "../pages/academico/Dashboard.jsx";
 import Perfil from "../pages/academico/Perfil.jsx";
 import Tesis from "../pages/academico/Tesis.jsx";
 import Publicaciones from "../pages/academico/Publicaciones.jsx";
+import Libros from "../pages/academico/Libros.jsx";
+import CapLibro from "../pages/academico/CapLibro.jsx";
 
 // Secretaria (placeholder)
 import SecretariaLayout from "../layouts/SecretariaLayout.jsx";
@@ -37,6 +39,8 @@ export default function App() {
         <Route path="perfil" element={<Perfil />} />
         <Route path="tesis" element={<Tesis />} />
         <Route path="publicaciones" element={<Publicaciones />} />
+        <Route path="libros" element={<Libros />} />
+        <Route path="cap-libro" element={<CapLibro />} />
       </Route>
 
       {/* SECRETARIA */}

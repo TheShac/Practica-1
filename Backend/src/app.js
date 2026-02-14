@@ -9,6 +9,9 @@ import userRoutes from "./routes/users/user.routes.js";
 import categoriaRoutes from "./routes/categorias/categoria.routes.js";
 import publicacionRoutes from "./routes/publicaciones/publicacion.routes.js";
 
+import libroRoutes from "./routes/libros/libro.routes.js";
+import capLibroRoutes from "./routes/libros/cap.libro.routes.js";
+
 dotenv.config();
 
 const app = express();
@@ -23,5 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/categorias", categoriaRoutes);
 app.use("/api/publicaciones", publicacionRoutes);
+app.use("/api/libros", libroRoutes);
+app.use("/api/cap-libro", capLibroRoutes);
 
 export default app;

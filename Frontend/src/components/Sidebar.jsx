@@ -25,6 +25,8 @@ export default function Sidebar({ collapsed }) {
       { type: "section", label: "ACADÉMICO" },
       { to: "/academico/tesis", icon: "bi-journal-text", label: "Tesis" },
       { to: "/academico/publicaciones", icon: "bi-file-earmark-text", label: "Publicaciones" },
+      { to: "/academico/libros", icon: "bi-book", label: "Libros" },
+      { to: "/academico/cap-libro", icon: "bi-journal-bookmark", label: "Capítulos de libro" },
     ];
 
     // Menú Secretaria
@@ -79,7 +81,6 @@ export default function Sidebar({ collapsed }) {
         )}
       </div>
 
-      {/* MENU */}
       <nav className="d-flex flex-column gap-2">
         {menu.map((item, idx) => {
           if (item.type === "section") {

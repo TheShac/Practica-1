@@ -68,3 +68,85 @@ export async function deletePublicacion(id) {
   if (!res.ok) throw new Error(data?.message || "Error eliminando publicación");
   return data;
 }
+
+export async function getMisLibros() {
+  const res = await fetch(`${API_URL}/libros/mios`, {
+    headers: { ...authHeader() },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error cargando libros");
+  return data;
+}
+
+export async function createLibro(payload) {
+  const res = await fetch(`${API_URL}/libros`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error creando libro");
+  return data;
+}
+
+export async function updateLibro(id, payload) {
+  const res = await fetch(`${API_URL}/libros/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error actualizando libro");
+  return data;
+}
+
+export async function deleteLibro(id) {
+  const res = await fetch(`${API_URL}/libros/${id}`, {
+    method: "DELETE",
+    headers: { ...authHeader() },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error eliminando libro");
+  return data;
+}
+
+export async function getMisCapLibros() {
+  const res = await fetch(`${API_URL}/cap-libro/mios`, {
+    headers: { ...authHeader() },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error cargando capítulos de libro");
+  return data;
+}
+
+export async function createCapLibro(payload) {
+  const res = await fetch(`${API_URL}/cap-libro`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error creando capítulo de libro");
+  return data;
+}
+
+export async function updateCapLibro(id, payload) {
+  const res = await fetch(`${API_URL}/cap-libro/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...authHeader() },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error actualizando capítulo de libro");
+  return data;
+}
+
+export async function deleteCapLibro(id) {
+  const res = await fetch(`${API_URL}/cap-libro/${id}`, {
+    method: "DELETE",
+    headers: { ...authHeader() },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error eliminando capítulo de libro");
+  return data;
+}
