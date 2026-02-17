@@ -11,6 +11,8 @@ import Tesis from "../pages/academico/Tesis.jsx";
 import Publicaciones from "../pages/academico/Publicaciones.jsx";
 import Libros from "../pages/academico/Libros.jsx";
 import CapLibro from "../pages/academico/CapLibro.jsx";
+import Investigacion from "../pages/academico/Investigacion.jsx";
+import Patente from "../pages/academico/Patente.jsx";
 
 // Secretaria (placeholder)
 import SecretariaLayout from "../layouts/SecretariaLayout.jsx";
@@ -37,10 +39,12 @@ export default function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="perfil" element={<Perfil />} />
-        <Route path="tesis" element={<Tesis />} />
+        <Route path="tesis/:nivel" element={<Tesis />} />
         <Route path="publicaciones" element={<Publicaciones />} />
         <Route path="libros" element={<Libros />} />
         <Route path="cap-libro" element={<CapLibro />} />
+        <Route path="investigacion" element={<Investigacion />} />
+        <Route path="patentes" element={<Patente />} />
       </Route>
 
       {/* SECRETARIA */}

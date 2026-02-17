@@ -23,10 +23,20 @@ export default function Sidebar({ collapsed }) {
       { to: "/academico/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
       { to: "/academico/perfil", icon: "bi-person", label: "Perfil" },
       { type: "section", label: "ACADÉMICO" },
-      { to: "/academico/tesis", icon: "bi-journal-text", label: "Tesis" },
+      {
+        type: "submenu",
+        icon: "bi-journal-text",
+        label: "Tesis",
+        children: [
+          { to: "/academico/tesis/magister", label: "Magíster" },
+          { to: "/academico/tesis/doctorado", label: "Doctorado" },
+        ],
+      },
       { to: "/academico/publicaciones", icon: "bi-file-earmark-text", label: "Publicaciones" },
       { to: "/academico/libros", icon: "bi-book", label: "Libros" },
       { to: "/academico/cap-libro", icon: "bi-journal-bookmark", label: "Capítulos de libro" },
+      { to: "/academico/investigacion", icon: "bi-diagram-3", label: "Investigación" },
+      { to: "/academico/patentes", icon: "bi-award", label: "Patentes" },
     ];
 
     // Menú Secretaria
@@ -104,6 +114,39 @@ export default function Sidebar({ collapsed }) {
             );
           }
 
+          if (item.type === "submenu") {
+            return (
+              <div key={`submenu-${idx}`}>
+                <div
+                  className="d-flex align-items-center gap-2 px-3 py-2 rounded"
+                  style={{ color: "#fff" }}
+                >
+                  <i className={`bi ${item.icon}`} />
+                  {!collapsed && <span>{item.label}</span>}
+                </div>
+
+                {!collapsed && (
+                  <div style={{ paddingLeft: "30px" }}>
+                    {item.children.map((child) => (
+                      <NavLink
+                        key={child.to}
+                        to={child.to}
+                        className={({ isActive }) =>
+                          `d-block px-2 py-1 rounded ${
+                            isActive ? "bg-secondary bg-opacity-50" : ""
+                          }`
+                        }
+                        style={{ color: "#fff", fontSize: "14px" }}
+                      >
+                        {child.label}
+                      </NavLink>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
           return (
             <NavLink
               key={item.to}
@@ -114,7 +157,6 @@ export default function Sidebar({ collapsed }) {
                 }`
               }
               style={{ color: "#fff", textDecoration: "none" }}
-              title={collapsed ? item.label : undefined}
             >
               <i className={`bi ${item.icon}`} />
               {!collapsed && <span>{item.label}</span>}

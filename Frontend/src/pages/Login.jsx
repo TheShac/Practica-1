@@ -67,7 +67,7 @@ export default function Login() {
 
               <div>
                 <div className="fw-bold" style={{ color: "#daa136", fontSize: 18 }}>
-                  Sistema de Acreditación
+                  Postgrado de Historia
                 </div>
                 <div style={{ color: "var(--muted)" }}>Ingreso</div>
               </div>

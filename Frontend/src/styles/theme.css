@@ -46,6 +46,7 @@ a, a:hover, a:focus {
 .nav-user-name{
   color: #ffffff !important;
 }
+
 .nav-user-role{
   color: rgba(255,255,255,.75) !important;
 }
@@ -58,7 +59,9 @@ input-dark,
   color: var(--text) !important;
 }
 
-.input-dark::placeholder{ color: var(--muted); }
+.input-dark::placeholder{ 
+  color: var(--muted); 
+}
 
 .form-control.input-dark:focus,
 .form-select.input-dark:focus{
@@ -66,7 +69,6 @@ input-dark,
   box-shadow: 0 0 0 .2rem rgba(218,161,54,.15) !important;
 }
 
-/* Opciones del select (cuando el navegador lo permite) */
 .form-select.input-dark option{
   background-color: var(--card);
   color: var(--text);
@@ -98,4 +100,124 @@ input-dark,
 .badge-rechazado{
   background: rgba(220,53,69,.18);
   color: #ffb3bd;
-} 
+}
+
+.fa-search-box {
+  max-width: 350px;
+}
+
+.fa-table th:first-child,
+.fa-table td:first-child {
+  padding-left: 28px !important;
+}
+
+.fa-table th:last-child,
+.fa-table td:last-child {
+  padding-right: 28px !important;
+}
+
+.fa-pagination button {
+  min-width: 38px;
+}
+
+.fa-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.70);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.fa-modal {
+  width: 850px;
+  max-width: 95%;
+  max-height: 90vh;
+  overflow-y: auto;
+  background: var(--card);
+  border-radius: 20px;
+  padding: 30px;
+  border: 1px solid var(--border);
+  animation: faFadeIn .2s ease-in-out;
+  color: var(--text);
+}
+
+.fa-modal * {
+  color: var(--text);
+}
+
+.fa-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.fa-modal-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: 20px;
+  color: #ffffff;
+}
+
+.fa-close-btn {
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.fa-close-btn:hover {
+  color: var(--gold);
+}
+
+.fa-info-box {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  padding: 20px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  margin-bottom: 30px;
+}
+
+.fa-info-box label {
+  font-size: .75rem;
+  letter-spacing: .08em;
+  color: var(--muted);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.fa-info-box p {
+  margin: 0;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.fa-section {
+  margin-bottom: 25px;
+}
+
+.fa-section h5 {
+  margin-bottom: 15px;
+  color: var(--gold);
+  font-weight: 600;
+}
+
+.fa-empty {
+  background: rgba(255,255,255,.03);
+  padding: 15px;
+  border-radius: 12px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+@keyframes faFadeIn {
+  from { opacity: 0; transform: scale(.96); }
+  to { opacity: 1; transform: scale(1); }
+}

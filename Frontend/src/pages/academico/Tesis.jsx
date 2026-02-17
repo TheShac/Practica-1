@@ -1,111 +1,186 @@
-import { useMemo, useState } from "react";
-import FormModal from "../../components/FormModal.jsx";
+import { useEffect, useState, useMemo } from "react";
+import { useParams } from "react-router-dom";
+import FormModal from "../../components/FormModal";
+import YearInput from "../../components/YearInput";
+import {
+  fetchTesis,
+  createTesis,
+  updateTesis,
+  deleteTesis,
+} from "../../services/tesis.service";
 
 const emptyForm = {
-  autor: "",
-  anio: "",
-  titulo: "",
-  programa: "",
+  titulo_tesis: "",
+  nombre_programa: "",
   institucion: "",
-  link: "",
+  ano: "",
+  autor: "",
+  link_verificacion: "",
+  rol_guia: "GUIA",
 };
 
 export default function Tesis() {
-  const [rows, setRows] = useState([
-    {
-      id: 1,
-      autor: "Roberto Sánchez",
-      anio: "2023",
-      titulo: "Aplicación de redes neuronales en diagnóstico médico",
-      programa: "Maestría en Ciencias Computacionales",
-      institucion: "Universidad Nacional",
-      link: "Ver",
-    },
-  ]);
+  const { nivel } = useParams();
+  const nivelUpper = nivel?.toUpperCase();
 
+  const nivelValido =
+    nivelUpper === "MAGISTER" || nivelUpper === "DOCTORADO";
+
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingSubmit, setLoadingSubmit] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [mode, setMode] = useState("create"); // create | edit
+  const [mode, setMode] = useState("create");
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    if (nivelValido) loadTesis();
+  }, [nivelUpper]);
+
+  useEffect(() => {
+    if (showModal) validate();
+  }, [form]);
+
+  async function loadTesis() {
+    try {
+      setLoading(true);
+      const data = await fetchTesis(nivelUpper);
+      setRows(data);
+    } catch (err) {
+      console.error(err);
+      alert("Error cargando tesis");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const modalTitle = useMemo(() => {
-    return mode === "create" ? "Nueva Tesis" : "Editar Tesis";
-  }, [mode]);
+    const nivelTexto =
+      nivelUpper === "MAGISTER" ? "Magíster" : "Doctorado";
+
+    return mode === "create"
+      ? `Nueva Tesis (${nivelTexto})`
+      : `Editar Tesis (${nivelTexto})`;
+  }, [mode, nivelUpper]);
+
+  function validate() {
+    const newErrors = {};
+    const currentYear = new Date().getFullYear();
+    const anoNumber = Number(form.ano);
+
+    if (!form.autor.trim())
+      newErrors.autor = "El autor es obligatorio";
+
+    if (!form.titulo_tesis.trim())
+      newErrors.titulo_tesis = "El título es obligatorio";
+
+    if (!form.nombre_programa.trim())
+      newErrors.nombre_programa = "El programa es obligatorio";
+
+    if (!form.institucion.trim())
+      newErrors.institucion = "La institución es obligatoria";
+
+    if (!form.ano)
+      newErrors.ano = "El año es obligatorio";
+    else if (!/^\d{4}$/.test(form.ano))
+      newErrors.ano = "Debe tener 4 dígitos numéricos";
+    else if (anoNumber < 1900 || anoNumber > currentYear)
+      newErrors.ano = `Debe estar entre 1900 y ${currentYear}`;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  const isFormValid =
+    Object.keys(errors).length === 0 &&
+    form.ano.length === 4;
 
   const openCreate = () => {
     setMode("create");
     setEditingId(null);
     setForm(emptyForm);
+    setErrors({});
     setShowModal(true);
   };
 
   const openEdit = (row) => {
     setMode("edit");
-    setEditingId(row.id);
+    setEditingId(row.tesis_id);
     setForm({
-      autor: row.autor,
-      anio: row.anio,
-      titulo: row.titulo,
-      programa: row.programa,
-      institucion: row.institucion,
-      link: row.link === "Ver" ? "" : row.link,
+      ...row,
+      ano: String(row.ano),
     });
+    setErrors({});
     setShowModal(true);
   };
 
-  const close = () => setShowModal(false);
-
-  const submit = () => {
-    // validación simple
-    if (!form.autor || !form.anio || !form.titulo) {
-      alert("Completa al menos Autor, Año y Título.");
-      return;
-    }
-
-    if (mode === "create") {
-      const newRow = {
-        id: Date.now(),
-        autor: form.autor,
-        anio: form.anio,
-        titulo: form.titulo,
-        programa: form.programa,
-        institucion: form.institucion,
-        link: form.link ? form.link : "Ver",
-      };
-      setRows((prev) => [newRow, ...prev]);
-    } else {
-      setRows((prev) =>
-        prev.map((r) =>
-          r.id === editingId
-            ? {
-                ...r,
-                autor: form.autor,
-                anio: form.anio,
-                titulo: form.titulo,
-                programa: form.programa,
-                institucion: form.institucion,
-                link: form.link ? form.link : "Ver",
-              }
-            : r
-        )
-      );
-    }
-
+  const close = () => {
+    if (loadingSubmit) return; // evita cerrar mientras guarda
     setShowModal(false);
+    setErrors({});
   };
 
-  const remove = (id) => {
-    if (!confirm("¿Eliminar esta tesis?")) return;
-    setRows((prev) => prev.filter((r) => r.id !== id));
+  /* =========================
+     SUBMIT
+  ========================== */
+
+  const submit = async () => {
+    if (!validate()) return;
+
+    try {
+      setLoadingSubmit(true);
+
+      const payload = {
+        ...form,
+        ano: Number(form.ano),
+        nivel_programa: nivelUpper,
+      };
+
+      if (mode === "create") {
+        await createTesis(payload);
+      } else {
+        await updateTesis(editingId, payload);
+      }
+
+      setShowModal(false);
+      loadTesis();
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Error guardando tesis");
+    } finally {
+      setLoadingSubmit(false);
+    }
   };
+
+  const remove = async (id) => {
+    if (!confirm("¿Eliminar esta tesis?")) return;
+
+    try {
+      await deleteTesis(id);
+      loadTesis();
+    } catch (err) {
+      console.error(err);
+      alert("Error eliminando tesis");
+    }
+  };
+
+  if (!nivelValido) {
+    return <div>Nivel inválido.</div>;
+  }
 
   return (
     <div>
-      <h3 className="mb-3">Tesis</h3>
+      <h3 className="mb-3">
+        Tesis {nivelUpper === "MAGISTER" ? "Magíster" : "Doctorado"}
+      </h3>
 
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <div style={{ color: "var(--muted)" }}>Tabla de guía de tesis</div>
+          <div style={{ color: "var(--muted)" }}>
+            Listado de tesis
+          </div>
 
           <button className="btn btn-primary" onClick={openCreate}>
             <i className="bi bi-plus-lg me-2" />
@@ -113,61 +188,61 @@ export default function Tesis() {
           </button>
         </div>
 
-        <div className="table-wrap">
-          <div className="table-responsive">
-            <table className="table table-dark table-dark-custom align-middle">
-              <thead>
-                <tr>
-                  <th>Autor</th>
-                  <th>Año</th>
-                  <th>Título</th>
-                  <th>Programa</th>
-                  <th>Institución</th>
-                  <th>Link</th>
-                  <th className="text-end">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <td>{r.autor}</td>
-                    <td>{r.anio}</td>
-                    <td>{r.titulo}</td>
-                    <td>{r.programa}</td>
-                    <td>{r.institucion}</td>
-                    <td>
-                      <a href={r.link !== "Ver" ? r.link : "#"} target="_blank" rel="noreferrer">
-                        Ver
-                      </a>
-                    </td>
-                    <td className="text-end">
-                      <button
-                        className="btn btn-sm btn-outline-light me-2"
-                        onClick={() => openEdit(r)}
-                      >
-                        Editar
-                      </button>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => remove(r.id)}
-                      >
-                        Eliminar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-
-                {rows.length === 0 && (
-                  <tr>
-                    <td colSpan="7" style={{ color: "var(--muted)" }}>
-                      Sin registros.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+        {loading ? (
+          <div style={{ color: "var(--muted)" }}>
+            Cargando...
           </div>
-        </div>
+        ) : (
+          <div className="table-wrap">
+            <div className="table-responsive">
+              <table className="table table-dark table-dark-custom align-middle">
+                <thead>
+                  <tr>
+                    <th>Autor</th>
+                    <th>Año</th>
+                    <th>Título</th>
+                    <th>Programa</th>
+                    <th>Rol</th>
+                    <th className="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.tesis_id}>
+                      <td>{r.autor}</td>
+                      <td>{r.ano}</td>
+                      <td>{r.titulo_tesis}</td>
+                      <td>{r.nombre_programa}</td>
+                      <td>{r.rol_guia}</td>
+                      <td className="text-end">
+                        <button
+                          className="btn btn-sm btn-outline-light me-2"
+                          onClick={() => openEdit(r)}
+                        >
+                          Editar
+                        </button>
+                        <button
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => remove(r.tesis_id)}
+                        >
+                          Eliminar
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+
+                  {rows.length === 0 && (
+                    <tr>
+                      <td colSpan="6" style={{ color: "var(--muted)" }}>
+                        Sin registros.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       <FormModal
@@ -175,68 +250,118 @@ export default function Tesis() {
         title={modalTitle}
         onClose={close}
         onSubmit={submit}
-        submitText={mode === "create" ? "Crear" : "Guardar cambios"}
+        submitText={
+          loadingSubmit
+            ? "Guardando..."
+            : mode === "create"
+            ? "Crear"
+            : "Guardar cambios"
+        }
+        submitDisabled={!isFormValid || loadingSubmit}
       >
         <div className="row g-3">
+
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Autor</label>
+            <label className="form-label text-light">Autor</label>
             <input
-              className="form-control input-dark"
+              className={`form-control input-dark ${errors.autor ? "is-invalid" : ""}`}
               value={form.autor}
-              onChange={(e) => setForm({ ...form, autor: e.target.value })}
-              placeholder="Nombre del autor"
+              onChange={(e) =>
+                setForm({ ...form, autor: e.target.value })
+              }
             />
+            {errors.autor && (
+              <div className="invalid-feedback d-block">
+                {errors.autor}
+              </div>
+            )}
           </div>
 
-          <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Año</label>
-            <input
-              className="form-control input-dark"
-              value={form.anio}
-              onChange={(e) => setForm({ ...form, anio: e.target.value })}
-              placeholder="2024"
-            />
-          </div>
-
-          <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Link</label>
-            <input
-              className="form-control input-dark"
-              value={form.link}
-              onChange={(e) => setForm({ ...form, link: e.target.value })}
-              placeholder="https://..."
+          <div className="col-12 col-md-6">
+            <YearInput
+              value={form.ano}
+              onChange={(val) =>
+                setForm({ ...form, ano: val })
+              }
+              error={errors.ano}
+              required
             />
           </div>
 
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Título</label>
+            <label className="form-label text-light">Título</label>
             <input
-              className="form-control input-dark"
-              value={form.titulo}
-              onChange={(e) => setForm({ ...form, titulo: e.target.value })}
-              placeholder="Título de la tesis"
+              className={`form-control input-dark ${errors.titulo_tesis ? "is-invalid" : ""}`}
+              value={form.titulo_tesis}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  titulo_tesis: e.target.value,
+                })
+              }
             />
+            {errors.titulo_tesis && (
+              <div className="invalid-feedback d-block">
+                {errors.titulo_tesis}
+              </div>
+            )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Programa</label>
+            <label className="form-label text-light">Programa</label>
             <input
-              className="form-control input-dark"
-              value={form.programa}
-              onChange={(e) => setForm({ ...form, programa: e.target.value })}
-              placeholder="Ej: Maestría en..."
+              className={`form-control input-dark ${errors.nombre_programa ? "is-invalid" : ""}`}
+              value={form.nombre_programa}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  nombre_programa: e.target.value,
+                })
+              }
             />
+            {errors.nombre_programa && (
+              <div className="invalid-feedback d-block">
+                {errors.nombre_programa}
+              </div>
+            )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Institución</label>
+            <label className="form-label text-light">Institución</label>
             <input
-              className="form-control input-dark"
+              className={`form-control input-dark ${errors.institucion ? "is-invalid" : ""}`}
               value={form.institucion}
-              onChange={(e) => setForm({ ...form, institucion: e.target.value })}
-              placeholder="Ej: Universidad..."
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  institucion: e.target.value,
+                })
+              }
             />
+            {errors.institucion && (
+              <div className="invalid-feedback d-block">
+                {errors.institucion}
+              </div>
+            )}
           </div>
+
+          <div className="col-12 col-md-6">
+            <label className="form-label text-light">Rol guía</label>
+            <select
+              className="form-select input-dark"
+              value={form.rol_guia}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  rol_guia: e.target.value,
+                })
+              }
+            >
+              <option value="GUIA">Guía</option>
+              <option value="CO_GUIA">Co-Guía</option>
+            </select>
+          </div>
+
         </div>
       </FormModal>
     </div>
