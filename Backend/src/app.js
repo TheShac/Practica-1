@@ -35,4 +35,6 @@ app.use("/api/cap-libro", capLibroRoutes);
 app.use("/api/investigacion", investigacionRoutes);
 app.use("/api/patente", patenteRoutes);
 
+app.use("/api/ficha", fichaRoutes);
+
 export default app;

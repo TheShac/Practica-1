@@ -8,7 +8,7 @@ export default function Dashboard() {
           <div className="card-dark p-3">
             <div className="fw-semibold mb-2">Noticias</div>
             <div style={{ color: "var(--muted)" }}>
-              Aquí van cards tipo intranet (como tu referencia).
+              Aquí van cards
             </div>
           </div>
         </div>
@@ -17,7 +17,7 @@ export default function Dashboard() {
           <div className="card-dark p-3">
             <div className="fw-semibold mb-2">Accesos rápidos</div>
             <div style={{ color: "var(--muted)" }}>
-              Botones / métricas del sistema de acreditación.
+              Botones / métricas 
             </div>
           </div>
         </div>

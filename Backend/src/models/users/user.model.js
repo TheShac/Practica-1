@@ -133,3 +133,26 @@ export async function getRoleIdByName(roleName) {
   const [rows] = await pool.query(`SELECT rol_id FROM rol WHERE nombre = ? LIMIT 1`, [roleName]);
   return rows[0]?.rol_id || null;
 }
+
+export async function listAcademicos() {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      u.usuario_id,
+      u.rut,
+      u.primer_nombre,
+      u.segundo_nombre,
+      u.primer_apellido,
+      u.segundo_apellido,
+      u.correo,
+      ra.tipo_academico AS contrato
+    FROM usuario u
+    JOIN rol r ON r.rol_id = u.rol_id
+    LEFT JOIN rol_academico ra ON ra.rolaca_id = u.rolaca_id
+    WHERE r.nombre = 'Academico'
+    ORDER BY u.primer_apellido ASC
+    `
+  );
+
+  return rows;
+}

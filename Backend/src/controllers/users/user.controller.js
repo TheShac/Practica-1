@@ -7,6 +7,7 @@ import {
   updateUserPassword,
   deleteUser,
   getRoleIdByName,
+  listAcademicos
 } from "../../models/users/user.model.js";
 
 export async function getAllUsers(req, res) {
@@ -130,5 +131,15 @@ export async function deleteUserHandler(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error eliminando usuario" });
+  }
+}
+
+export async function getAcademicos(req, res) {
+  try {
+    const academicos = await listAcademicos();
+    res.json(academicos);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error listando académicos" });
   }
 }

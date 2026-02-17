@@ -10,7 +10,6 @@ import {
 
 const router = Router();
 
-// solo logueados
 router.get("/mias", auth, listMisPublicaciones);
 router.post("/", auth, createPublicacionHandler);
 router.put("/:id", auth, updatePublicacionHandler);

@@ -7,10 +7,12 @@ import {
   updateUserHandler,
   updatePasswordHandler,
   deleteUserHandler,
+  getAcademicos
 } from "../../controllers/users/user.controller.js";
 
 const router = Router();
 
+router.get("/academicos", auth, authorizeRoles("Secretaria"), getAcademicos);
 router.get("/", auth, authorizeRoles("Admin"), getAllUsers);
 router.get("/:id", auth, authorizeRoles("Admin"), getUser);
 router.post("/", auth, authorizeRoles("Admin"), createUserHandler);

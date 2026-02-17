@@ -295,7 +295,7 @@ export default function Patente() {
           </div>
 
           <div className="col-12">
-            <label className="form-label">Respaldo(link)</label>
+            <label className="form-label">Respaldo (link)</label>
             <input
               className="form-control input-dark"
               value={form.link_verificacion}

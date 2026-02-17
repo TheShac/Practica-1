@@ -1,0 +1,197 @@
+import { useEffect, useMemo, useState } from "react";
+import { getFichaAcademica } from "../services/ficha.service";
+
+export default function FichaAcademicaModal({
+  show,
+  academico,
+  onClose,
+}) {
+  const [ficha, setFicha] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const nombreCompleto = useMemo(() => {
+    if (!academico) return "";
+    return `
+      ${academico.primer_nombre}
+      ${academico.segundo_nombre || ""}
+      ${academico.primer_apellido}
+      ${academico.segundo_apellido || ""}
+    `;
+  }, [academico]);
+
+  useEffect(() => {
+    if (!show || !academico) return;
+
+    async function loadFicha() {
+      try {
+        setLoading(true);
+        const data = await getFichaAcademica(
+          academico.usuario_id
+        );
+        setFicha(data);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadFicha();
+  }, [show, academico]);
+
+  useEffect(() => {
+    document.body.style.overflow = show ? "hidden" : "auto";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [show]);
+
+  if (!show || !academico) return null;
+
+  const tesis = ficha?.tesis || [];
+  const publicaciones = ficha?.publicaciones || [];
+  const libros = ficha?.libros || [];
+  const capitulos = ficha?.capitulos || [];
+  const investigaciones = ficha?.investigaciones || [];
+  const patentes = ficha?.patentes || [];
+
+  const magisterGuia = tesis.filter(
+    t => t.nivel_programa === "MAGISTER" && t.rol_guia === "GUIA"
+  );
+
+  const magisterCoGuia = tesis.filter(
+    t => t.nivel_programa === "MAGISTER" && t.rol_guia === "CO_GUIA"
+  );
+
+  const doctoradoGuia = tesis.filter(
+    t => t.nivel_programa === "DOCTORADO" && t.rol_guia === "GUIA"
+  );
+
+  const doctoradoCoGuia = tesis.filter(
+    t => t.nivel_programa === "DOCTORADO" && t.rol_guia === "CO_GUIA"
+  );
+
+  const wos = publicaciones.filter(p => p.categoria === "WoS");
+  const scopus = publicaciones.filter(p => p.categoria === "SCOPUS");
+  const scielo = publicaciones.filter(p => p.categoria === "SCIELO");
+  const otrasIndexadas = publicaciones.filter(
+    p =>
+      p.categoria !== "WoS" &&
+      p.categoria !== "SCOPUS" &&
+      p.categoria !== "SCIELO"
+  );
+
+  return (
+    <div className="fa-modal-overlay" onClick={onClose}>
+      <div
+        className="fa-modal"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="fa-modal-header">
+          <h4 className="fa-modal-title">
+            Ficha Académica: {nombreCompleto}
+          </h4>
+          <button className="fa-close-btn" onClick={onClose}>
+            ×
+          </button>
+        </div>
+
+        <div className="fa-info-box">
+          <Info label="Nombre Académico/a" value={nombreCompleto} />
+          <Info label="RUT" value={academico.rut} />
+          <Info label="Correo Institucional" value={academico.correo} />
+          <Info label="Tipo de Vinculo" value={academico.contrato} />
+          <Info label="Línea(s) de investigación" value={academico.lineas_investigacion} />
+        </div>
+
+        {loading ? (
+          <div className="fa-section">Cargando información...</div>
+        ) : (
+          <>
+            <Section title="Tesis de magíster dirigidas en los últimos 5 años (finalizadas)">
+              <SubBlock items={magisterGuia} />
+              <SubBlock items={magisterCoGuia} />
+            </Section>
+
+            <Section title="Tesis de doctorado dirigidas en los últimos 5 años (finalizadas)">
+              <SubBlock items={doctoradoGuia} />
+              <SubBlock items={doctoradoCoGuia} />
+            </Section>
+
+            <Section title="Listado de publicaciones en los últimos 5 años">
+              <SubBlock items={wos} field="titulo_articulo" />
+              <SubBlock items={scopus} field="titulo_articulo" />
+              <SubBlock items={scielo} field="titulo_articulo" />
+              <SubBlock items={otrasIndexadas} field="titulo_articulo" />
+              <SubBlock items={libros} field="nombre_libro" />
+              <SubBlock items={capitulos} field="nombre_capitulo" />
+              <SubBlock items={patentes} field="nombre_patente" />
+            </Section>
+
+            <Section title="Listado de proyectos de investigación, últimos 5 años">
+              {investigaciones.length === 0 ? (
+                <div className="fa-empty">Sin registros.</div>
+              ) : (
+                investigaciones.map((i, index) => (
+                  <div
+                    key={index}
+                    className="fa-empty"
+                    style={{ marginBottom: "15px" }}
+                  >
+                    <strong>{i.titulo}</strong>
+                    <div>{i.ano_adjudicacion}</div>
+                    <div>{i.rol_proyecto}</div>
+                  </div>
+                ))
+              )}
+            </Section>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Info({ label, value }) {
+  return (
+    <div>
+      <label>{label}</label>
+      <p>{value || "No definido"}</p>
+    </div>
+  );
+}
+
+function Section({ title, children }) {
+  return (
+    <div className="fa-section" style={{ marginBottom: "45px" }}>
+      <h5>{title}</h5>
+      <div style={{ marginTop: "20px" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function SubBlock({ items = [], field = "titulo_tesis" }) {
+  if (items.length === 0) {
+    return (
+      <div
+        className="fa-empty"
+        style={{ marginBottom: "15px" }}
+      >
+        Sin registros.
+      </div>
+    );
+  }
+
+  return items.map((item, index) => (
+    <div
+      key={index}
+      className="fa-empty"
+      style={{ marginBottom: "15px" }}
+    >
+      <strong>{item[field]}</strong>
+      {item.autor && <div>Autor: {item.autor}</div>}
+      {item.ano && <div>Año: {item.ano}</div>}
+      {item.estado && <div>Estado: {item.estado}</div>}
+    </div>
+  ));
+}

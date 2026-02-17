@@ -8,6 +8,8 @@ CREATE TABLE rol (
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO rol (nombre) VALUES ('Admin'),('Secretaria'),('Academico');
+SELECT * FROM rol;
 
 CREATE TABLE rol_academico (
     rolaca_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -15,6 +17,9 @@ CREATE TABLE rol_academico (
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO rol_academico (tipo_academico) VALUES ('Claustro'),('Colaborador');
+SELECT * FROM rol_academico;
 
 CREATE TABLE usuario(
 	usuario_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -35,10 +40,14 @@ CREATE TABLE usuario(
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+SELECT * FROM usuario;
 
 CREATE TABLE grado_academico (
     grado_id INT AUTO_INCREMENT PRIMARY KEY,
-    grado_academico VARCHAR(100) NOT NULL 
+    grado_academico VARCHAR(100) NOT NULL, 
+    institucion_grado VARCHAR(200),
+    pais_grado VARCHAR(100),
+    ano_grado YEAR
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
@@ -46,15 +55,13 @@ COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE titulacion (
     titulo_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
-    grado_id INT NOT NULL,
     titulo VARCHAR(200) NOT NULL,
-    institucion VARCHAR(200),
-    pais VARCHAR(100),
+    institucion_titulacion VARCHAR(200),
+    pais_titulacion VARCHAR(100),
     ano_titulacion YEAR,
     
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
-        ON DELETE CASCADE,
-    FOREIGN KEY (grado_id) REFERENCES grado_academico(grado_id)
+        ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
@@ -79,12 +86,17 @@ CREATE TABLE publicaciones (
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
+SELECT * FROM publicaciones;
+
 CREATE TABLE categoria (
     categoria_id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(50) NOT NULL
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+
+INSERT INTO categoria (nombre) VALUES ('WoS'),('SCOPUS'),('SCIELO'),('LATINDEX'),('ERIH'),('Otros.');
+SELECT * FROM categoria;
 
 CREATE TABLE libro (
     libro_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -103,6 +115,7 @@ CREATE TABLE libro (
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+SELECT * FROM libro;
 
 CREATE TABLE cap_libro (
     cap_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -139,6 +152,9 @@ CREATE TABLE tesis (
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
+SELECT * FROM tesis;
+
+-- drop table investigacion;
 CREATE TABLE investigacion (
     investigacion_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
@@ -146,6 +162,7 @@ CREATE TABLE investigacion (
     fuente_financiamiento VARCHAR(200),
     ano_adjudicacion YEAR,
     periodo_ejecucion VARCHAR(100),
+    rol_proyecto VARCHAR(100),
     link_verificacion TEXT,
     
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
@@ -153,10 +170,13 @@ CREATE TABLE investigacion (
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+SELECT * FROM investigacion;
 
+-- drop table patente;
 CREATE TABLE patente (
     patente_id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
+    inventores TEXT,
     nombre_patente VARCHAR(300),
     num_registro VARCHAR(100),
     fecha_solicitud DATE,
@@ -169,3 +189,4 @@ CREATE TABLE patente (
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+SELECT * FROM patente;

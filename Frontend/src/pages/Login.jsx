@@ -17,7 +17,7 @@ export default function Login() {
   const redirectByRole = (rol) => {
     if (rol === "Admin") return navigate("/admin/dashboard");
     if (rol === "Secretaria") return navigate("/secretaria/dashboard");
-    return navigate("/academico/dashboard"); // default Academico
+    return navigate("/academico/dashboard");
   };
 
   const handleLogin = async (e) => {

@@ -17,6 +17,7 @@ import Patente from "../pages/academico/Patente.jsx";
 // Secretaria (placeholder)
 import SecretariaLayout from "../layouts/SecretariaLayout.jsx";
 import SecretariaDashboard from "../pages/secretaria/Dashboard.jsx";
+import SecretariaFichaAcademics from "../pages/secretaria/Ficha-Academicas.jsx";
 
 // Admin (placeholder)
 import AdminLayout from "../layouts/AdminLayout.jsx";
@@ -58,6 +59,7 @@ export default function App() {
       >
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<SecretariaDashboard />} />
+        <Route path="ficha-academicas" element={<SecretariaFichaAcademics />} />
       </Route>
 
       {/* ADMIN */}

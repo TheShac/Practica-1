@@ -150,3 +150,14 @@ export async function deleteCapLibro(id) {
   if (!res.ok) throw new Error(data?.message || "Error eliminando capítulo de libro");
   return data;
 }
+
+export async function getAcademicos() {
+  const res = await fetch(`${API_URL}/users/academicos`, {
+    headers: { ...authHeader() },
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message || "Error cargando académicos");
+
+  return data;
+}

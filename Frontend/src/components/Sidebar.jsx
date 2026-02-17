@@ -43,7 +43,7 @@ export default function Sidebar({ collapsed }) {
     const secretaria = [
       { to: "/secretaria/dashboard", icon: "bi-speedometer2", label: "Dashboard" },
       { type: "section", label: "SECRETARÍA" },
-      { to: "/secretaria/academicos", icon: "bi-people", label: "Académicos" },
+      { to: "/secretaria/ficha-academicas", icon: "bi-people", label: "Ficha Académicas" },
       { to: "/secretaria/reportes", icon: "bi-clipboard-data", label: "Reportes" },
     ];
 
@@ -60,7 +60,8 @@ export default function Sidebar({ collapsed }) {
     return academico;
   }, [rol]);
 
-  const title = rol === "Secretaria" ? "Secretaría" : rol === "Admin" ? "Admin" : "Académico";
+  const title =
+    rol === "Secretaria" ? "Secretaría" : rol === "Admin" ? "Admin" : "Académico";
 
   return (
     <aside
