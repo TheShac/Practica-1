@@ -45,10 +45,17 @@ export async function createPatente(data) {
 }
 
 export async function updatePatente(id, data) {
+  const {
+    patente_id,
+    id: fakeId,
+    usuario_id,
+    ...cleanData
+  } = data;
+
   await pool.query(
     `UPDATE patente SET ?
      WHERE patente_id = ?`,
-    [data, id]
+    [cleanData, id]
   );
 }
 
