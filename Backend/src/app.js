@@ -15,6 +15,8 @@ import capLibroRoutes from "./routes/libros/cap.libro.routes.js";
 import investigacionRoutes from "./routes/investigacion/investigacion.routes.js";
 import patenteRoutes from "./routes/patente/patente.routes.js";
 
+import fichaRoutes from "./routes/ficha.routes.js";
+
 dotenv.config();
 
 const app = express();
