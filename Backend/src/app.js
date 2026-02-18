@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from "cookie-parser";
 import dotenv from 'dotenv';
+import morgan from 'morgan'
 
 import authRoutes from "./routes/users/auth.routes.js";
 import userRoutes from "./routes/users/user.routes.js";
@@ -20,6 +21,8 @@ import fichaRoutes from "./routes/ficha.routes.js";
 dotenv.config();
 
 const app = express();
+
+app.use(morgan('dev'));
 
 app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());

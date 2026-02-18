@@ -156,3 +156,30 @@ export async function listAcademicos() {
 
   return rows;
 }
+
+export async function getAcademicoProfileById(usuario_id) {
+  const [rows] = await pool.query(
+    `
+    SELECT 
+      u.usuario_id,
+      u.rut,
+      u.primer_nombre,
+      u.segundo_nombre,
+      u.primer_apellido,
+      u.segundo_apellido,
+      u.correo,
+      u.lineas_investigacion,
+      u.telefono,
+      r.nombre AS rol_nombre,
+      ra.tipo_academico AS contrato
+    FROM usuario u
+    JOIN rol r ON r.rol_id = u.rol_id
+    LEFT JOIN rol_academico ra ON ra.rolaca_id = u.rolaca_id
+    WHERE u.usuario_id = ?
+      AND r.nombre = 'Academico'
+    `,
+    [usuario_id]
+  );
+
+  return rows[0] || null;
+}

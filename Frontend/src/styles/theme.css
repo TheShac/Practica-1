@@ -217,6 +217,71 @@ input-dark,
   border: 1px solid var(--border);
 }
 
+.perfil-wrapper {
+  padding: 24px;
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+}
+
+.perfil-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #ffffff;
+}
+
+/* reutilizamos el estilo institucional */
+.perfil-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 22px;
+}
+
+/* título de sección */
+.perfil-card h2 {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* grid elegante */
+.perfil-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 18px;
+}
+
+/* inputs oscuros (alineados con tu sistema) */
+.perfil-grid label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.perfil-grid input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.perfil-grid input:disabled {
+  opacity: 0.95;
+}
+
+/* separación visual suave */
+.perfil-card + .perfil-card {
+  margin-top: 10px;
+}
+
 @keyframes faFadeIn {
   from { opacity: 0; transform: scale(.96); }
   to { opacity: 1; transform: scale(1); }

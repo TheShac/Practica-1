@@ -7,6 +7,7 @@ import {
   updateUserPassword,
   deleteUser,
   getRoleIdByName,
+  getAcademicoProfileById,
   listAcademicos
 } from "../../models/users/user.model.js";
 
@@ -141,5 +142,23 @@ export async function getAcademicos(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error listando académicos" });
+  }
+}
+
+ getAcademicoProfileById
+export async function getAcademicoProfile(req, res) {
+  try {
+    const { id } = req.params;
+
+    const profile = await getAcademicoProfileById(id);
+
+    if (!profile) {
+      return res.status(404).json({ message: "Perfil académico no encontrado" });
+    }
+
+    res.json(profile);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error obteniendo perfil académico" });
   }
 }
