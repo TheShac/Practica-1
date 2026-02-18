@@ -1,16 +1,16 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { findUserByRutOrEmail } from "../../models/users/user.model.js";
+import { findUserByRut } from "../../models/users/user.model.js";
 
 export async function login(req, res) {
   try {
-    const { identifier, password } = req.body;
+    const { rut, password } = req.body;
 
-    if (!identifier || !password) {
-      return res.status(400).json({ message: "identifier y password son requeridos" });
+    if (!rut || !password) {
+      return res.status(400).json({ message: "rut y password son requeridos" });
     }
 
-    const user = await findUserByRutOrEmail(identifier);
+    const user = await findUserByRut(rut);
     if (!user) return res.status(401).json({ message: "Credenciales inválidas" });
 
     const ok = await bcrypt.compare(password, user.contrasena);
@@ -31,7 +31,6 @@ export async function login(req, res) {
         usuario_id: user.usuario_id,
         rut: user.rut,
         nombre: `${user.primer_nombre} ${user.primer_apellido}`,
-        correo: user.correo,
         rol: user.rol_nombre,
       },
     });

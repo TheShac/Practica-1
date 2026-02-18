@@ -40,7 +40,23 @@ CREATE TABLE usuario(
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+ALTER TABLE usuario
+ADD COLUMN telefono VARCHAR(20) AFTER correo;
+ALTER TABLE usuario
+MODIFY COLUMN lineas_investigacion TEXT;
+ALTER TABLE usuario DROP COLUMN correo;
 SELECT * FROM usuario;
+
+CREATE TABLE mail(
+	mail_id INT AUTO_INCREMENT PRIMARY KEY,
+    mail VARCHAR(150) UNIQUE NOT NULL,
+    usuario_id INT NOT NULL,
+    
+    FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
+    ON DELETE CASCADE
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE grado_academico (
     grado_id INT AUTO_INCREMENT PRIMARY KEY,

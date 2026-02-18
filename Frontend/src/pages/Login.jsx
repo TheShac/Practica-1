@@ -7,7 +7,7 @@ import { formatRut, looksLikeEmail } from "../utils/rut.js";
 export default function Login() {
   const navigate = useNavigate();
 
-  const [identifier, setIdentifier] = useState("");
+  const [rut, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
 
@@ -26,7 +26,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const { token, user } = await loginRequest({ identifier, password });
+      const { token, user } = await loginRequest({ rut, password });
 
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(user));
@@ -91,12 +91,12 @@ export default function Login() {
             <form onSubmit={handleLogin}>
               <div className="mb-3">
                 <label className="form-label" style={{ color: "var(--muted)" }}>
-                  Rut o correo*
+                  Rut*
                 </label>
                 <input
                   className="form-control input-dark"
-                  placeholder="12.345.678-9 o correo@uta.cl"
-                  value={identifier}
+                  placeholder="12.345.678-9"
+                  value={rut}
                   onChange={(e) => {
                     const raw = e.target.value;
 
@@ -108,8 +108,8 @@ export default function Login() {
                     setIdentifier(formatRut(raw));
                   }}
                   onBlur={() => {
-                    if (!looksLikeEmail(identifier)) {
-                      setIdentifier(formatRut(identifier));
+                    if (!looksLikeEmail(rut)) {
+                      setIdentifier(formatRut(rut));
                     }
                   }}
                   autoComplete="username"
