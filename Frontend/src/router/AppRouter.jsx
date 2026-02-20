@@ -14,10 +14,11 @@ import CapLibro from "../pages/academico/CapLibro.jsx";
 import Investigacion from "../pages/academico/Investigacion.jsx";
 import Patente from "../pages/academico/Patente.jsx";
 
-// Secretaria (placeholder)
+// Secretaria
 import SecretariaLayout from "../layouts/SecretariaLayout.jsx";
 import SecretariaDashboard from "../pages/secretaria/Dashboard.jsx";
 import SecretariaFichaAcademics from "../pages/secretaria/Ficha-Academicas.jsx";
+import ReportesSecretaria from "../pages/secretaria/ReportesSecretaria.jsx";
 
 // Admin (placeholder)
 import AdminLayout from "../layouts/AdminLayout.jsx";
@@ -60,6 +61,7 @@ export default function App() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<SecretariaDashboard />} />
         <Route path="ficha-academicas" element={<SecretariaFichaAcademics />} />
+        <Route path="reportes" element={<ReportesSecretaria />} />
       </Route>
 
       {/* ADMIN */}
