@@ -8,12 +8,15 @@ import {
   updatePasswordHandler,
   deleteUserHandler,
   getAcademicoProfile,
+  updateAcademicoProfileHandler,
   getAcademicos
 } from "../../controllers/users/user.controller.js";
 
 const router = Router();
 
 router.get("/academicos", auth, authorizeRoles("Secretaria"), getAcademicos);
+router.get("/academicos/:id/perfil", auth, authorizeRoles("Admin", "Secretaria", "Academico"), getAcademicoProfile);
+router.put("/academicos/:id/perfil", auth, authorizeRoles("Academico", "Admin"), updateAcademicoProfileHandler);
 router.get("/", auth, authorizeRoles("Admin"), getAllUsers);
 router.get("/:id", auth, authorizeRoles("Admin"), getUser);
 router.post("/", auth, authorizeRoles("Admin"), createUserHandler);

@@ -8,6 +8,7 @@ import {
   deleteUser,
   getRoleIdByName,
   getAcademicoProfileById,
+  updateAcademicoProfile,
   listAcademicos
 } from "../../models/users/user.model.js";
 
@@ -49,7 +50,7 @@ export async function createUserHandler(req, res) {
       rolaca_id,
     } = req.body;
 
-    if (!rut || !primer_nombre || !primer_apellido || !correo || !password || !lineas_investigacion) {
+    if (!rut || !primer_nombre || !primer_apellido || !password || !lineas_investigacion) {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
     }
 
@@ -79,7 +80,7 @@ export async function createUserHandler(req, res) {
   } catch (err) {
     console.error(err);
     if (err?.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({ message: "Rut o correo ya existe" });
+      return res.status(409).json({ message: "Rut ya existe" });
     }
     res.status(500).json({ message: "Error creando usuario" });
   }
@@ -97,7 +98,7 @@ export async function updateUserHandler(req, res) {
   } catch (err) {
     console.error(err);
     if (err?.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({ message: "Rut o correo ya existe" });
+      return res.status(409).json({ message: "Rut ya existe" });
     }
     res.status(500).json({ message: "Error actualizando usuario" });
   }
@@ -160,5 +161,24 @@ export async function getAcademicoProfile(req, res) {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Error obteniendo perfil académico" });
+  }
+}
+export async function updateAcademicoProfileHandler(req, res) {
+  try {
+    const { id } = req.params;
+
+    const existing = await getAcademicoProfileById(id);
+    if (!existing) {
+      return res.status(404).json({ message: "Perfil académico no encontrado" });
+    }
+
+    await updateAcademicoProfile(id, req.body);
+
+    const updated = await getAcademicoProfileById(id);
+
+    res.status(200).json(updated); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error actualizando perfil académico" });
   }
 }

@@ -1,15 +1,15 @@
 import { pool } from "../../config/db.js";
 
-export async function findUserByRutOrEmail(identifier) {
+export async function findUserByRutOrEmail(rut) {
   const [rows] = await pool.query(
     `
     SELECT u.*, r.nombre AS rol_nombre
     FROM usuario u
     JOIN rol r ON r.rol_id = u.rol_id
-    WHERE u.rut = ? OR u.correo = ?
+    WHERE u.rut = ? 
     LIMIT 1
     `,
-    [identifier, identifier]
+    [rut]
   );
   return rows[0] || null;
 }
@@ -18,7 +18,7 @@ export async function findUserById(usuario_id) {
   const [rows] = await pool.query(
     `
     SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
-           u.primer_apellido, u.segundo_apellido, u.correo,
+           u.primer_apellido, u.segundo_apellido,
            u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre, u.rolaca_id
     FROM usuario u
     JOIN rol r ON r.rol_id = u.rol_id
@@ -33,7 +33,7 @@ export async function listUsers() {
   const [rows] = await pool.query(
     `
     SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
-           u.primer_apellido, u.segundo_apellido, u.correo,
+           u.primer_apellido, u.segundo_apellido,
            u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre, u.rolaca_id
     FROM usuario u
     JOIN rol r ON r.rol_id = u.rol_id
@@ -61,8 +61,8 @@ export async function createUser(data) {
     `
     INSERT INTO usuario
       (rut, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
-       correo, contrasena, lineas_investigacion, rol_id, rolaca_id)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       contrasena, lineas_investigacion, rol_id, rolaca_id)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       rut,
@@ -82,40 +82,27 @@ export async function createUser(data) {
 }
 
 export async function updateUser(usuario_id, data) {
-  const {
-    rut,
-    primer_nombre,
-    segundo_nombre,
-    primer_apellido,
-    segundo_apellido,
-    correo,
-    lineas_investigacion,
-    rol_id,
-    rolaca_id,
-  } = data;
+  const fields = [];
+  const values = [];
 
-  await pool.query(
-    `
+  for (const key in data) {
+    fields.push(`${key} = ?`);
+    values.push(data[key]);
+  }
+
+  if (fields.length === 0) {
+    throw new Error("No hay campos para actualizar");
+  }
+
+  values.push(usuario_id);
+
+  const sql = `
     UPDATE usuario
-    SET rut = ?, primer_nombre = ?, segundo_nombre = ?,
-        primer_apellido = ?, segundo_apellido = ?,
-        correo = ?, lineas_investigacion = ?,
-        rol_id = ?, rolaca_id = ?
+    SET ${fields.join(", ")}
     WHERE usuario_id = ?
-    `,
-    [
-      rut,
-      primer_nombre,
-      segundo_nombre || null,
-      primer_apellido,
-      segundo_apellido || null,
-      correo,
-      lineas_investigacion,
-      rol_id,
-      rolaca_id || null,
-      usuario_id,
-    ]
-  );
+  `;
+
+  await pool.query(sql, values);
 }
 
 export async function updateUserPassword(usuario_id, contrasena_hash) {
@@ -182,4 +169,37 @@ export async function getAcademicoProfileById(usuario_id) {
   );
 
   return rows[0] || null;
+}
+
+export async function updateAcademicoProfile(usuario_id, data) {
+  const {
+    primer_nombre,
+    segundo_nombre,
+    primer_apellido,
+    segundo_apellido,
+    telefono,
+    lineas_investigacion,
+  } = data;
+
+  await pool.query(
+    `
+    UPDATE usuario
+    SET primer_nombre = ?,
+        segundo_nombre = ?,
+        primer_apellido = ?,
+        segundo_apellido = ?,
+        telefono = ?,
+        lineas_investigacion = ?
+    WHERE usuario_id = ?
+    `,
+    [
+      primer_nombre,
+      segundo_nombre || null,
+      primer_apellido,
+      segundo_apellido || null,
+      telefono || null,
+      lineas_investigacion || null,
+      usuario_id,
+    ]
+  );
 }
