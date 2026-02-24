@@ -36,12 +36,20 @@ export default function ReportesSecretaria() {
     total_wos_scopus: claustro.reduce(
       (acc, curr) => acc + Number(curr.total_wos_scopus_5_anios || 0),
       0
+    ),
+    total_scielo: claustro.reduce(
+      (acc, curr) => acc + Number(curr.total_scielo_5_anios || 0),
+      0
     )
   };
 
   const totalColaboradores = {
     total_wos_scopus: colaboradores.reduce(
       (acc, curr) => acc + Number(curr.total_wos_scopus_5_anios || 0),
+      0
+    ),
+    total_scielo: colaboradores.reduce(
+      (acc, curr) => acc + Number(curr.total_scielo_5_anios || 0),
       0
     )
   };
@@ -118,7 +126,7 @@ export default function ReportesSecretaria() {
                     </td>
                     <td>{row.ingreso || "-"}</td>
                     <td>{row.total_wos_scopus_5_anios || 0}</td>
-                    <td>{row.scielo || 0}</td>
+                    <td>{row.total_scielo_5_anios || 0}</td>
                     <td>{row.otros_articulos || 0}</td>
                     <td>{row.libros_area || 0}</td>
                     <td>{row.libros_otro || 0}</td>
@@ -134,6 +142,7 @@ export default function ReportesSecretaria() {
                 <tr style={{ background: "rgba(255,255,255,.05)" }}>
                   <td colSpan="2" className="fw-bold">TOTAL</td>
                   <td>{totalClaustro.total_wos_scopus}</td>
+                  <td>{totalClaustro.total_scielo}</td>
                   <td colSpan="10"></td>
                 </tr>
 
@@ -185,6 +194,7 @@ export default function ReportesSecretaria() {
                 <tr style={{ background: "rgba(255,255,255,.05)" }}>
                   <td colSpan="2" className="fw-bold">TOTAL</td>
                   <td>{totalColaboradores.total_wos_scopus}</td>
+                  <td>{totalColaboradores.total_scielo}</td>
                   <td colSpan="10"></td>
                 </tr>
 

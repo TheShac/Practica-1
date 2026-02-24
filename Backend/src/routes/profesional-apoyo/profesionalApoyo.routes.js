@@ -4,6 +4,6 @@ import { reporteGeneralHandler } from "../../controllers/profesional-apoyo/profe
 
 const router = Router();
 
-router.get("/", auth, reporteGeneralHandler);
+router.get("/reporte-general", auth, reporteGeneralHandler);
 
 export default router;

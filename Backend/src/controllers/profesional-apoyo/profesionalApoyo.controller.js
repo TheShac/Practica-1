@@ -2,10 +2,12 @@ import { getReporteGeneral } from "../../models/profesional-apoyo/profesionalApo
 
 export async function reporteGeneralHandler(req, res) {
   try {
-    const rows = await getReporteGeneral();
-    res.json(rows);
+    const data = await getReporteGeneral();
+    res.json(data);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error obteniendo reporte general" });
+    console.error("Error reporte general:", error);
+    res.status(500).json({
+      message: "Error al obtener reporte general"
+    });
   }
 }

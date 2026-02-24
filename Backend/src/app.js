@@ -39,6 +39,6 @@ app.use("/api/investigacion", investigacionRoutes);
 app.use("/api/patente", patenteRoutes);
 
 app.use("/api/ficha", fichaRoutes);
-app.use("/api/profesional-apoyo/reporte-general", reporteGeneralRoutes);
+app.use("/api/profesional-apoyo", reporteGeneralRoutes);
 
 export default app;
