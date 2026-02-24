@@ -220,7 +220,7 @@ export default function ReportesSecretaria() {
         {/* NOTAS */}
         <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
           <div>(1) Sólo se registran artículos como primer autor.</div>
-          <div>(2) Se registran los proyectos obtenidos desde 2019.</div>
+          <div>(2) Se registran los proyectos obtenidos desde 2019, sin considerar los proyectos en curso.</div>
         </div>
 
         {/* TABLA PROMEDIOS (NO SE BORRÓ) */}

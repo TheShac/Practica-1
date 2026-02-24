@@ -89,9 +89,7 @@ export default function FichaAcademicaModal({
           <h4 className="fa-modal-title">
             Ficha Académica: {nombreCompleto}
           </h4>
-          <button className="fa-close-btn" onClick={onClose}>
-            ×
-          </button>
+          <button type="button" className="btn-close btn-close-white" onClick={onClose}/>
         </div>
 
         <div className="fa-info-box">
@@ -107,23 +105,23 @@ export default function FichaAcademicaModal({
         ) : (
           <>
             <Section title="Tesis de magíster dirigidas en los últimos 5 años (finalizadas)">
-              <SubBlock items={magisterGuia} />
-              <SubBlock items={magisterCoGuia} />
+              <SubBlock subtitle="Como guía de tesis" items={magisterGuia} />
+              <SubBlock subtitle="Como co-guía de tesis" items={magisterCoGuia} />
             </Section>
 
             <Section title="Tesis de doctorado dirigidas en los últimos 5 años (finalizadas)">
-              <SubBlock items={doctoradoGuia} />
-              <SubBlock items={doctoradoCoGuia} />
+              <SubBlock subtitle="Como guía de tesis" items={doctoradoGuia} />
+              <SubBlock subtitle="Como co-guía de tesis" items={doctoradoCoGuia} />
             </Section>
 
             <Section title="Listado de publicaciones en los últimos 5 años">
-              <SubBlock items={wos} field="titulo_articulo" />
-              <SubBlock items={scopus} field="titulo_articulo" />
-              <SubBlock items={scielo} field="titulo_articulo" />
-              <SubBlock items={otrasIndexadas} field="titulo_articulo" />
-              <SubBlock items={libros} field="nombre_libro" />
-              <SubBlock items={capitulos} field="nombre_capitulo" />
-              <SubBlock items={patentes} field="nombre_patente" />
+              <SubBlock subtitle="Publicaciones indexadas WoS" items={wos} field="titulo_articulo" />
+              <SubBlock subtitle="Publicaciones indexadas SCOPUS" items={scopus} field="titulo_articulo" />
+              <SubBlock subtitle="Publicaciones indexadas SCIELO" items={scielo} field="titulo_articulo" />
+              <SubBlock subtitle="Otras publicaciones indexadas (identificar tipo de indexación: LATINDEX u otra)" items={otrasIndexadas} field="titulo_articulo" />
+              <SubBlock subtitle="Publicaciones no indexadas LIBRO" items={libros} field="nombre_libro" />
+              <SubBlock subtitle="Publicaciones no indexadas CAPÍTULOS DE LIBRO" items={capitulos} field="nombre_capitulo" />
+              <SubBlock subtitle="Patentes" items={patentes} field="nombre_patente" />
             </Section>
 
             <Section title="Listado de proyectos de investigación, últimos 5 años">
@@ -170,28 +168,35 @@ function Section({ title, children }) {
   );
 }
 
-function SubBlock({ items = [], field = "titulo_tesis" }) {
-  if (items.length === 0) {
-    return (
-      <div
-        className="fa-empty"
-        style={{ marginBottom: "15px" }}
-      >
-        Sin registros.
-      </div>
-    );
-  }
+function SubBlock({ 
+  items = [], 
+  field = "titulo_tesis", 
+  subtitle 
+}) {
+  return (
+    <div style={{ marginBottom: "25px" }}>
+      {subtitle && (
+        <h6 style={{ marginBottom: "10px", fontWeight: "600" }}>
+          {subtitle}
+        </h6>
+      )}
 
-  return items.map((item, index) => (
-    <div
-      key={index}
-      className="fa-empty"
-      style={{ marginBottom: "15px" }}
-    >
-      <strong>{item[field]}</strong>
-      {item.autor && <div>Autor: {item.autor}</div>}
-      {item.ano && <div>Año: {item.ano}</div>}
-      {item.estado && <div>Estado: {item.estado}</div>}
+      {items.length === 0 ? (
+        <div className="fa-empty">Sin registros.</div>
+      ) : (
+        items.map((item, index) => (
+          <div
+            key={index}
+            className="fa-empty"
+            style={{ marginBottom: "15px" }}
+          >
+            <strong>{item[field]}</strong>
+            {item.autor && <div>Autor: {item.autor}</div>}
+            {item.ano && <div>Año: {item.ano}</div>}
+            {item.estado && <div>Estado: {item.estado}</div>}
+          </div>
+        ))
+      )}
     </div>
-  ));
+  );
 }
