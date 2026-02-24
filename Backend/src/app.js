@@ -16,6 +16,7 @@ import investigacionRoutes from "./routes/investigacion/investigacion.routes.js"
 import patenteRoutes from "./routes/patente/patente.routes.js";
 
 import fichaRoutes from "./routes/ficha.routes.js";
+import reporteGeneralRoutes from "./routes/profesional-apoyo/profesionalApoyo.routes.js";
 
 dotenv.config();
 
@@ -38,5 +39,6 @@ app.use("/api/investigacion", investigacionRoutes);
 app.use("/api/patente", patenteRoutes);
 
 app.use("/api/ficha", fichaRoutes);
+app.use("/api/profesional-apoyo/reporte-general", reporteGeneralRoutes);
 
 export default app;

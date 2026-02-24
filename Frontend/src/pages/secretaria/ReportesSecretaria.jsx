@@ -1,65 +1,50 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { getReporteGeneral } from "../../services/reporteGeneral.service";
 
 export default function ReportesSecretaria() {
 
-  const claustro = [
-    {
-      nombre: "Académico 1",
-      ingreso: 2018,
-      total_wos_scopus: 33,
-      scielo: 2,
-      otros_articulos: 0,
-      libros_area: 8,
-      libros_otro: 5,
-      cap_area: 0,
-      cap_otro: 0,
-      edicion_area: 0,
-      edicion_otro: 0,
-      proyectos_fondecyt: 2,
-      otros_proyectos: 0
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const result = await getReporteGeneral();
+        setData(result);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
 
-  const colaboradores = [
-    {
-      nombre: "Colaborador 1",
-      ingreso: 2019,
-      total_wos_scopus: 6,
-      scielo: 5,
-      otros_articulos: 0,
-      libros_area: 0,
-      libros_otro: 0,
-      cap_area: 1,
-      cap_otro: 0,
-      edicion_area: 1,
-      edicion_otro: 0,
-      proyectos_fondecyt: 2,
-      otros_proyectos: 2
-    }
-  ];
+    fetchData();
+  }, []);
 
-  const calcularTotales = (array) =>
-    array.reduce((acc, item) => {
-      Object.keys(acc).forEach(key => {
-        if (typeof item[key] === "number") acc[key] += item[key];
-      });
-      return acc;
-    }, {
-      total_wos_scopus: 0,
-      scielo: 0,
-      otros_articulos: 0,
-      libros_area: 0,
-      libros_otro: 0,
-      cap_area: 0,
-      cap_otro: 0,
-      edicion_area: 0,
-      edicion_otro: 0,
-      proyectos_fondecyt: 0,
-      otros_proyectos: 0
-    });
+  const claustro = useMemo(
+    () => data.filter(a => a.tipo_academico === "Claustro"),
+    [data]
+  );
 
-  const totalClaustro = calcularTotales(claustro);
-  const totalColaboradores = calcularTotales(colaboradores);
+  const colaboradores = useMemo(
+    () => data.filter(a => a.tipo_academico === "Colaborador"),
+    [data]
+  );
+
+  const totalClaustro = {
+    total_wos_scopus: claustro.reduce(
+      (acc, curr) => acc + Number(curr.total_wos_scopus_5_anios || 0),
+      0
+    )
+  };
+
+  const totalColaboradores = {
+    total_wos_scopus: colaboradores.reduce(
+      (acc, curr) => acc + Number(curr.total_wos_scopus_5_anios || 0),
+      0
+    )
+  };
 
   return (
     <div>
@@ -74,6 +59,16 @@ export default function ReportesSecretaria() {
             Descargar Excel
           </button>
         </div>
+
+        {loading && (
+          <div style={{ color: "var(--muted)" }}>Cargando...</div>
+        )}
+
+        {error && (
+          <div className="text-danger">{error}</div>
+        )}
+
+        {!loading && !error && (
 
         <div className="table-wrap">
           <div className="table-responsive">
@@ -95,9 +90,9 @@ export default function ReportesSecretaria() {
                     <th>Edición crítica y traducción anotada de un libro en otra editorial</th>
                     <th>Proyectos FONDECYT, FONDEF, FONDAP, BASALES, CORFO, ANILLO, FONIS, FONIDE o Instituto Milenio como investigador responsable (2)</th>
                     <th>Otros proyectos con:
-                            1) evaluación externa por pares.
-                            2) Financiamiento externo.
-                            3) investigación de carácter claramente disciplinar
+                            <br/>1) evaluación externa por pares.
+                            <br/>2) Financiamiento externo.
+                            <br/>3) investigación de carácter claramente disciplinar
                     </th>
                 </tr>
               </thead>
@@ -117,36 +112,29 @@ export default function ReportesSecretaria() {
                 </tr>
 
                 {claustro.map((row, index) => (
-                  <tr key={index}>
-                    <td className="text-start">{row.nombre}</td>
-                    <td>{row.ingreso}</td>
-                    <td>{row.total_wos_scopus}</td>
-                    <td>{row.scielo}</td>
-                    <td>{row.otros_articulos}</td>
-                    <td>{row.libros_area}</td>
-                    <td>{row.libros_otro}</td>
-                    <td>{row.cap_area}</td>
-                    <td>{row.cap_otro}</td>
-                    <td>{row.edicion_area}</td>
-                    <td>{row.edicion_otro}</td>
-                    <td>{row.proyectos_fondecyt}</td>
-                    <td>{row.otros_proyectos}</td>
+                  <tr key={row.usuario_id}>
+                    <td className="text-start">
+                      <strong>{index + 1}.</strong> {row.nombre}
+                    </td>
+                    <td>{row.ingreso || "-"}</td>
+                    <td>{row.total_wos_scopus_5_anios || 0}</td>
+                    <td>{row.scielo || 0}</td>
+                    <td>{row.otros_articulos || 0}</td>
+                    <td>{row.libros_area || 0}</td>
+                    <td>{row.libros_otro || 0}</td>
+                    <td>{row.cap_area || 0}</td>
+                    <td>{row.cap_otro || 0}</td>
+                    <td>{row.edicion_area || 0}</td>
+                    <td>{row.edicion_otro || 0}</td>
+                    <td>{row.proyectos_fondecyt || 0}</td>
+                    <td>{row.otros_proyectos || 0}</td>
                   </tr>
                 ))}
 
                 <tr style={{ background: "rgba(255,255,255,.05)" }}>
                   <td colSpan="2" className="fw-bold">TOTAL</td>
                   <td>{totalClaustro.total_wos_scopus}</td>
-                  <td>{totalClaustro.scielo}</td>
-                  <td>{totalClaustro.otros_articulos}</td>
-                  <td>{totalClaustro.libros_area}</td>
-                  <td>{totalClaustro.libros_otro}</td>
-                  <td>{totalClaustro.cap_area}</td>
-                  <td>{totalClaustro.cap_otro}</td>
-                  <td>{totalClaustro.edicion_area}</td>
-                  <td>{totalClaustro.edicion_otro}</td>
-                  <td>{totalClaustro.proyectos_fondecyt}</td>
-                  <td>{totalClaustro.otros_proyectos}</td>
+                  <td colSpan="10"></td>
                 </tr>
 
                 <tr>
@@ -165,7 +153,7 @@ export default function ReportesSecretaria() {
                 {/* COLABORADORES */}
                 <tr>
                   <td colSpan="13"
-                    className="fw-bold text-start mt-3"
+                    className="fw-bold text-start"
                     style={{
                       background: "rgba(42,64,106,.35)",
                       color: "#ffffff"
@@ -175,36 +163,29 @@ export default function ReportesSecretaria() {
                 </tr>
 
                 {colaboradores.map((row, index) => (
-                  <tr key={index}>
-                    <td className="text-start">{row.nombre}</td>
-                    <td>{row.ingreso}</td>
-                    <td>{row.total_wos_scopus}</td>
-                    <td>{row.scielo}</td>
-                    <td>{row.otros_articulos}</td>
-                    <td>{row.libros_area}</td>
-                    <td>{row.libros_otro}</td>
-                    <td>{row.cap_area}</td>
-                    <td>{row.cap_otro}</td>
-                    <td>{row.edicion_area}</td>
-                    <td>{row.edicion_otro}</td>
-                    <td>{row.proyectos_fondecyt}</td>
-                    <td>{row.otros_proyectos}</td>
+                  <tr key={row.usuario_id}>
+                    <td className="text-start">
+                      <strong>{index + 1}.</strong> {row.nombre}
+                    </td>
+                    <td>{row.ingreso || "-"}</td>
+                    <td>{row.total_wos_scopus_5_anios || 0}</td>
+                    <td>{row.scielo || 0}</td>
+                    <td>{row.otros_articulos || 0}</td>
+                    <td>{row.libros_area || 0}</td>
+                    <td>{row.libros_otro || 0}</td>
+                    <td>{row.cap_area || 0}</td>
+                    <td>{row.cap_otro || 0}</td>
+                    <td>{row.edicion_area || 0}</td>
+                    <td>{row.edicion_otro || 0}</td>
+                    <td>{row.proyectos_fondecyt || 0}</td>
+                    <td>{row.otros_proyectos || 0}</td>
                   </tr>
                 ))}
 
                 <tr style={{ background: "rgba(255,255,255,.05)" }}>
                   <td colSpan="2" className="fw-bold">TOTAL</td>
                   <td>{totalColaboradores.total_wos_scopus}</td>
-                  <td>{totalColaboradores.scielo}</td>
-                  <td>{totalColaboradores.otros_articulos}</td>
-                  <td>{totalColaboradores.libros_area}</td>
-                  <td>{totalColaboradores.libros_otro}</td>
-                  <td>{totalColaboradores.cap_area}</td>
-                  <td>{totalColaboradores.cap_otro}</td>
-                  <td>{totalColaboradores.edicion_area}</td>
-                  <td>{totalColaboradores.edicion_otro}</td>
-                  <td>{totalColaboradores.proyectos_fondecyt}</td>
-                  <td>{totalColaboradores.otros_proyectos}</td>
+                  <td colSpan="10"></td>
                 </tr>
 
                 <tr>
@@ -215,7 +196,7 @@ export default function ReportesSecretaria() {
                     background: "rgba(218,161,54,.25)",
                     fontWeight: 600
                   }}>
-                    25
+                    104
                   </td>
                   <td colSpan="10"></td>
                 </tr>
@@ -224,31 +205,49 @@ export default function ReportesSecretaria() {
             </table>
           </div>
         </div>
+        )}
 
         {/* NOTAS */}
         <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
           <div>(1) Sólo se registran artículos como primer autor.</div>
-          <div>(2) Se registran los proyectos obtenidos desde 2019, sin considerar proyectos en curso.</div>
+          <div>(2) Se registran los proyectos obtenidos desde 2019.</div>
         </div>
 
+        {/* TABLA PROMEDIOS (NO SE BORRÓ) */}
         <div className="mt-4">
 
-        <div className="table-wrap">
+          <div className="table-wrap">
             <div className="table-responsive">
 
-            <table className="table table-dark table-dark-custom align-middle small text-center">
+              <table className="table table-dark table-dark-custom align-middle small text-center">
 
                 <thead>
-                <tr>
+                  <tr>
                     <th></th>
                     <th>Claustro</th>
                     <th>Cuerpo Académico</th>
-                </tr>
+                  </tr>
                 </thead>
 
                 <tbody>
 
-                <tr>
+                  <tr>
+                    <td className="text-start">
+                      Promedio de publicaciones WOS últimos 5 años
+                    </td>
+                    <td>
+                      {claustro.length
+                        ? (totalClaustro.total_wos_scopus / claustro.length).toFixed(1)
+                        : 0}
+                    </td>
+                    <td>
+                      {data.length
+                        ? ((totalClaustro.total_wos_scopus + totalColaboradores.total_wos_scopus) / data.length).toFixed(1)
+                        : 0}
+                    </td>
+                  </tr>
+
+                  <tr>
                     <td className="text-start">
                     Promedio de publicaciones WOS, últimos 5 años (2019-2023)
                     </td>
@@ -281,10 +280,10 @@ export default function ReportesSecretaria() {
                 </tr>
 
                 </tbody>
-            </table>
+              </table>
 
             </div>
-        </div>
+          </div>
 
         </div>
 
