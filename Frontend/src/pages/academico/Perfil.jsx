@@ -9,16 +9,46 @@ export default function PerfilAcademico() {
   const [formData, setFormData] = useState(null);
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const usuario = JSON.parse(localStorage.getItem("user"));
+  const usuarioStorage = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     const fetchPerfil = async () => {
-      const data = await getPerfilAcademico(usuario.usuario_id);
-      setPerfil(data);
-      setFormData(data);
-      setLoading(false);
+      try {
+        const data = await getPerfilAcademico(
+          usuarioStorage.usuario_id
+        );
+
+        setPerfil(data);
+
+        setFormData({
+          ...data.usuario,
+
+          ano_ingreso: data.usuario?.ano_ingreso || "",
+          telefono: data.usuario?.telefono || "",
+          lineas_investigacion:
+            data.usuario?.lineas_investigacion || "",
+
+          contrato: data.usuario?.contrato || "",
+          rol_nombre: data.usuario?.rol_nombre || "",
+
+          correos: data.correos || [],
+
+          grado_academico: data.grado_academico || {
+            nombre_grado: "",
+            institucion_grado: "",
+            pais_grado: "",
+            ano_grado: "",
+          },
+
+          titulaciones: data.titulaciones || [],
+        });
+
+        setLoading(false);
+      } catch (error) {
+        console.error(error);
+        setLoading(false);
+      }
     };
 
     fetchPerfil();
@@ -31,52 +61,103 @@ export default function PerfilAcademico() {
     });
   };
 
+  const handleGradoChange = (e) => {
+    setFormData({
+      ...formData,
+      grado_academico: {
+        ...formData.grado_academico,
+        [e.target.name]: e.target.value,
+      },
+    });
+  };
+
+  const handleCorreoChange = (index, value) => {
+    const nuevos = [...formData.correos];
+    nuevos[index].mail = value;
+    setFormData({ ...formData, correos: nuevos });
+  };
+
+  const agregarCorreo = () => {
+    setFormData({
+      ...formData,
+      correos: [...formData.correos, { mail: "" }],
+    });
+  };
+
+  const eliminarCorreo = (index) => {
+    const nuevos = formData.correos.filter((_, i) => i !== index);
+    setFormData({ ...formData, correos: nuevos });
+  };
+
+  const handleTitulacionChange = (index, field, value) => {
+    const nuevas = [...formData.titulaciones];
+    nuevas[index][field] = value;
+    setFormData({ ...formData, titulaciones: nuevas });
+  };
+
+  const agregarTitulacion = () => {
+    setFormData({
+      ...formData,
+      titulaciones: [
+        ...formData.titulaciones,
+        {
+          titulo: "",
+          institucion_titulacion: "",
+          pais_titulacion: "",
+          ano_titulacion: "",
+        },
+      ],
+    });
+  };
+
+  const eliminarTitulacion = (index) => {
+    const nuevas = formData.titulaciones.filter((_, i) => i !== index);
+    setFormData({ ...formData, titulaciones: nuevas });
+  };
+
   const handleGuardar = async () => {
-    await updatePerfilAcademico(usuario.usuario_id, formData);
-    setPerfil(formData);
+    console.log(formData);
+    await updatePerfilAcademico(
+      usuarioStorage.usuario_id,
+      formData
+    );
     setEditando(false);
+    window.location.reload();
   };
 
   const handleCancelar = () => {
-    setFormData(perfil);
-    setEditando(false);
+    window.location.reload();
   };
 
   if (loading) return <p>Cargando...</p>;
   if (!perfil) return <p>No se encontró perfil</p>;
 
   return (
-  <div className="perfil-wrapper">
+    <div className="perfil-wrapper">
 
-    <div className="perfil-header">
-      <h1 className="perfil-title">Mi Perfil</h1>
+      <div className="perfil-header">
+        <h1 className="perfil-title">Mi Perfil</h1>
 
-      <div className="perfil-actions">
-        {!editando ? (
-          <button
-            className="btn-primary"
-            onClick={() => setEditando(true)}
-          >
-            Editar Perfil
-          </button>
-        ) : (
-          <>
+        <div className="perfil-actions">
+          {!editando ? (
             <button
               className="btn-primary"
-              onClick={handleGuardar}
+              onClick={() => setEditando(true)}
             >
-              Guardar
+              Editar Perfil
             </button>
-            <button
-              className="btn-primary"
-              onClick={handleCancelar}
-            >
-              Cancelar
-            </button>
-          </>
-        )}
+          ) : (
+            <>
+              <button className="btn-primary" onClick={handleGuardar}>
+                Guardar
+              </button>
+              <button className="btn-primary" onClick={handleCancelar}>
+                Cancelar
+              </button>
+            </>
+          )}
+        </div>
       </div>
-    </div>
 
       {/* INFORMACIÓN PERSONAL */}
       <div className="perfil-card">
@@ -85,8 +166,7 @@ export default function PerfilAcademico() {
 
           <div>
             <label>Primer Nombre</label>
-            <input
-              name="primer_nombre"
+            <input name="primer_nombre"
               value={formData.primer_nombre || ""}
               onChange={handleChange}
               disabled={!editando}
@@ -95,8 +175,7 @@ export default function PerfilAcademico() {
 
           <div>
             <label>Segundo Nombre</label>
-            <input
-              name="segundo_nombre"
+            <input name="segundo_nombre"
               value={formData.segundo_nombre || ""}
               onChange={handleChange}
               disabled={!editando}
@@ -105,8 +184,7 @@ export default function PerfilAcademico() {
 
           <div>
             <label>Primer Apellido</label>
-            <input
-              name="primer_apellido"
+            <input name="primer_apellido"
               value={formData.primer_apellido || ""}
               onChange={handleChange}
               disabled={!editando}
@@ -115,8 +193,7 @@ export default function PerfilAcademico() {
 
           <div>
             <label>Segundo Apellido</label>
-            <input
-              name="segundo_apellido"
+            <input name="segundo_apellido"
               value={formData.segundo_apellido || ""}
               onChange={handleChange}
               disabled={!editando}
@@ -125,7 +202,18 @@ export default function PerfilAcademico() {
 
           <div>
             <label>RUT</label>
-            <input value={perfil.rut} disabled />
+            <input value={formData.rut} disabled />
+          </div>
+
+          <div>
+            <label>Año de Ingreso al Programa</label>
+            <input
+              type="number"
+              name="ano_ingreso"
+              value={formData.ano_ingreso || ""}
+              onChange={handleChange}
+              disabled={!editando}
+            />
           </div>
 
           <div>
@@ -137,6 +225,7 @@ export default function PerfilAcademico() {
               disabled={!editando}
             />
           </div>
+
         </div>
       </div>
 
@@ -144,32 +233,26 @@ export default function PerfilAcademico() {
       <div className="perfil-card">
         <h2>Información Laboral</h2>
         <div className="perfil-grid">
+
           <div>
             <label>Tipo de Contrato</label>
-            <input value={perfil.contrato || ""} disabled />
+            <input value={formData.contrato || ""} disabled />
           </div>
 
           <div>
             <label>Rol</label>
-            <input value={perfil.rol_nombre} disabled />
+            <input value={formData.rol_nombre || ""} disabled />
           </div>
+
         </div>
       </div>
 
       {/* CONTACTO */}
       <div className="perfil-card">
         <h2>Contacto</h2>
-        <div className="perfil-grid">
-          <div>
-            <label>Correo</label>
-            <input
-              name="correo"
-              value={formData.correo || ""}
-              onChange={handleChange}
-              disabled={!editando}
-            />
-          </div>
 
+        {/* TELÉFONO */}
+        <div className="perfil-grid">
           <div>
             <label>Teléfono</label>
             <input
@@ -180,7 +263,147 @@ export default function PerfilAcademico() {
             />
           </div>
         </div>
+
+        <div style={{ margin: "25px 0 15px 0" }}>
+          <label>Correos Electrónicos</label>
+        </div>
+
+        {formData.correos.map((correo, index) => (
+          <div key={index} className="perfil-correo-row">
+            <input
+              style={{ flex: 1 }}
+              value={correo.mail}
+              placeholder="correo@ejemplo.cl"
+              onChange={(e) =>
+                handleCorreoChange(index, e.target.value)
+              }
+              disabled={!editando}
+            />
+
+            {editando && (
+              <button
+                type="button"
+                className="btn-danger-soft"
+                onClick={() => eliminarCorreo(index)}
+              >
+                Eliminar
+              </button>
+            )}
+          </div>
+        ))}
+
+        {editando && (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={agregarCorreo}
+            style={{ marginTop: "10px" }}
+          >
+            + Agregar Correo
+          </button>
+        )}
       </div>
+
+      {/* GRADO ACADÉMICO */}
+      <div className="perfil-card">
+        <h2>Grado Académico</h2>
+        <div className="perfil-grid">
+
+          <input
+            name="nombre_grado"
+            value={formData.grado_academico?.nombre_grado || ""}
+            onChange={handleGradoChange}
+            disabled={!editando}
+            placeholder="Nombre del Grado"
+          />
+
+          <input
+            name="institucion_grado"
+            value={formData.grado_academico?.institucion_grado || ""}
+            onChange={handleGradoChange}
+            disabled={!editando}
+            placeholder="Institución"
+          />
+
+          <input
+            name="pais_grado"
+            value={formData.grado_academico?.pais_grado || ""}
+            onChange={handleGradoChange}
+            disabled={!editando}
+            placeholder="País"
+          />
+
+          <input
+            type="number"
+            name="ano_grado"
+            value={formData.grado_academico?.ano_grado || ""}
+            onChange={handleGradoChange}
+            disabled={!editando}
+            placeholder="Año"
+          />
+
+        </div>
+      </div>
+
+      {/* TITULACIONES */}
+      <div className="perfil-card">
+        <h2>Titulaciones</h2>
+
+        {formData.titulaciones.map((t, index) => (
+          <div key={index} className="perfil-grid">
+
+            <input
+              placeholder="Título"
+              value={t.titulo}
+              onChange={(e) =>
+                handleTitulacionChange(index, "titulo", e.target.value)
+              }
+              disabled={!editando}
+            />
+
+            <input
+              placeholder="Institución"
+              value={t.institucion_titulacion}
+              onChange={(e) =>
+                handleTitulacionChange(index, "institucion_titulacion", e.target.value)
+              }
+              disabled={!editando}
+            />
+
+            <input
+              placeholder="País"
+              value={t.pais_titulacion}
+              onChange={(e) =>
+                handleTitulacionChange(index, "pais_titulacion", e.target.value)
+              }
+              disabled={!editando}
+            />
+
+            <input
+              type="number"
+              placeholder="Año"
+              value={t.ano_titulacion}
+              onChange={(e) =>
+                handleTitulacionChange(index, "ano_titulacion", e.target.value)
+              }
+              disabled={!editando}
+            />
+
+            {editando && (
+              <button onClick={() => eliminarTitulacion(index)}>
+                Eliminar
+              </button>
+            )}
+          </div>
+        ))}
+
+        {editando && (
+          <button className="btn-primary" onClick={agregarTitulacion}>
+            Agregar Titulación
+          </button>
+        )}
+      </div>
+
     </div>
   );
 }
