@@ -164,7 +164,7 @@ export default function PerfilAcademico() {
         <h2>Información Personal</h2>
         <div className="perfil-grid">
 
-          <div>
+          <div className="form-group">
             <label>Primer Nombre</label>
             <input name="primer_nombre"
               value={formData.primer_nombre || ""}
@@ -173,7 +173,7 @@ export default function PerfilAcademico() {
             />
           </div>
 
-          <div>
+          <div className="form-group">
             <label>Segundo Nombre</label>
             <input name="segundo_nombre"
               value={formData.segundo_nombre || ""}
@@ -182,7 +182,7 @@ export default function PerfilAcademico() {
             />
           </div>
 
-          <div>
+          <div className="form-group">
             <label>Primer Apellido</label>
             <input name="primer_apellido"
               value={formData.primer_apellido || ""}
@@ -191,7 +191,7 @@ export default function PerfilAcademico() {
             />
           </div>
 
-          <div>
+          <div className="form-group">
             <label>Segundo Apellido</label>
             <input name="segundo_apellido"
               value={formData.segundo_apellido || ""}
@@ -200,12 +200,16 @@ export default function PerfilAcademico() {
             />
           </div>
 
-          <div>
+          <div className="form-group">
             <label>RUT</label>
-            <input value={formData.rut} disabled />
+            <input 
+            name="rut"
+            value={formData.rut} disabled 
+            onChange={handleChange}
+            />
           </div>
 
-          <div>
+          <div className="form-group">
             <label>Año de Ingreso al Programa</label>
             <input
               type="number"
@@ -216,7 +220,7 @@ export default function PerfilAcademico() {
             />
           </div>
 
-          <div>
+          <div className="form-group">
             <label>Líneas de Investigación</label>
             <input
               name="lineas_investigacion"
@@ -346,64 +350,76 @@ export default function PerfilAcademico() {
       </div>
 
       {/* TITULACIONES */}
-      <div className="perfil-card">
+        <div className="perfil-card">
         <h2>Titulaciones</h2>
 
         {formData.titulaciones.map((t, index) => (
-          <div key={index} className="perfil-grid">
+          <div key={index} className="perfil-titulacion-item">
 
-            <input
-              placeholder="Título"
-              value={t.titulo}
-              onChange={(e) =>
-                handleTitulacionChange(index, "titulo", e.target.value)
-              }
-              disabled={!editando}
-            />
+          <div className="perfil-grid">
+        <input
+          placeholder="Título"
+          value={t.titulo}
+          onChange={(e) =>
+            handleTitulacionChange(index, "titulo", e.target.value)
+          }
+          disabled={!editando}
+        />
 
-            <input
-              placeholder="Institución"
-              value={t.institucion_titulacion}
-              onChange={(e) =>
-                handleTitulacionChange(index, "institucion_titulacion", e.target.value)
-              }
-              disabled={!editando}
-            />
+        <input
+          placeholder="Institución"
+          value={t.institucion_titulacion}
+          onChange={(e) =>
+            handleTitulacionChange(index, "institucion_titulacion", e.target.value)
+          }
+          disabled={!editando}
+        />
 
-            <input
-              placeholder="País"
-              value={t.pais_titulacion}
-              onChange={(e) =>
-                handleTitulacionChange(index, "pais_titulacion", e.target.value)
-              }
-              disabled={!editando}
-            />
+        <input
+          placeholder="País"
+          value={t.pais_titulacion}
+          onChange={(e) =>
+            handleTitulacionChange(index, "pais_titulacion", e.target.value)
+          }
+          disabled={!editando}
+        />
 
-            <input
-              type="number"
-              placeholder="Año"
-              value={t.ano_titulacion}
-              onChange={(e) =>
-                handleTitulacionChange(index, "ano_titulacion", e.target.value)
-              }
-              disabled={!editando}
-            />
-
-            {editando && (
-              <button onClick={() => eliminarTitulacion(index)}>
-                Eliminar
-              </button>
-            )}
-          </div>
-        ))}
-
-        {editando && (
-          <button className="btn-primary" onClick={agregarTitulacion}>
-            Agregar Titulación
-          </button>
-        )}
+        <input
+          type="number"
+          placeholder="Año"
+          value={t.ano_titulacion}
+          onChange={(e) =>
+            handleTitulacionChange(index, "ano_titulacion", e.target.value)
+          }
+          disabled={!editando}
+        />
       </div>
 
+      {editando && (
+        <div className="perfil-titulacion-actions">
+          <button
+            type="button"
+            className="btn-danger-soft"
+            onClick={() => eliminarTitulacion(index)}
+          >
+            Eliminar Titulación
+          </button>
+        </div>
+      )}
+
     </div>
+  ))}
+
+  {editando && (
+    <button
+      type="button"
+      className="btn-primary"
+      onClick={agregarTitulacion}
+    >
+      Agregar Titulación
+    </button>
+  )}
+    </div>
+</div>
   );
 }
