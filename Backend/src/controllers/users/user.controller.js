@@ -7,178 +7,98 @@ import {
   updateUserPassword,
   deleteUser,
   getRoleIdByName,
-  getAcademicoProfileById,
-  updateAcademicoProfile,
-  listAcademicos
+  listAcademicos,
+  getAcademicoFullProfile,
+  updateAcademicoProfile
 } from "../../models/users/user.model.js";
 
 export async function getAllUsers(req, res) {
   try {
-    const users = await listUsers();
-    res.json(users);
+    res.json(await listUsers());
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Error listando usuarios" });
   }
 }
 
 export async function getUser(req, res) {
   try {
-    const { id } = req.params;
-    const user = await findUserById(id);
+    const user = await findUserById(req.params.id);
     if (!user) return res.status(404).json({ message: "Usuario no encontrado" });
     res.json(user);
-  } catch (err) {
-    console.error(err);
+  } catch {
     res.status(500).json({ message: "Error obteniendo usuario" });
   }
 }
 
 export async function createUserHandler(req, res) {
   try {
-    const {
-      rut,
-      primer_nombre,
-      segundo_nombre,
-      primer_apellido,
-      segundo_apellido,
-      correo,
-      password,
-      lineas_investigacion,
-      rol,
-      rol_id,
-      rolaca_id,
-    } = req.body;
+    const { rut, primer_nombre, primer_apellido, password, lineas_investigacion, rol, rol_id, rolaca_id } = req.body;
 
-    if (!rut || !primer_nombre || !primer_apellido || !password || !lineas_investigacion) {
+    if (!rut || !primer_nombre || !primer_apellido || !password) {
       return res.status(400).json({ message: "Faltan campos obligatorios" });
     }
 
-    let finalRolId = rol_id;
-    if (!finalRolId && rol) {
-      finalRolId = await getRoleIdByName(rol);
-    }
-    if (!finalRolId) return res.status(400).json({ message: "rol o rol_id inválido" });
+    const finalRolId = rol_id || await getRoleIdByName(rol);
+    const hash = await bcrypt.hash(password, 10);
 
-    const contrasena_hash = await bcrypt.hash(password, 10);
-
-    const newId = await createUser({
-      rut,
-      primer_nombre,
-      segundo_nombre,
-      primer_apellido,
-      segundo_apellido,
-      correo,
-      contrasena_hash,
-      lineas_investigacion,
-      rol_id: finalRolId,
-      rolaca_id,
+    const id = await createUser({
+      ...req.body,
+      contrasena_hash: hash,
+      rol_id: finalRolId
     });
 
-    const created = await findUserById(newId);
-    res.status(201).json(created);
+    res.status(201).json(await findUserById(id));
   } catch (err) {
-    console.error(err);
-    if (err?.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({ message: "Rut ya existe" });
-    }
     res.status(500).json({ message: "Error creando usuario" });
   }
 }
 
 export async function updateUserHandler(req, res) {
   try {
-    const { id } = req.params;
-    const existing = await findUserById(id);
-    if (!existing) return res.status(404).json({ message: "Usuario no encontrado" });
-
-    await updateUser(id, req.body);
-    const updated = await findUserById(id);
-    res.json(updated);
-  } catch (err) {
-    console.error(err);
-    if (err?.code === "ER_DUP_ENTRY") {
-      return res.status(409).json({ message: "Rut ya existe" });
-    }
+    await updateUser(req.params.id, req.body);
+    res.json(await findUserById(req.params.id));
+  } catch {
     res.status(500).json({ message: "Error actualizando usuario" });
   }
 }
 
 export async function updatePasswordHandler(req, res) {
-  try {
-    const { id } = req.params;
-    const { password } = req.body;
-    if (!password) return res.status(400).json({ message: "password requerido" });
-
-    const existing = await findUserById(id);
-    if (!existing) return res.status(404).json({ message: "Usuario no encontrado" });
-
-    const hash = await bcrypt.hash(password, 10);
-    await updateUserPassword(id, hash);
-    res.json({ message: "Contraseña actualizada" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error actualizando contraseña" });
-  }
+  const hash = await bcrypt.hash(req.body.password, 10);
+  await updateUserPassword(req.params.id, hash);
+  res.json({ message: "Contraseña actualizada" });
 }
 
 export async function deleteUserHandler(req, res) {
-  try {
-    const { id } = req.params;
-    const existing = await findUserById(id);
-    if (!existing) return res.status(404).json({ message: "Usuario no encontrado" });
-
-    await deleteUser(id);
-    res.json({ message: "Usuario eliminado" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error eliminando usuario" });
-  }
+  await deleteUser(req.params.id);
+  res.json({ message: "Usuario eliminado" });
 }
 
 export async function getAcademicos(req, res) {
-  try {
-    const academicos = await listAcademicos();
-    res.json(academicos);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error listando académicos" });
-  }
+  res.json(await listAcademicos());
 }
 
- getAcademicoProfileById
-export async function getAcademicoProfile(req, res) {
-  try {
-    const { id } = req.params;
-
-    const profile = await getAcademicoProfileById(id);
-
-    if (!profile) {
-      return res.status(404).json({ message: "Perfil académico no encontrado" });
-    }
-
-    res.json(profile);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error obteniendo perfil académico" });
-  }
+export async function getAcademicoFullProfileHandler(req, res) {
+  const profile = await getAcademicoFullProfile(req.params.id);
+  if (!profile) return res.status(404).json({ message: "Perfil no encontrado" });
+  res.json(profile);
 }
+
 export async function updateAcademicoProfileHandler(req, res) {
   try {
-    const { id } = req.params;
+    const usuarioId = parseInt(req.params.id);
 
-    const existing = await getAcademicoProfileById(id);
-    if (!existing) {
-      return res.status(404).json({ message: "Perfil académico no encontrado" });
+    if (req.user.rol === "Academico" && req.user.usuario_id !== usuarioId) {
+      return res.status(403).json({ message: "No autorizado" });
     }
 
-    await updateAcademicoProfile(id, req.body);
+    await updateAcademicoProfile(usuarioId, req.body);
 
-    const updated = await getAcademicoProfileById(id);
+    const perfilActualizado = await getAcademicoFullProfile(usuarioId);
 
-    res.status(200).json(updated); 
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Error actualizando perfil académico" });
+    res.json(perfilActualizado);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error actualizando perfil" });
   }
 }

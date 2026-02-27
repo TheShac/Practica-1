@@ -50,7 +50,6 @@ export async function createUser(data) {
     segundo_nombre,
     primer_apellido,
     segundo_apellido,
-    correo,
     contrasena_hash,
     lineas_investigacion,
     rol_id,
@@ -70,7 +69,6 @@ export async function createUser(data) {
       segundo_nombre || null,
       primer_apellido,
       segundo_apellido || null,
-      correo,
       contrasena_hash,
       lineas_investigacion,
       rol_id,
@@ -131,7 +129,6 @@ export async function listAcademicos() {
       u.segundo_nombre,
       u.primer_apellido,
       u.segundo_apellido,
-      u.correo,
       ra.tipo_academico AS contrato
     FROM usuario u
     JOIN rol r ON r.rol_id = u.rol_id
@@ -144,8 +141,8 @@ export async function listAcademicos() {
   return rows;
 }
 
-export async function getAcademicoProfileById(usuario_id) {
-  const [rows] = await pool.query(
+export async function getAcademicoFullProfile(usuario_id) {
+  const [userRows] = await pool.query(
     `
     SELECT 
       u.usuario_id,
@@ -154,7 +151,7 @@ export async function getAcademicoProfileById(usuario_id) {
       u.segundo_nombre,
       u.primer_apellido,
       u.segundo_apellido,
-      u.correo,
+      u.ano_ingreso,
       u.lineas_investigacion,
       u.telefono,
       r.nombre AS rol_nombre,
@@ -168,38 +165,208 @@ export async function getAcademicoProfileById(usuario_id) {
     [usuario_id]
   );
 
-  return rows[0] || null;
+  if (userRows.length === 0) return null;
+
+  const usuario = userRows[0];
+
+  const [correos] = await pool.query(
+    `SELECT mail FROM mail WHERE usuario_id = ?`,
+    [usuario_id]
+  );
+
+  const [titulaciones] = await pool.query(
+    `
+    SELECT titulo, institucion_titulacion, pais_titulacion, ano_titulacion
+    FROM titulacion
+    WHERE usuario_id = ?
+    ORDER BY ano_titulacion DESC
+    `,
+    [usuario_id]
+  );
+
+  const [gradoRows] = await pool.query(
+    `
+    SELECT nombre_grado, institucion_grado, pais_grado, ano_grado
+    FROM grado_academico
+    WHERE usuario_id = ?
+    `,
+    [usuario_id]
+  );
+
+  return {
+    usuario,
+    correos,
+    titulaciones,
+    grado_academico: gradoRows[0] || null,
+  };
 }
 
 export async function updateAcademicoProfile(usuario_id, data) {
-  const {
-    primer_nombre,
-    segundo_nombre,
-    primer_apellido,
-    segundo_apellido,
-    telefono,
-    lineas_investigacion,
-  } = data;
+  const connection = await pool.getConnection();
 
-  await pool.query(
-    `
-    UPDATE usuario
-    SET primer_nombre = ?,
-        segundo_nombre = ?,
-        primer_apellido = ?,
-        segundo_apellido = ?,
-        telefono = ?,
-        lineas_investigacion = ?
-    WHERE usuario_id = ?
-    `,
-    [
+  try {
+    await connection.beginTransaction();
+
+    const {
       primer_nombre,
-      segundo_nombre || null,
+      segundo_nombre,
       primer_apellido,
-      segundo_apellido || null,
-      telefono || null,
-      lineas_investigacion || null,
-      usuario_id,
-    ]
-  );
+      segundo_apellido,
+      telefono,
+      lineas_investigacion,
+      ano_ingreso,
+      correos = [],
+      grado_academico,
+      titulaciones = []
+    } = data;
+
+    await connection.query(
+      `
+      UPDATE usuario
+      SET primer_nombre = ?,
+          segundo_nombre = ?,
+          primer_apellido = ?,
+          segundo_apellido = ?,
+          telefono = ?,
+          lineas_investigacion = ?,
+          ano_ingreso = ?
+      WHERE usuario_id = ?
+      `,
+      [
+        primer_nombre,
+        segundo_nombre || null,
+        primer_apellido,
+        segundo_apellido || null,
+        telefono || null,
+        lineas_investigacion || null,
+        ano_ingreso || null,
+        usuario_id
+      ]
+    );
+
+    const [existingMails] = await connection.query(
+      `SELECT mail_id FROM mail WHERE usuario_id = ?`,
+      [usuario_id]
+    );
+
+    const existingMailIds = existingMails.map(m => m.mail_id);
+    const incomingMailIds = correos
+      .filter(m => m.mail_id)
+      .map(m => m.mail_id);
+
+    for (const id of existingMailIds) {
+      if (!incomingMailIds.includes(id)) {
+        await connection.query(
+          `DELETE FROM mail WHERE mail_id = ?`,
+          [id]
+        );
+      }
+    }
+
+    for (const m of correos) {
+      const mailClean = m.mail?.trim();
+      if (!mailClean) continue;
+
+      if (m.mail_id) {
+        await connection.query(
+          `UPDATE mail SET mail = ? WHERE mail_id = ?`,
+          [mailClean, m.mail_id]
+        );
+      } else {
+        await connection.query(
+          `INSERT INTO mail (mail, usuario_id) VALUES (?, ?)`,
+          [mailClean, usuario_id]
+        );
+      }
+    }
+
+    if (grado_academico?.nombre_grado) {
+      await connection.query(
+        `
+        INSERT INTO grado_academico
+          (usuario_id, nombre_grado, institucion_grado, pais_grado, ano_grado)
+        VALUES (?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE
+          nombre_grado = VALUES(nombre_grado),
+          institucion_grado = VALUES(institucion_grado),
+          pais_grado = VALUES(pais_grado),
+          ano_grado = VALUES(ano_grado)
+        `,
+        [
+          usuario_id,
+          grado_academico.nombre_grado,
+          grado_academico.institucion_grado || null,
+          grado_academico.pais_grado || null,
+          grado_academico.ano_grado || null
+        ]
+      );
+    }
+
+    const [existingTit] = await connection.query(
+      `SELECT titulo_id FROM titulacion WHERE usuario_id = ?`,
+      [usuario_id]
+    );
+
+    const existingTitIds = existingTit.map(t => t.titulo_id);
+    const incomingTitIds = titulaciones
+      .filter(t => t.titulo_id)
+      .map(t => t.titulo_id);
+
+    for (const id of existingTitIds) {
+      if (!incomingTitIds.includes(id)) {
+        await connection.query(
+          `DELETE FROM titulacion WHERE titulo_id = ?`,
+          [id]
+        );
+      }
+    }
+
+    for (const t of titulaciones) {
+      const tituloClean = t.titulo?.trim();
+      if (!tituloClean) continue;
+
+      if (t.titulo_id) {
+        await connection.query(
+          `
+          UPDATE titulacion
+          SET titulo = ?,
+              institucion_titulacion = ?,
+              pais_titulacion = ?,
+              ano_titulacion = ?
+          WHERE titulo_id = ?
+          `,
+          [
+            tituloClean,
+            t.institucion_titulacion || null,
+            t.pais_titulacion || null,
+            t.ano_titulacion || null,
+            t.titulo_id
+          ]
+        );
+      } else {
+        await connection.query(
+          `
+          INSERT INTO titulacion
+            (usuario_id, titulo, institucion_titulacion, pais_titulacion, ano_titulacion)
+          VALUES (?, ?, ?, ?, ?)
+          `,
+          [
+            usuario_id,
+            tituloClean,
+            t.institucion_titulacion || null,
+            t.pais_titulacion || null,
+            t.ano_titulacion || null
+          ]
+        );
+      }
+    }
+
+    await connection.commit();
+
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 }
