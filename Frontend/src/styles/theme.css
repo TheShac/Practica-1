@@ -217,6 +217,211 @@ input-dark,
   border: 1px solid var(--border);
 }
 
+.perfil-wrapper {
+  padding: 24px;
+  background: var(--bg);
+  min-height: 100vh;
+  color: var(--text);
+}
+/* header superior del perfil */
+.perfil-header {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 24px;
+}
+
+.perfil-actions {
+  margin-left: auto; 
+  display: flex;
+  gap: 12px;
+}
+
+.perfil-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  margin: 0;
+  color: #ffffff;
+}
+
+/* reutilizamos el estilo institucional */
+.perfil-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 22px;
+}
+
+/* título de sección */
+.perfil-card h2 {
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+/* grid elegante */
+.perfil-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 20px 30px;
+  align-items: end;
+}
+
+/* inputs oscuros (alineados con tu sistema) */
+.perfil-grid label {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.perfil-grid input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.perfil-grid input:disabled {
+  opacity: 0.95;
+}
+
+/* separación visual suave */
+.perfil-card + .perfil-card {
+  margin-top: 10px;
+}
+
+.perfil-card {
+  background: linear-gradient(
+    145deg,
+    rgba(255,255,255,0.02),
+    rgba(0,0,0,0.25)
+  );
+  box-shadow: 0 8px 30px rgba(0,0,0,.35);
+}
+
+.perfil-grid input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(218,161,54,.15);
+  outline: none;
+  transition: .2s ease;
+}
+
+.perfil-grid input:not(:disabled) {
+  background: rgba(255,255,255,0.04);
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--nav), #1f2f4f);
+  border: 1px solid rgba(255,255,255,.08);
+  color: white;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  letter-spacing: .05em;
+  transition: .25s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--gold), #b8842e);
+  color: #000;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(218,161,54,.35);
+}
+
+.perfil-correo-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.perfil-correo-row input {
+  flex: 1;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  color: var(--text);
+  transition: .2s ease;
+}
+
+.perfil-correo-row input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(218,161,54,.15);
+  outline: none;
+}
+
+.btn-danger-soft {
+  background: rgba(220,53,69,.12);
+  border: 1px solid rgba(220,53,69,.25);
+  color: #ffb3bd;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: .25s ease;
+}
+
+.btn-danger-soft:hover {
+  background: rgba(220,53,69,.25);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(220,53,69,.25);
+}
+
+.perfil-titulacion-item {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.02);
+  margin-bottom: 18px;
+  transition: .25s ease;
+}
+
+.perfil-titulacion-item:hover {
+  border-color: rgba(218,161,54,.25);
+}
+
+.perfil-titulacion-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.btn-danger-soft {
+  background: rgba(220,53,69,.12);
+  border: 1px solid rgba(220,53,69,.25);
+  color: #ffb3bd;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: .25s ease;
+}
+
+.btn-danger-soft:hover {
+  background: rgba(220,53,69,.25);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(220,53,69,.25);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 13px;
+  margin-bottom: 6px;
+  color: #9ca3af; /* gris claro elegante */
+}
+
+.form-group input {
+  width: 100%;
+}
+
 @keyframes faFadeIn {
   from { opacity: 0; transform: scale(.96); }
   to { opacity: 1; transform: scale(1); }
