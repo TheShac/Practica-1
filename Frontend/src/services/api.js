@@ -161,3 +161,19 @@ export async function getAcademicos() {
 
   return data;
 }
+
+export async function downloadFichaExcel(usuarioId) {
+  const res = await fetch(`${API_URL}/ficha/${usuarioId}/export`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message || "Error descargando ficha");
+  }
+
+  return await res.blob();
+}

@@ -17,7 +17,6 @@ CREATE TABLE rol_academico (
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
-
 INSERT INTO rol_academico (tipo_academico) VALUES ('Claustro'),('Colaborador');
 SELECT * FROM rol_academico;
 
@@ -33,10 +32,8 @@ CREATE TABLE usuario(
     lineas_investigacion VARCHAR(100) NOT NULL, -- ??
     rol_id INT NOT NULL,
     rolaca_id INT NULL,
-    
     FOREIGN KEY (rol_id) REFERENCES rol(rol_id),
     FOREIGN KEY (rolaca_id) REFERENCES rol_academico(rolaca_id)
-    
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
@@ -45,28 +42,35 @@ ADD COLUMN telefono VARCHAR(20) AFTER correo;
 ALTER TABLE usuario
 MODIFY COLUMN lineas_investigacion TEXT;
 ALTER TABLE usuario DROP COLUMN correo;
+ALTER TABLE usuario
+ADD COLUMN ano_ingreso YEAR AFTER segundo_apellido;
 SELECT * FROM usuario;
 
 CREATE TABLE mail(
 	mail_id INT AUTO_INCREMENT PRIMARY KEY,
     mail VARCHAR(150) UNIQUE NOT NULL,
     usuario_id INT NOT NULL,
-    
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
     ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+SELECT * FROM mail;
 
+-- drop table grado_academico;
 CREATE TABLE grado_academico (
     grado_id INT AUTO_INCREMENT PRIMARY KEY,
-    grado_academico VARCHAR(100) NOT NULL, 
+    usuario_id INT NOT NULL,
+    nombre_grado VARCHAR(100) NOT NULL, 
     institucion_grado VARCHAR(200),
     pais_grado VARCHAR(100),
-    ano_grado YEAR
+    ano_grado YEAR,
+    FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
+        ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+SELECT * FROM grado_academico;
 
 CREATE TABLE titulacion (
     titulo_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -75,12 +79,12 @@ CREATE TABLE titulacion (
     institucion_titulacion VARCHAR(200),
     pais_titulacion VARCHAR(100),
     ano_titulacion YEAR,
-    
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
+SELECT * FROM titulacion;
 
 CREATE TABLE publicaciones (
     publicacion_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -94,14 +98,12 @@ CREATE TABLE publicaciones (
     autores TEXT,
     link_verificacion TEXT,
     estado VARCHAR(100),
-    
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE,
     FOREIGN KEY (categoria_id) REFERENCES categoria(categoria_id)
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
-
 SELECT * FROM publicaciones;
 
 CREATE TABLE categoria (
@@ -110,7 +112,6 @@ CREATE TABLE categoria (
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
-
 INSERT INTO categoria (nombre) VALUES ('WoS'),('SCOPUS'),('SCIELO'),('LATINDEX'),('ERIH'),('Otros.');
 SELECT * FROM categoria;
 
@@ -125,7 +126,6 @@ CREATE TABLE libro (
 	autores TEXT,
     link_verificacion TEXT,
     estado VARCHAR(100),
-    
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
 )ENGINE=InnoDB
@@ -145,7 +145,6 @@ CREATE TABLE cap_libro (
     autores TEXT,
     link_verificacion TEXT,
     estado VARCHAR(100),
-    
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
 )ENGINE=InnoDB
@@ -161,13 +160,13 @@ CREATE TABLE tesis (
     ano YEAR,
     autor VARCHAR(200),
     link_verificacion TEXT,
-    
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
-
+ALTER TABLE tesis
+	ADD COLUMN tesis_dirigida ENUM('Si', 'No') AFTER institucion;
 SELECT * FROM tesis;
 
 -- drop table investigacion;
@@ -180,7 +179,6 @@ CREATE TABLE investigacion (
     periodo_ejecucion VARCHAR(100),
     rol_proyecto VARCHAR(100),
     link_verificacion TEXT,
-    
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
 )ENGINE=InnoDB
@@ -199,9 +197,9 @@ CREATE TABLE patente (
     fecha_publicacion DATE,
     estado VARCHAR(100),
     link_verificacion TEXT,
-    
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
+
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
