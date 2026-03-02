@@ -25,7 +25,6 @@ export default function Topbar({ collapsed, onToggleSidebar }) {
     return user?.rol || "—";
   }, [user]);
 
-  // 🔥 ICONO SEGÚN ROL
   const roleIcon = useMemo(() => {
     switch (user?.rol) {
       case "Admin":

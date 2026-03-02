@@ -44,7 +44,6 @@ export default function FormModal({
         </div>
       </div>
 
-      {/* backdrop */}
       <div className="modal-backdrop fade show" />
     </>
   );

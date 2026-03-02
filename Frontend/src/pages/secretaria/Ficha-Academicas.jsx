@@ -38,7 +38,7 @@ export default function FichaAcademicas() {
       const fullName =
         `${a.primer_nombre} ${a.segundo_nombre || ""} ${a.primer_apellido} ${a.segundo_apellido || ""}`.toLowerCase();
 
-      const email = a.correo?.toLowerCase() || "";
+      const email = a.correos?.toLowerCase() || "";
       const contrato = a.contrato?.toLowerCase() || "";
       const rut = a.rut?.toLowerCase() || "";
       const query = search.toLowerCase();
@@ -168,7 +168,11 @@ export default function FichaAcademicas() {
                           {a.primer_apellido} {a.segundo_apellido || ""}
                         </td>
 
-                        <td>{a.correo}</td>
+                        <td>
+                          {a.correos
+                            ? a.correos.split("||").join(", ")
+                            : "Sin correo"}
+                        </td>
 
                         <td>
                           <span className="badge-status badge-aceptado">

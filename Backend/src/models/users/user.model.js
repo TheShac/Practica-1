@@ -129,12 +129,56 @@ export async function listAcademicos() {
       u.segundo_nombre,
       u.primer_apellido,
       u.segundo_apellido,
-      ra.tipo_academico AS contrato
+      u.ano_ingreso,
+      u.lineas_investigacion,
+      ra.tipo_academico AS contrato,
+
+      (
+        SELECT GROUP_CONCAT(m.mail SEPARATOR '||')
+        FROM mail m
+        WHERE m.usuario_id = u.usuario_id
+      ) AS correos,
+
+      (
+        SELECT ga.nombre_grado
+        FROM grado_academico ga
+        WHERE ga.usuario_id = u.usuario_id
+        LIMIT 1
+      ) AS nombre_grado,
+
+      (
+        SELECT ga.institucion_grado
+        FROM grado_academico ga
+        WHERE ga.usuario_id = u.usuario_id
+        LIMIT 1
+      ) AS institucion_grado,
+
+      (
+        SELECT ga.ano_grado
+        FROM grado_academico ga
+        WHERE ga.usuario_id = u.usuario_id
+        LIMIT 1
+      ) AS ano_grado,
+
+      (
+        SELECT GROUP_CONCAT(
+          CONCAT(
+            t.titulo, '##',
+            t.institucion_titulacion, '##',
+            t.ano_titulacion, '##',
+            t.pais_titulacion
+          )
+          SEPARATOR '||'
+        )
+        FROM titulacion t
+        WHERE t.usuario_id = u.usuario_id
+      ) AS titulaciones
+
     FROM usuario u
     JOIN rol r ON r.rol_id = u.rol_id
     LEFT JOIN rol_academico ra ON ra.rolaca_id = u.rolaca_id
     WHERE r.nombre = 'Academico'
-    ORDER BY u.primer_apellido ASC
+    ORDER BY u.primer_apellido ASC;
     `
   );
 

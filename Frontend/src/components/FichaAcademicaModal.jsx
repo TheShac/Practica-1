@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getFichaAcademica } from "../services/ficha.service";
 
-export default function FichaAcademicaModal({
-  show,
-  academico,
-  onClose,
-}) {
+export default function FichaAcademicaModal({ show, academico, onClose, }) {
   const [ficha, setFicha] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -45,6 +41,17 @@ export default function FichaAcademicaModal({
   }, [show]);
 
   if (!show || !academico) return null;
+
+  const correosArray = academico?.correos
+  ? academico.correos.split("||")
+  : [];
+  
+  const titulacionesArray = academico?.titulaciones
+  ? academico.titulaciones.split("||").map(t => {
+      const [nombre, institucion, ano, pais] = t.split("##");
+      return { nombre, institucion, ano, pais };
+    })
+  : [];
 
   const tesis = ficha?.tesis || [];
   const publicaciones = ficha?.publicaciones || [];
@@ -95,9 +102,44 @@ export default function FichaAcademicaModal({
         <div className="fa-info-box">
           <Info label="Nombre Académico/a" value={nombreCompleto} />
           <Info label="RUT" value={academico.rut} />
-          <Info label="Correo Institucional" value={academico.correo} />
+          <div>
+            <label>Correos asociados</label>
+            {correosArray.length === 0 ? (
+              <p>No definido</p>
+            ) : (
+              correosArray.map((mail, i) => (
+                <p key={i}>{mail}</p>
+              ))
+            )}
+          </div>
           <Info label="Tipo de Vinculo" value={academico.contrato} />
-          <Info label="Línea(s) de investigación" value={academico.lineas_investigacion} />
+          <Info label="Línea(s) de investigación" value={academico.lineas_investigacion} /> <br/>
+          <div>
+            <label>Títulos</label>
+            {titulacionesArray.length === 0 ? (
+              <p>No definidos</p>
+            ) : (
+              titulacionesArray.map((t, i) => (
+                <div key={i} style={{ marginBottom: "8px" }}>
+                  <p><strong>{t.nombre}</strong></p>
+                  <p>{t.institucion} - {t.pais}</p>
+                  <p>Año: {t.ano}</p>
+                </div>
+              ))
+            )}
+          </div> <br/>
+          <div>
+            <label>Grado Académico</label>
+            {academico.nombre_grado ? (
+              <>
+                <p><strong>Grado:</strong> {academico.nombre_grado}</p>
+                <p><strong>Institución:</strong> {academico.institucion_grado}</p>
+                <p><strong>Año:</strong> {academico.ano_grado}</p>
+              </>
+            ) : (
+              <p>No definido</p>
+            )}
+          </div>
         </div>
 
         {loading ? (
