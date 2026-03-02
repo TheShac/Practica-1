@@ -13,6 +13,7 @@ const emptyForm = {
   titulo_tesis: "",
   nombre_programa: "",
   institucion: "",
+  tesis_dirigida: "",
   ano: "",
   autor: "",
   link_verificacion: "",
@@ -89,6 +90,14 @@ export default function Tesis() {
     else if (anoNumber < 1900 || anoNumber > currentYear)
       newErrors.ano = `Debe estar entre 1900 y ${currentYear}`;
 
+    if (
+      nivelUpper === "DOCTORADO" &&
+      !form.tesis_dirigida
+    ) {
+      newErrors.tesis_dirigida =
+        "Debe indicar si fue dirigida en el mismo programa";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -136,6 +145,10 @@ export default function Tesis() {
         ...form,
         ano: Number(form.ano),
         nivel_programa: nivelUpper,
+        tesis_dirigida:
+          nivelUpper === "DOCTORADO"
+          ? form.tesis_dirigida
+          : null,
       };
 
       if (mode === "create") {
@@ -202,6 +215,10 @@ export default function Tesis() {
                     <th>Año</th>
                     <th>Título</th>
                     <th>Programa</th>
+                    <th>Institución</th>
+                    {nivelUpper === "DOCTORADO" && (
+                      <th>¿La tesis fue dirigida en el mismo programa?</th>
+                    )}
                     <th>Rol</th>
                     <th className="text-end">Acciones</th>
                   </tr>
@@ -213,6 +230,10 @@ export default function Tesis() {
                       <td>{r.ano}</td>
                       <td>{r.titulo_tesis}</td>
                       <td>{r.nombre_programa}</td>
+                      <td>{r.institucion}</td>
+                      {nivelUpper === "DOCTORADO" && (
+                        <td>{r.tesis_dirigida}</td>
+                      )}
                       <td>{r.rol_guia}</td>
                       <td className="text-end">
                         <button
@@ -236,6 +257,7 @@ export default function Tesis() {
                       <td colSpan="6" style={{ color: "var(--muted)" }}>
                         Sin registros.
                       </td>
+                      <td colSpan={nivelUpper === "DOCTORADO" ? 8 : 7}></td>
                     </tr>
                   )}
                 </tbody>
@@ -361,7 +383,28 @@ export default function Tesis() {
               <option value="CO_GUIA">Co-Guía</option>
             </select>
           </div>
-
+          
+          {nivelUpper === "DOCTORADO" && (
+            <div className="col-12 col-md-6">
+              <label className="form-label text-light">
+                ¿La tesis fue dirigida en el mismo programa?
+              </label>
+              <select
+                className="form-select input-dark"
+                value={form.tesis_dirigida}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    tesis_dirigida: e.target.value,
+                  })
+                }
+              >
+                <option value="">Seleccione</option>
+                <option value="SI">Sí</option>
+                <option value="NO">No</option>
+              </select>
+            </div>
+          )}
         </div>
       </FormModal>
     </div>
