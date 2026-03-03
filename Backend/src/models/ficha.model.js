@@ -44,7 +44,17 @@ export async function getFichaByUsuario(usuarioId) {
   // TESIS
   const [tesis] = await pool.query(
     `
-    SELECT *
+    SELECT 
+      tesis_id,
+      titulo_tesis,
+      nombre_programa,
+      institucion,
+      ano,
+      autor,
+      rol_guia,
+      nivel_programa,
+      tesis_dirigida,
+      link_verificacion
     FROM tesis
     WHERE usuario_id = ?
     AND ano >= ?
@@ -54,9 +64,16 @@ export async function getFichaByUsuario(usuarioId) {
   );
 
   // INVESTIGACIONES
-  const [investigaciones] = await pool.query(
+    const [investigaciones] = await pool.query(
     `
-    SELECT *
+    SELECT 
+      investigacion_id,
+      titulo,
+      fuente_financiamiento,
+      ano_adjudicacion,
+      periodo_ejecucion,
+      rol_proyecto,
+      link_verificacion
     FROM investigacion
     WHERE usuario_id = ?
     AND ano_adjudicacion >= ?
@@ -68,7 +85,15 @@ export async function getFichaByUsuario(usuarioId) {
   // PATENTES
   const [patentes] = await pool.query(
     `
-    SELECT *
+    SELECT 
+      patente_id,
+      inventores,
+      nombre_patente,
+      num_registro,
+      fecha_solicitud,
+      fecha_publicacion,
+      estado,
+      link_verificacion
     FROM patente
     WHERE usuario_id = ?
     AND YEAR(fecha_publicacion) >= ?

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getAcademicos } from "../../services/api";
+import { getAcademicos, downloadFichaExcel } from "../../services/api";
 import FichaAcademicaModal from "../../components/FichaAcademicaModal.jsx";
 
 const ITEMS_PER_PAGE = 15;
@@ -81,6 +81,27 @@ export default function FichaAcademicas() {
 
   function closeModal() {
     setSelected(null);
+  }
+
+  async function handleDownload(usuarioId) {
+    try {
+      const blob = await downloadFichaExcel(usuarioId);
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = `ficha_academica_${usuarioId}.xlsx`;
+
+      document.body.appendChild(link);
+      link.click();
+
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      alert("Error al descargar ficha académica");
+    }
   }
   
   return (
@@ -188,7 +209,10 @@ export default function FichaAcademicas() {
                             <i className="bi bi-eye" />
                           </button>
 
-                          <button className="btn btn-sm btn-outline-success">
+                          <button
+                            className="btn btn-sm btn-outline-success"
+                            onClick={() => handleDownload(a.usuario_id)}
+                          >
                             <i className="bi bi-download" />
                           </button>
                         </td>
