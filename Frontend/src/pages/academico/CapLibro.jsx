@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import FormModal from "../../components/FormModal.jsx";
+import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
 import {
   createCapLibro,
   deleteCapLibro,
@@ -274,20 +275,11 @@ export default function CapLibro() {
             />
           </div>
 
-          <div className="col-12 col-md-5">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Estado
-            </label>
-            <select
-              className="form-select input-dark"
-              value={form.estado}
-              onChange={(e) => setForm({ ...form, estado: e.target.value })}
-            >
-              <option value="Publicado">Publicado</option>
-              <option value="En revisión">En revisión</option>
-              <option value="Aceptado">Aceptado</option>
-              <option value="Rechazado">Rechazado</option>
-            </select>
+          <div className="col-12 col-md-4">
+              <EstadoSelect
+                value={form.estado}
+                onChange={(e) => setForm({ ...form, estado: e.target.value })}
+              />
           </div>
 
           <div className="col-12">

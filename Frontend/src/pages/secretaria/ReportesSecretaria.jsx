@@ -258,36 +258,28 @@ export default function ReportesSecretaria() {
                   </tr>
 
                   <tr>
-                    <td className="text-start">
-                    Promedio de publicaciones WOS, últimos 5 años (2019-2023)
-                    </td>
-                    <td>20,8</td>
-                    <td>25,8</td>
-                </tr>
+                      <td className="text-start">
+                      Promedio de publicaciones WOS, por académico, últimos 5 años (2019-2023)
+                      </td>
+                      <td>6,1</td>
+                      <td>5,9</td>
+                  </tr>
 
-                <tr>
-                    <td className="text-start">
-                    Promedio de publicaciones WOS, por académico, últimos 5 años (2019-2023)
-                    </td>
-                    <td>6,1</td>
-                    <td>5,9</td>
-                </tr>
+                  <tr>
+                      <td className="text-start">
+                      Promedio de Libros o capítulos de libros, últimos 5 años (2019-2023)
+                      </td>
+                      <td>14,6</td>
+                      <td>17</td>
+                  </tr>
 
-                <tr>
-                    <td className="text-start">
-                    Promedio de Libros o capítulos de libros, últimos 5 años (2019-2023)
-                    </td>
-                    <td>14,6</td>
-                    <td>17</td>
-                </tr>
-
-                <tr>
-                    <td className="text-start">
-                    Promedio de Proyectos FONDECYT, en calidad de IP, últimos 5 años (2019-2023)
-                    </td>
-                    <td>3,8</td>
-                    <td>4,8</td>
-                </tr>
+                  <tr>
+                      <td className="text-start">
+                      Promedio de Proyectos FONDECYT, en calidad de IP, últimos 5 años (2019-2023)
+                      </td>
+                      <td>3,8</td>
+                      <td>4,8</td>
+                  </tr>
 
                 </tbody>
               </table>

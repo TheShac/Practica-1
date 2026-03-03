@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import FormModal from "../../components/FormModal.jsx";
+import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
 
 import {
   getCategorias,
@@ -29,7 +30,7 @@ export default function Publicaciones() {
   const [saving, setSaving] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
-  const [mode, setMode] = useState("create"); // create | edit
+  const [mode, setMode] = useState("create");
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
@@ -77,7 +78,6 @@ export default function Publicaciones() {
     setMode("create");
     setEditingId(null);
 
-    // Categoría por defecto = primera opción si existe
     const defaultCatId = categorias?.[0]?.categoria_id
       ? String(categorias[0].categoria_id)
       : "";
@@ -110,7 +110,6 @@ export default function Publicaciones() {
   const close = () => setShowModal(false);
 
   const submit = async () => {
-    // Validación mínima
     if (!form.autorPrincipal || !form.anio || !form.titulo || !form.categoria_id) {
       alert("Completa al menos Autor principal, Año, Categoría y Título.");
       return;
@@ -134,7 +133,6 @@ export default function Publicaciones() {
       if (mode === "create") {
         await createPublicacion(payload);
 
-        // recargar lista (simple y seguro)
         const pubs = await getMisPublicaciones();
         const mapped = pubs.map((p) => ({
           id: p.publicacion_id,
@@ -153,7 +151,6 @@ export default function Publicaciones() {
       } else {
         await updatePublicacion(editingId, payload);
 
-        // recargar lista
         const pubs = await getMisPublicaciones();
         const mapped = pubs.map((p) => ({
           id: p.publicacion_id,
@@ -382,19 +379,10 @@ export default function Publicaciones() {
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Estado
-            </label>
-            <select
-              className="form-select input-dark"
+            <EstadoSelect
               value={form.estado}
               onChange={(e) => setForm({ ...form, estado: e.target.value })}
-            >
-              <option value="Publicado">Publicado</option>
-              <option value="En revisión">En revisión</option>
-              <option value="Aceptado">Aceptado</option>
-              <option value="Rechazado">Rechazado</option>
-            </select>
+            />
           </div>
 
           {/* ISSN + Respaldo */}

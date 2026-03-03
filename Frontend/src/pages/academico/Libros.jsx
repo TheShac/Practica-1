@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import FormModal from "../../components/FormModal.jsx";
+import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
 import { createLibro, deleteLibro, getMisLibros, updateLibro } from "../../services/api.js";
 
 const emptyForm = {
@@ -84,7 +85,6 @@ export default function Libros() {
   const close = () => setShowModal(false);
 
   const submit = async () => {
-    // Requisitos mínimos según tu orden: al menos Nombre libro y Año suelen ser clave
     if (!form.nombre_libro || !form.ano) {
       alert("Completa al menos Año y Nombre libro.");
       return;
@@ -275,19 +275,10 @@ export default function Libros() {
 
           {/* Estado */}
           <div className="col-12 col-md-4">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Estado
-            </label>
-            <select
-              className="form-select input-dark"
-              value={form.estado}
-              onChange={(e) => setForm({ ...form, estado: e.target.value })}
-            >
-              <option value="Publicado">Publicado</option>
-              <option value="En revisión">En revisión</option>
-              <option value="Aceptado">Aceptado</option>
-              <option value="Rechazado">Rechazado</option>
-            </select>
+              <EstadoSelect
+                value={form.estado}
+                onChange={(e) => setForm({ ...form, estado: e.target.value })}
+              />
           </div>
 
           {/* Nombre libro */}

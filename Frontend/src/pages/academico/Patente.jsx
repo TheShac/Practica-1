@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import FormModal from "../../components/FormModal";
+import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect";
 import {
   fetchPatentes,
   createPatente,
@@ -283,15 +284,11 @@ export default function Patente() {
             />
           </div>
 
-          <div className="col-12 col-md-6">
-            <label className="form-label">Estado</label>
-            <input
-              className="form-control input-dark"
-              value={form.estado}
-              onChange={(e) =>
-                setForm({ ...form, estado: e.target.value })
-              }
-            />
+          <div className="col-12 col-md-4">
+              <EstadoSelect
+                value={form.estado}
+                onChange={(e) => setForm({ ...form, estado: e.target.value })}
+              />
           </div>
 
           <div className="col-12">
