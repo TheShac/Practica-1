@@ -400,8 +400,8 @@ export default function Tesis() {
                 }
               >
                 <option value="">Seleccione</option>
-                <option value="SI">Sí</option>
-                <option value="NO">No</option>
+                <option value="Si">Si</option>
+                <option value="No">No</option>
               </select>
             </div>
           )}

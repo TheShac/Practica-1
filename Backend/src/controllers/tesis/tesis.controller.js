@@ -1,4 +1,5 @@
 import {
+  getTesisById,
   getTesisByUsuario,
   createTesis,
   updateTesis,
@@ -41,6 +42,7 @@ export async function createTesisHandler(req, res) {
       titulo_tesis,
       nombre_programa,
       institucion,
+      tesis_dirigida,
       ano,
       autor,
       link_verificacion,
@@ -71,6 +73,7 @@ export async function createTesisHandler(req, res) {
       titulo_tesis,
       nombre_programa,
       institucion,
+      tesis_dirigida,
       ano,
       autor,
       link_verificacion,
@@ -97,7 +100,17 @@ export async function updateTesisHandler(req, res) {
       return res.status(401).json({ message: "Usuario no autenticado" });
     }
 
-    await updateTesis(id, usuario_id, req.body);
+    const tesis = await getTesisById(id);
+
+    if (!tesis) {
+      return res.status(404).json({ message: "Tesis no encontrada" });
+    }
+
+    if (tesis.usuario_id !== usuario_id) {
+      return res.status(403).json({ message: "No tienes permiso para editar esta tesis" });
+    }
+
+    await updateTesis(id, req.body);
 
     res.json({ message: "Tesis actualizada correctamente" });
   } catch (err) {

@@ -1,5 +1,13 @@
 import { pool } from "../../config/db.js";
 
+export async function getTesisById(tesis_id) {
+  const [rows] = await pool.query(
+    `SELECT * FROM tesis WHERE tesis_id = ?`,
+    [tesis_id]
+  );
+  return rows[0];
+}
+
 export async function getTesisByUsuario(usuario_id, nivel_programa) {
   const [rows] = await pool.query(
     `
@@ -21,6 +29,7 @@ export async function createTesis(data) {
     titulo_tesis,
     nombre_programa,
     institucion,
+    tesis_dirigida,
     ano,
     autor,
     link_verificacion,
@@ -31,15 +40,16 @@ export async function createTesis(data) {
   const [result] = await pool.query(
     `
     INSERT INTO tesis
-    (usuario_id, titulo_tesis, nombre_programa, institucion,
+    (usuario_id, titulo_tesis, nombre_programa, institucion, tesis_dirigida,
      ano, autor, link_verificacion, rol_guia, nivel_programa)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       usuario_id,
       titulo_tesis,
       nombre_programa,
       institucion,
+      tesis_dirigida,
       ano,
       autor,
       link_verificacion || null,
@@ -56,6 +66,7 @@ export async function updateTesis(tesis_id, data) {
     titulo_tesis,
     nombre_programa,
     institucion,
+    tesis_dirigida,
     ano,
     autor,
     link_verificacion,
@@ -68,6 +79,7 @@ export async function updateTesis(tesis_id, data) {
     SET titulo_tesis = ?,
         nombre_programa = ?,
         institucion = ?,
+        tesis_dirigida = ?,
         ano = ?,
         autor = ?,
         link_verificacion = ?,
@@ -78,6 +90,7 @@ export async function updateTesis(tesis_id, data) {
       titulo_tesis,
       nombre_programa,
       institucion,
+      tesis_dirigida,
       ano,
       autor,
       link_verificacion || null,
