@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import FormModal from "../../components/FormModal.jsx";
 import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
+import IssnInput from "@/components/ui/inputs/IssnInput.jsx";
 
 import {
   getCategorias,
@@ -238,9 +239,7 @@ export default function Publicaciones() {
                               ? "badge-publicado"
                               : r.estado === "En revisión"
                               ? "badge-revision"
-                              : r.estado === "Aceptado"
-                              ? "badge-aceptado"
-                              : "badge-rechazado")
+                              : r.estado === "Aceptado")
                           }
                         >
                           {r.estado}
@@ -295,7 +294,6 @@ export default function Publicaciones() {
         submitText={saving ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"}
       >
         <div className="row g-3">
-          {/* Autores + Autor Principal */}
           <div className="col-12 col-md-6">
             <label className="form-label" style={{ color: "var(--muted)" }}>
               Autores
@@ -320,7 +318,6 @@ export default function Publicaciones() {
             />
           </div>
 
-          {/* Año + Categoría + Revista (Categoría ENTRE año y revista) */}
           <div className="col-12 col-md-3">
             <label className="form-label" style={{ color: "var(--muted)" }}>
               Año*
@@ -365,7 +362,6 @@ export default function Publicaciones() {
             />
           </div>
 
-          {/* Título + Estado (Estado al lado del título) */}
           <div className="col-12 col-md-8">
             <label className="form-label" style={{ color: "var(--muted)" }}>
               Título*
@@ -385,16 +381,10 @@ export default function Publicaciones() {
             />
           </div>
 
-          {/* ISSN + Respaldo */}
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              ISSN
-            </label>
-            <input
-              className="form-control input-dark"
+            <IssnInput
               value={form.issn}
               onChange={(e) => setForm({ ...form, issn: e.target.value })}
-              placeholder="0000-0000"
             />
           </div>
 

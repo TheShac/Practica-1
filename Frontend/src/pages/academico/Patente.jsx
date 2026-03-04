@@ -172,7 +172,18 @@ export default function Patente() {
                             : ""}
                         </td>
                         <td>{r.num_registro}</td>
-                        <td>{r.estado}</td>
+                        <td><span
+                          className={
+                            "badge-status " +
+                            (r.estado === "Publicado"
+                              ? "badge-publicado"
+                              : r.estado === "En revisión"
+                              ? "badge-revision"
+                              : r.estado === "Aceptado")
+                          }
+                        >
+                          {r.estado}
+                        </span></td>
                         <td>
                         <a
                           href={r.link_verificacion || "#"}

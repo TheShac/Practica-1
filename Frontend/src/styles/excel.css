@@ -1,0 +1,37 @@
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.excel-input {
+  width: 100%;
+  border: none;
+  outline: none;
+  text-align: center;
+  font-weight: 500;
+  background: transparent;
+  color: var(--text);
+  padding: 6px 4px;
+}
+
+td[style*="rgba(218,161,54,.25)"] .excel-input {
+  background: transparent;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.excel-input:hover {
+  background: rgba(255,255,255,.05);
+}
+
+.excel-input:focus {
+  background: rgba(255,255,255,.08);
+  box-shadow: inset 0 0 0 1px var(--gold);
+  border-radius: 4px;
+}
