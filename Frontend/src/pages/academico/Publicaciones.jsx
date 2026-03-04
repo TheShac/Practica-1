@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import FormModal from "../../components/FormModal.jsx";
 import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
 import IssnInput from "@/components/ui/inputs/IssnInput.jsx";
+import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
 
 import {
   getCategorias,
@@ -197,11 +198,7 @@ export default function Publicaciones() {
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div style={{ color: "var(--muted)" }}>Tabla de publicaciones</div>
-
-          <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
-            <i className="bi bi-plus-lg me-2" />
-            Nueva Publicación
-          </button>
+          <BtnNuevo label="Nueva Publicación" onClick={openCreate} disabled={loading} />
         </div>
 
         {loading ? (

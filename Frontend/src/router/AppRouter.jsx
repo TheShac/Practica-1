@@ -18,7 +18,7 @@ import Patente from "../pages/academico/Patente.jsx";
 import SecretariaLayout from "../layouts/SecretariaLayout.jsx";
 import SecretariaDashboard from "../pages/secretaria/Dashboard.jsx";
 import SecretariaFichaAcademics from "../pages/secretaria/Ficha-Academicas.jsx";
-import ReportesSecretaria from "../pages/secretaria/ReportesSecretaria.jsx";
+import ReportesSecretaria from "../pages/secretaria/reports/ReportesSecretaria.jsx";
 
 // Admin (placeholder)
 import AdminLayout from "../layouts/AdminLayout.jsx";
