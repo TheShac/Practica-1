@@ -186,8 +186,9 @@ export default function Login() {
               </button>
 
               <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
-                Cuenta Secretaria: secretaria@uta.cl / Secretaria123* <br/>
-                Cuenta Academico: academico@uta.cl / Academico123*
+                Cuenta Secretaria: 22.222.222-2 / Secretaria123* <br/>
+                Cuenta Academico: 33.333.333-3 / Academico123*
+                Cuenta Academico: 44.444.444-4 / Academico123*
               </div>
               
             </form>
