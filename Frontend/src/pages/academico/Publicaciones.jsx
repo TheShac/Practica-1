@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import FormModal from "../../components/FormModal.jsx";
 import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
+import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
 import IssnInput from "@/components/ui/inputs/IssnInput.jsx";
 import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
 
@@ -126,6 +127,7 @@ export default function Publicaciones() {
         ano: Number(form.anio),
         categoria_id: Number(form.categoria_id),
         titulo_articulo: form.titulo,
+        revista: form.revista,
         estado: form.estado,
         nombre_revista: form.revista,
         ISSN: form.issn,
@@ -213,6 +215,7 @@ export default function Publicaciones() {
                     <th>Autor principal</th>
                     <th>Año</th>
                     <th>Indexados</th>
+                    <th>Revista</th>
                     <th>Título</th>
                     <th>Estado</th>
                     <th>ISSN</th>
@@ -386,14 +389,9 @@ export default function Publicaciones() {
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Respaldo (link)
-            </label>
-            <input
-              className="form-control input-dark"
+            <RespaldoInput
               value={form.respaldo}
               onChange={(e) => setForm({ ...form, respaldo: e.target.value })}
-              placeholder="https://..."
             />
           </div>
         </div>

@@ -1,8 +1,11 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import { getFichaAcademica } from "../../../../services/ficha.service";
-import { getAcademicos } from "../../../../services/api";
+import { getAcademicos, getCategorias } from "../../../../services/api";
 import FormModal from "../../../../components/FormModal";
+import EstadoSelect from "../../../../components/forms/statusSelect/EstadoSelect.jsx";
+import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
+import IssnInput from "@/components/ui/inputs/IssnInput.jsx";
 
 import {
   createLibroParaAcademico,
@@ -25,23 +28,25 @@ import {
   deletePatenteParaAcademico,
 } from "../../../../services/api.service";
 
+// ── Config de campos y columnas por sección ───────────────────────────────────
+// tipo: "estado" → renderiza EstadoSelect
+// tipo: "input"  → renderiza input de texto (por defecto)
 const SECCIONES_CONFIG = {
   magister: {
     titulo:    "Tesis Magíster",
     icono:     "bi-mortarboard-fill",
     idKey:     "tesis_id",
     campo:     "titulo_tesis",
-    columnas:  ["titulo_tesis", "autor", "nombre_programa", "institucion", "ano", "rol_guia"],
-    emptyForm: { titulo_tesis: "", nombre_programa: "", institucion: "", tesis_dirigida: "", ano: "", autor: "", link_verificacion: "", rol_guia: "" },
+    columnas:  ["titulo_tesis", "autor", "nombre_programa", "institucion", "ano", "rol_guia", "link_verificacion"],
+    emptyForm: { titulo_tesis: "", nombre_programa: "", institucion: "", ano: "", autor: "", link_verificacion: "", rol_guia: "GUIA" },
     campos: [
-      { key: "titulo_tesis",      label: "Título*",          col: "col-12",   required: true  },
-      { key: "autor",             label: "Autor",            col: "col-md-6", required: false },
-      { key: "nombre_programa",   label: "Programa",         col: "col-md-6", required: false },
-      { key: "institucion",       label: "Institución",      col: "col-md-6", required: false },
-      { key: "tesis_dirigida",    label: "Tesis dirigida",   col: "col-md-6", required: false },
-      { key: "rol_guia",          label: "Rol guía",         col: "col-md-6", required: false },
-      { key: "ano",               label: "Año",              col: "col-md-6", required: false },
-      { key: "link_verificacion", label: "Respaldo (link)",  col: "col-12",   required: false },
+      { key: "autor",             label: "Autor*",          col: "col-md-6", required: true  },
+      { key: "ano",               label: "Año*",            col: "col-md-6", required: true  },
+      { key: "titulo_tesis",      label: "Título*",         col: "col-12",   required: true  },
+      { key: "nombre_programa",   label: "Programa*",       col: "col-md-6", required: true  },
+      { key: "institucion",       label: "Institución*",    col: "col-md-6", required: true  },
+      { key: "rol_guia",          label: "Rol guía",        col: "col-md-6", required: false, tipo: "rol_guia" },
+      { key: "link_verificacion", label: "Respaldo (link)", col: "col-12",   required: false, tipo: "respaldo" },
     ],
   },
   doctorado: {
@@ -49,17 +54,17 @@ const SECCIONES_CONFIG = {
     icono:     "bi-building-fill",
     idKey:     "tesis_id",
     campo:     "titulo_tesis",
-    columnas:  ["titulo_tesis", "autor", "nombre_programa", "institucion", "ano", "rol_guia"],
-    emptyForm: { titulo_tesis: "", nombre_programa: "", institucion: "", tesis_dirigida: "", ano: "", autor: "", link_verificacion: "", rol_guia: "" },
+    columnas:  ["titulo_tesis", "autor", "nombre_programa", "institucion", "ano", "rol_guia", "tesis_dirigida", "link_verificacion"],
+    emptyForm: { titulo_tesis: "", nombre_programa: "", institucion: "", tesis_dirigida: "", ano: "", autor: "", link_verificacion: "", rol_guia: "GUIA" },
     campos: [
-      { key: "titulo_tesis",      label: "Título*",          col: "col-12",   required: true  },
-      { key: "autor",             label: "Autor",            col: "col-md-6", required: false },
-      { key: "nombre_programa",   label: "Programa",         col: "col-md-6", required: false },
-      { key: "institucion",       label: "Institución",      col: "col-md-6", required: false },
-      { key: "tesis_dirigida",    label: "Tesis dirigida",   col: "col-md-6", required: false },
-      { key: "rol_guia",          label: "Rol guía",         col: "col-md-6", required: false },
-      { key: "ano",               label: "Año",              col: "col-md-6", required: false },
-      { key: "link_verificacion", label: "Respaldo (link)",  col: "col-12",   required: false },
+      { key: "autor",             label: "Autor*",                                          col: "col-md-6", required: true  },
+      { key: "ano",               label: "Año*",                                            col: "col-md-6", required: true  },
+      { key: "titulo_tesis",      label: "Título*",                                         col: "col-12",   required: true  },
+      { key: "nombre_programa",   label: "Programa*",                                       col: "col-md-6", required: true  },
+      { key: "institucion",       label: "Institución*",                                    col: "col-md-6", required: true  },
+      { key: "rol_guia",          label: "Rol guía",                                        col: "col-md-6", required: false, tipo: "rol_guia" },
+      { key: "tesis_dirigida",    label: "¿Dirigida en el mismo programa?",                 col: "col-md-6", required: true,  tipo: "tesis_dirigida" },
+      { key: "link_verificacion", label: "Respaldo (link)",                                 col: "col-12",   required: false, tipo: "respaldo" },
     ],
   },
   publicaciones: {
@@ -67,17 +72,18 @@ const SECCIONES_CONFIG = {
     icono:     "bi-file-earmark-text-fill",
     idKey:     "publicacion_id",
     campo:     "titulo_articulo",
-    columnas:  ["titulo_articulo", "nombre_revista", "autor_principal", "ano", "estado"],
-    emptyForm: { titulo_articulo: "", nombre_revista: "", ISSN: "", ano: "", autor_principal: "", autores: "", link_verificacion: "", estado: "" },
+    columnas:  ["autores", "autor_principal", "ano", "categoria_nombre", "nombre_revista", "titulo_articulo", "estado", "ISSN", "link_verificacion"],
+    emptyForm: { autores: "", autor_principal: "", ano: "", categoria_id: "", nombre_revista: "", titulo_articulo: "", estado: "Publicado", ISSN: "", link_verificacion: "" },
     campos: [
-      { key: "titulo_articulo",   label: "Título artículo*", col: "col-12",   required: true  },
-      { key: "nombre_revista",    label: "Revista",          col: "col-md-6", required: false },
-      { key: "ISSN",              label: "ISSN",             col: "col-md-6", required: false },
+      { key: "autores",           label: "Autores",          col: "col-md-6", required: false },
       { key: "autor_principal",   label: "Autor principal",  col: "col-md-6", required: false },
-      { key: "autores",           label: "Otros autores",    col: "col-md-6", required: false },
-      { key: "ano",               label: "Año",              col: "col-md-6", required: false },
-      { key: "estado",            label: "Estado",           col: "col-md-6", required: false },
-      { key: "link_verificacion", label: "Respaldo (link)",  col: "col-12",   required: false },
+      { key: "ano",               label: "Año",              col: "col-md-4", required: false },
+      { key: "categoria_id",      label: "Indexados*",       col: "col-md-4", required: true,  tipo: "categorias" },
+      { key: "nombre_revista",    label: "Revista",          col: "col-md-4", required: false },
+      { key: "titulo_articulo",   label: "Título artículo*", col: "col-12",   required: true  },
+      { key: "estado",            label: "Estado",           col: "col-md-6", required: false, tipo: "estado" },
+      { key: "ISSN",              label: "ISSN",             col: "col-md-6", required: false, tipo: "issn" },
+      { key: "link_verificacion", label: "Respaldo (link)",  col: "col-12",   required: false, tipo: "respaldo" },
     ],
   },
   libros: {
@@ -85,17 +91,17 @@ const SECCIONES_CONFIG = {
     icono:     "bi-book-fill",
     idKey:     "libro_id",
     campo:     "nombre_libro",
-    columnas:  ["nombre_libro", "editorial", "autor_principal", "ano", "estado"],
-    emptyForm: { nombre_libro: "", editorial: "", lugar: "", ano: "", autor_principal: "", autores: "", link_verificacion: "", estado: "" },
+    columnas:  ["autores", "autor_principal", "ano", "nombre_libro", "lugar", "editorial", "estado", "link_verificacion"],
+    emptyForm: { autores: "", autor_principal: "", ano: "", nombre_libro: "", lugar: "", editorial: "", estado: "Publicado", link_verificacion: "" },
     campos: [
-      { key: "nombre_libro",      label: "Nombre libro*",    col: "col-12",   required: true  },
-      { key: "editorial",         label: "Editorial",        col: "col-md-6", required: false },
-      { key: "lugar",             label: "Lugar",            col: "col-md-6", required: false },
-      { key: "autor_principal",   label: "Autor principal",  col: "col-md-6", required: false },
-      { key: "autores",           label: "Otros autores",    col: "col-md-6", required: false },
-      { key: "ano",               label: "Año",              col: "col-md-6", required: false },
-      { key: "estado",            label: "Estado",           col: "col-md-6", required: false },
-      { key: "link_verificacion", label: "Respaldo (link)",  col: "col-12",   required: false },
+      { key: "autores",           label: "Autor(es)",       col: "col-md-6", required: false },
+      { key: "autor_principal",   label: "Autor/a principal",col: "col-md-6", required: false },
+      { key: "ano",               label: "Año*",            col: "col-md-3", required: true  },
+      { key: "estado",            label: "Estado",          col: "col-md-4", required: false, tipo: "estado" },
+      { key: "nombre_libro",      label: "Nombre libro*",   col: "col-12",   required: true  },
+      { key: "lugar",             label: "Lugar",           col: "col-md-6", required: false },
+      { key: "editorial",         label: "Editorial",       col: "col-md-6", required: false },
+      { key: "link_verificacion", label: "Respaldo (link)", col: "col-12",   required: false, tipo: "respaldo" },
     ],
   },
   capitulos: {
@@ -103,18 +109,18 @@ const SECCIONES_CONFIG = {
     icono:     "bi-bookmark-fill",
     idKey:     "cap_id",
     campo:     "nombre_capitulo",
-    columnas:  ["nombre_capitulo", "nombre_libro", "editorial", "ano", "estado"],
-    emptyForm: { nombre_capitulo: "", nombre_libro: "", editorial: "", lugar: "", ano: "", autor_principal: "", autores: "", link_verificacion: "", estado: "" },
+    columnas:  ["autores", "autor_principal", "ano", "nombre_capitulo", "nombre_libro", "lugar", "editorial", "estado", "link_verificacion"],
+    emptyForm: { autores: "", autor_principal: "", ano: "", nombre_capitulo: "", nombre_libro: "", lugar: "", editorial: "", estado: "Publicado", link_verificacion: "" },
     campos: [
-      { key: "nombre_capitulo",   label: "Nombre capítulo*", col: "col-12",   required: true  },
-      { key: "nombre_libro",      label: "Libro",            col: "col-md-6", required: false },
-      { key: "editorial",         label: "Editorial",        col: "col-md-6", required: false },
-      { key: "lugar",             label: "Lugar",            col: "col-md-6", required: false },
-      { key: "autor_principal",   label: "Autor principal",  col: "col-md-6", required: false },
-      { key: "autores",           label: "Otros autores",    col: "col-md-6", required: false },
-      { key: "ano",               label: "Año",              col: "col-md-6", required: false },
-      { key: "estado",            label: "Estado",           col: "col-md-6", required: false },
-      { key: "link_verificacion", label: "Respaldo (link)",  col: "col-12",   required: false },
+      { key: "autores",           label: "Autor(es)",            col: "col-md-6", required: false },
+      { key: "autor_principal",   label: "Autor/a principal",    col: "col-md-6", required: false },
+      { key: "ano",               label: "Año*",                 col: "col-md-3", required: true  },
+      { key: "estado",            label: "Estado",               col: "col-md-4", required: false, tipo: "estado" },
+      { key: "nombre_capitulo",   label: "Nombre del capítulo*", col: "col-12",   required: true  },
+      { key: "nombre_libro",      label: "Nombre libro",         col: "col-12",   required: false },
+      { key: "lugar",             label: "Lugar",                col: "col-md-6", required: false },
+      { key: "editorial",         label: "Editorial",            col: "col-md-6", required: false },
+      { key: "link_verificacion", label: "Respaldo (link)",      col: "col-12",   required: false, tipo: "respaldo" },
     ],
   },
   investigaciones: {
@@ -122,7 +128,7 @@ const SECCIONES_CONFIG = {
     icono:     "bi-search",
     idKey:     "investigacion_id",
     campo:     "titulo",
-    columnas:  ["titulo", "fuente_financiamiento", "ano_adjudicacion", "periodo_ejecucion", "rol_proyecto"],
+    columnas:  ["titulo", "fuente_financiamiento", "ano_adjudicacion", "periodo_ejecucion", "rol_proyecto", "link_verificacion"],
     emptyForm: { titulo: "", fuente_financiamiento: "", ano_adjudicacion: "", periodo_ejecucion: "", rol_proyecto: "", link_verificacion: "" },
     campos: [
       { key: "titulo",                label: "Título*",               col: "col-12",   required: true  },
@@ -138,16 +144,16 @@ const SECCIONES_CONFIG = {
     icono:     "bi-award-fill",
     idKey:     "patente_id",
     campo:     "nombre_patente",
-    columnas:  ["nombre_patente", "inventores", "num_registro", "estado", "fecha_solicitud"],
-    emptyForm: { nombre_patente: "", inventores: "", num_registro: "", fecha_solicitud: "", fecha_publicacion: "", estado: "", link_verificacion: "" },
+    columnas:  ["inventores", "nombre_patente", "fecha_solicitud", "fecha_publicacion", "num_registro", "estado", "link_verificacion"],
+    emptyForm: { inventores: "", nombre_patente: "", fecha_solicitud: "", fecha_publicacion: "", num_registro: "", estado: "", link_verificacion: "" },
     campos: [
-      { key: "nombre_patente",    label: "Nombre patente*",   col: "col-12",   required: true  },
-      { key: "inventores",        label: "Inventores",        col: "col-12",   required: false },
-      { key: "num_registro",      label: "N° registro",       col: "col-md-6", required: false },
-      { key: "estado",            label: "Estado",            col: "col-md-6", required: false },
-      { key: "fecha_solicitud",   label: "Fecha solicitud",   col: "col-md-6", required: false },
-      { key: "fecha_publicacion", label: "Fecha publicación", col: "col-md-6", required: false },
-      { key: "link_verificacion", label: "Respaldo (link)",   col: "col-12",   required: false },
+      { key: "inventores",        label: "Inventor(es)",          col: "col-12",   required: false },
+      { key: "nombre_patente",    label: "Nombre Patente*",       col: "col-12",   required: true  },
+      { key: "fecha_solicitud",   label: "Fecha de Solicitud",    col: "col-md-4", required: false, tipo: "date" },
+      { key: "fecha_publicacion", label: "Fecha de Publicación",  col: "col-md-4", required: false, tipo: "date" },
+      { key: "num_registro",      label: "N° de registro",        col: "col-md-4", required: false },
+      { key: "estado",            label: "Estado",                col: "col-md-4", required: false, tipo: "estado" },
+      { key: "link_verificacion", label: "Respaldo (link)",       col: "col-12",   required: false, tipo: "respaldo" },
     ],
   },
 };
@@ -172,6 +178,27 @@ function nombreCompleto(academico) {
 }
 
 function labelCol(key) {
+  if (key === "link_verificacion") return "Respaldo";
+  if (key === "categoria_nombre")  return "Indexados";
+  if (key === "ano_adjudicacion")  return "Año Adjud.";
+  if (key === "ISSN")              return "ISSN";
+  if (key === "autor_principal")   return "Autor Principal";
+  if (key === "nombre_revista")    return "Revista";
+  if (key === "titulo_articulo")   return "Título Artículo";
+  if (key === "nombre_capitulo")   return "Nombre del Capítulo";
+  if (key === "nombre_libro")      return "Nombre Libro";
+  if (key === "autor_principal")   return "Autor/a Principal";
+  if (key === "autores")           return "Autor(es)";
+  if (key === "ano")               return "Año";
+  if (key === "estado")            return "Estado";
+  if (key === "inventores")        return "Inventor(es)";
+  if (key === "nombre_patente")    return "Nombre Patente";
+  if (key === "fecha_solicitud")   return "Fecha Solicitud";
+  if (key === "fecha_publicacion") return "Fecha Publicación";
+  if (key === "num_registro")      return "N° Registro";
+  if (key === "rol_guia")          return "Rol";
+  if (key === "titulo_tesis")      return "Título";
+  if (key === "nombre_programa")   return "Programa";
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
@@ -181,6 +208,7 @@ export default function EditarFicha() {
 
   const [data, setData]                   = useState(null);
   const [academico, setAcademico]         = useState(null);
+  const [categorias, setCategorias]       = useState([]);
   const [seccionActiva, setSeccionActiva] = useState(null);
   const [loading, setLoading]             = useState(true);
 
@@ -247,11 +275,13 @@ export default function EditarFicha() {
     (async () => {
       try {
         setLoading(true);
-        const [fichaRes, academicosRes] = await Promise.all([
+        const [fichaRes, academicosRes, categoriasRes] = await Promise.all([
           getFichaAcademica(usuarioId),
           getAcademicos(),
+          getCategorias(),
         ]);
         setData(fichaRes);
+        setCategorias(categoriasRes);
         const found = academicosRes.find(
           (a) => String(a.usuario_id) === String(usuarioId)
         );
@@ -291,7 +321,12 @@ export default function EditarFicha() {
   const openCreate = () => {
     setMode("create");
     setEditingId(null);
-    setForm(config?.emptyForm ?? {});
+    const emptyForm = config?.emptyForm ?? {};
+    // para publicaciones pre-seleccionar primera categoría
+    if (seccionActiva === "publicaciones" && categorias.length > 0 && !emptyForm.categoria_id) {
+      emptyForm.categoria_id = String(categorias[0].categoria_id);
+    }
+    setForm(emptyForm);
     setErrors({});
     setShowModal(true);
   };
@@ -336,7 +371,7 @@ export default function EditarFicha() {
   };
 
   const itemsSeccion = () => {
-    if (!seccionActiva) return [];
+    if (!seccionActiva || !data) return [];
     switch (seccionActiva) {
       case "magister":        return data.tesis?.filter(t => t.nivel_programa === "MAGISTER") ?? [];
       case "doctorado":       return data.tesis?.filter(t => t.nivel_programa === "DOCTORADO") ?? [];
@@ -420,7 +455,7 @@ export default function EditarFicha() {
                         {config.columnas.map((col) => (
                           <th key={col}>{labelCol(col)}</th>
                         ))}
-                        <th className="text-end">Acciones</th>
+                        <th className="text-center">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -430,7 +465,21 @@ export default function EditarFicha() {
                             {index + 1}
                           </td>
                           {config.columnas.map((col) => (
-                            <td key={col}>{item[col] ?? "—"}</td>
+                            <td key={col}>
+                              {col === "link_verificacion" ? (
+                                  <a
+                                    href={item[col] ? item[col] : "#"}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Ver
+                                  </a>
+                              ) : col === "fecha_solicitud" || col === "fecha_publicacion" ? (
+                                item[col] ? new Date(item[col]).toISOString().split("T")[0] : "—"
+                              ) : (
+                                item[col] ?? "—"
+                              )}
+                            </td>
                           ))}
                           <td className="text-end">
                             <button
@@ -475,17 +524,96 @@ export default function EditarFicha() {
           }
         >
           <div className="row g-3">
-            {config.campos.map(({ key, label, col, placeholder }) => (
+            {config.campos.map(({ key, label, col, placeholder, tipo }) => (
               <div className={`col-12 ${col}`} key={key}>
-                <label className="form-label">{label}</label>
-                <input
-                  className={`form-control input-dark${errors[key] ? " is-invalid" : ""}`}
-                  value={form[key] ?? ""}
-                  placeholder={placeholder ?? ""}
-                  onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                />
-                {errors[key] && (
-                  <div className="invalid-feedback">{errors[key]}</div>
+                {/* ── EstadoSelect para campos con tipo "estado" ── */}
+                {tipo === "estado" ? (
+                  <EstadoSelect
+                    label={label}
+                    value={form[key] ?? "Publicado"}
+                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  />
+                ) : tipo === "respaldo" ? (
+                  <RespaldoInput
+                    label={label}
+                    value={form[key] ?? ""}
+                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  />
+                ) : tipo === "issn" ? (
+                  <IssnInput
+                    value={form[key] ?? ""}
+                    onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  />
+                ) : tipo === "date" ? (
+                  <div>
+                    <label className="form-label" style={{ color: "var(--muted)" }}>{label}</label>
+                    <input
+                      type="date"
+                      className="form-control input-dark"
+                      value={form[key] ?? ""}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                    />
+                  </div>
+                ) : tipo === "rol_guia" ? (
+                  <div>
+                    <label className="form-label" style={{ color: "var(--muted)" }}>{label}</label>
+                    <select
+                      className="form-select input-dark"
+                      value={form[key] ?? "GUIA"}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                    >
+                      <option value="GUIA">Guía</option>
+                      <option value="CO_GUIA">Co-Guía</option>
+                    </select>
+                  </div>
+                ) : tipo === "tesis_dirigida" ? (
+                  <div>
+                    <label className="form-label" style={{ color: "var(--muted)" }}>{label}</label>
+                    <select
+                      className={`form-select input-dark${errors[key] ? " is-invalid" : ""}`}
+                      value={form[key] ?? ""}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                    >
+                      <option value="" disabled>Seleccione...</option>
+                      <option value="Si">Sí</option>
+                      <option value="No">No</option>
+                    </select>
+                    {errors[key] && <div className="invalid-feedback">{errors[key]}</div>}
+                  </div>
+                ) : tipo === "categorias" ? (
+                  <div>
+                    <label className="form-label" style={{ color: "var(--muted)" }}>
+                      {label}
+                    </label>
+                    <select
+                      className={`form-select input-dark${errors[key] ? " is-invalid" : ""}`}
+                      value={form[key] ?? ""}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                    >
+                      <option value="" disabled>Seleccione...</option>
+                      {categorias.map((c) => (
+                        <option key={c.categoria_id} value={String(c.categoria_id)}>
+                          {c.nombre}
+                        </option>
+                      ))}
+                    </select>
+                    {errors[key] && (
+                      <div className="invalid-feedback">{errors[key]}</div>
+                    )}
+                  </div>
+                ) : (
+                  <>
+                    <label className="form-label">{label}</label>
+                    <input
+                      className={`form-control input-dark${errors[key] ? " is-invalid" : ""}`}
+                      value={form[key] ?? ""}
+                      placeholder={placeholder ?? ""}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                    />
+                    {errors[key] && (
+                      <div className="invalid-feedback">{errors[key]}</div>
+                    )}
+                  </>
                 )}
               </div>
             ))}
