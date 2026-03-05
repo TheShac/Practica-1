@@ -101,3 +101,65 @@ export async function deletePublicacionHandler(req, res) {
     res.status(500).json({ message: "Error eliminando publicación" });
   }
 }
+
+export async function listPublicacionesDeAcademico(req, res) {
+  try {
+    const { usuarioId } = req.params;
+    const rows = await listPublicacionesByUser(usuarioId);
+    res.json(rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error listando publicaciones" });
+  }
+}
+
+export async function createPublicacionParaAcademico(req, res) {
+  try {
+    const { usuarioId } = req.params;
+    const { categoria_id, titulo_articulo, nombre_revista, ISSN, ano, autor_principal, autores, link_verificacion, estado } = req.body;
+
+    if (!categoria_id || !titulo_articulo)
+      return res.status(400).json({ message: "categoria_id y titulo_articulo son obligatorios" });
+
+    const newId = await createPublicacion(usuarioId, { categoria_id, titulo_articulo, nombre_revista, ISSN, ano, autor_principal, autores, link_verificacion, estado });
+    const created = await getPublicacionById(newId);
+    res.status(201).json(created);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error creando publicación" });
+  }
+}
+
+export async function updatePublicacionParaAcademico(req, res) {
+  try {
+    const { id } = req.params;
+
+    const existing = await getPublicacionById(id);
+    if (!existing) return res.status(404).json({ message: "Publicación no encontrada" });
+
+    if (!req.body.categoria_id || !req.body.titulo_articulo)
+      return res.status(400).json({ message: "categoria_id y titulo_articulo son obligatorios" });
+
+    await updatePublicacion(id, req.body);
+    const updated = await getPublicacionById(id);
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error actualizando publicación" });
+  }
+}
+
+export async function deletePublicacionParaAcademico(req, res) {
+  try {
+    const { id } = req.params;
+
+    const existing = await getPublicacionById(id);
+    if (!existing) return res.status(404).json({ message: "Publicación no encontrada" });
+
+    await deletePublicacion(id);
+    res.json({ message: "Publicación eliminada" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error eliminando publicación" });
+  }
+}

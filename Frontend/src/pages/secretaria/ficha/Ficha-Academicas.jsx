@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { getAcademicos, downloadFichaExcel } from "../../services/api";
-import FichaAcademicaModal from "../../components/FichaAcademicaModal.jsx";
+import { useEffect, useMemo, useState, } from "react";
+import { useNavigate } from "react-router-dom";
+import { getAcademicos, downloadFichaExcel } from "../../../services/api.js";
+import FichaAcademicaModal from "../../../components/FichaAcademicaModal.jsx";
 
 const ITEMS_PER_PAGE = 15;
 
@@ -12,6 +13,7 @@ export default function FichaAcademicas() {
   const [contratoFilter, setContratoFilter] = useState("");
   const [selected, setSelected] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchData() {
@@ -82,6 +84,10 @@ export default function FichaAcademicas() {
   function closeModal() {
     setSelected(null);
   }
+
+  const handleEdit = (usuarioId) => {
+    navigate(`/secretaria/ficha/${usuarioId}/editar`);
+  };
 
   async function handleDownload(usuarioId) {
     try {
@@ -202,6 +208,15 @@ export default function FichaAcademicas() {
                         </td>
 
                         <td className="text-end">
+
+                          <button
+                            type="button"
+                            className="btn btn-sm btn-outline-warning me-2"
+                            onClick={() => handleEdit(a.usuario_id)}
+                          >
+                            <i className="bi bi-pencil" />
+                          </button>
+
                           <button
                             className="btn btn-sm btn-outline-light me-2"
                             onClick={() => openModal(a)}
@@ -210,11 +225,12 @@ export default function FichaAcademicas() {
                           </button>
 
                           <button
-                            className="btn btn-sm btn-outline-success"
+                            className="btn btn-sm btn-outline-success me-2"
                             onClick={() => handleDownload(a.usuario_id)}
                           >
                             <i className="bi bi-download" />
                           </button>
+
                         </td>
                       </tr>
                     ))}
@@ -269,7 +285,7 @@ export default function FichaAcademicas() {
         )}
       </div>
 
-      {/* MODAL NUEVO */}
+      {/* MODAL */}
       <FichaAcademicaModal
         show={!!selected}
         academico={selected}

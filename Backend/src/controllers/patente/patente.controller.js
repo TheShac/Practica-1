@@ -68,3 +68,50 @@ export async function deletePatenteHandler(req, res) {
     res.status(500).json({ message: "Error eliminando patente" });
   }
 }
+
+export async function listPatentesDeAcademico(req, res) {
+  try {
+    const { usuarioId } = req.params;
+    const data = await getPatentesByUsuario(usuarioId);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error obteniendo patentes" });
+  }
+}
+
+export async function createPatenteParaAcademico(req, res) {
+  try {
+    const { usuarioId } = req.params;
+    if (!req.body.nombre_patente)
+      return res.status(400).json({ message: "Nombre obligatorio" });
+
+    const newId = await createPatente({ usuario_id: usuarioId, ...req.body });
+    res.status(201).json({ patente_id: newId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error creando patente" });
+  }
+}
+
+export async function updatePatenteParaAcademico(req, res) {
+  try {
+    const { id } = req.params;
+    await updatePatente(id, req.body);
+    res.json({ message: "Patente actualizada" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error actualizando patente" });
+  }
+}
+
+export async function deletePatenteParaAcademico(req, res) {
+  try {
+    const { id } = req.params;
+    await deletePatente(id);
+    res.json({ message: "Patente eliminada" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Error eliminando patente" });
+  }
+}
