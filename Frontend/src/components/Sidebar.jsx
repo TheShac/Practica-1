@@ -46,6 +46,7 @@ export default function Sidebar({ collapsed }) {
       { type: "section", label: "SECRETARÍA" },
       { to: "/secretaria/ficha-academicas", icon: "bi-people", label: "Ficha Académicas" },
       { to: "/secretaria/reportes", icon: "bi-clipboard-data", label: "Reportes" },
+      { to: "/secretaria/notificaciones", icon: "bi-bell", label: "Notificaciones" },
     ];
 
     // Menú Admin

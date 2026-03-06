@@ -204,3 +204,83 @@ CREATE TABLE patente (
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 SELECT * FROM patente;
+
+CREATE TABLE reporte_academico (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  usuario_id INT NOT NULL UNIQUE,
+
+  total_wos_scopus_5_anios INT DEFAULT 0,
+  total_scielo_5_anios INT DEFAULT 0,
+  otros_articulos INT DEFAULT 0,
+
+  libros_area INT DEFAULT 0,
+  libros_otro INT DEFAULT 0,
+
+  cap_area INT DEFAULT 0,
+  cap_otro INT DEFAULT 0,
+
+  edicion_area INT DEFAULT 0,
+  edicion_otro INT DEFAULT 0,
+
+  proyectos_fondecyt INT DEFAULT 0,
+  otros_proyectos INT DEFAULT 0,
+
+  actualizado_en TIMESTAMP 
+    DEFAULT CURRENT_TIMESTAMP 
+    ON UPDATE CURRENT_TIMESTAMP,
+
+  FOREIGN KEY (usuario_id) 
+    REFERENCES usuario(usuario_id)
+    ON DELETE CASCADE
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE reporte_wos_global (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+
+  tipo_academico ENUM('Claustro','Colaborador') NOT NULL UNIQUE,
+
+  total_wos INT DEFAULT 0,
+
+  actualizado_en TIMESTAMP 
+    DEFAULT CURRENT_TIMESTAMP 
+    ON UPDATE CURRENT_TIMESTAMP
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notificacion (
+    notificacion_id INT AUTO_INCREMENT PRIMARY KEY,
+    remitente_id    INT NOT NULL,
+    asunto          VARCHAR(200) NOT NULL,
+    mensaje         TEXT NOT NULL,
+    es_global       TINYINT(1) NOT NULL DEFAULT 0,   -- 1 = todos los académicos
+    creado_en       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notif_remitente FOREIGN KEY (remitente_id)
+        REFERENCES usuario(usuario_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Destinatarios específicos (solo cuando es_global = 0)
+CREATE TABLE notificacion_destinatario (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    notificacion_id INT NOT NULL,
+    usuario_id      INT NOT NULL,
+    leido           TINYINT(1) NOT NULL DEFAULT 0,
+    leido_en        TIMESTAMP NULL,
+    CONSTRAINT fk_nd_notif   FOREIGN KEY (notificacion_id) REFERENCES notificacion(notificacion_id) ON DELETE CASCADE,
+    CONSTRAINT fk_nd_usuario FOREIGN KEY (usuario_id)      REFERENCES usuario(usuario_id)           ON DELETE CASCADE,
+    UNIQUE KEY uq_nd (notificacion_id, usuario_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Registro de lectura para notificaciones globales
+CREATE TABLE notificacion_global_leido (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    notificacion_id INT NOT NULL,
+    usuario_id      INT NOT NULL,
+    leido_en        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ngl_notif   FOREIGN KEY (notificacion_id) REFERENCES notificacion(notificacion_id) ON DELETE CASCADE,
+    CONSTRAINT fk_ngl_usuario FOREIGN KEY (usuario_id)      REFERENCES usuario(usuario_id)           ON DELETE CASCADE,
+    UNIQUE KEY uq_ngl (notificacion_id, usuario_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

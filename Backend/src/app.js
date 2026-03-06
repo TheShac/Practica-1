@@ -19,6 +19,7 @@ import proyectoIntervencionRoutes from "./routes/proyecto-intervencion/proyecto.
 
 import fichaRoutes from "./routes/ficha.routes.js";
 import reporteGeneralRoutes from "./routes/profesional-apoyo/profesionalApoyo.routes.js";
+import notificacionRoutes from "./routes/profesional-apoyo/notificacion.routes.js";
 
 dotenv.config();
 
@@ -45,5 +46,6 @@ app.use("/api/proyectos-intervencion", proyectoIntervencionRoutes);
 
 app.use("/api/ficha", fichaRoutes);
 app.use("/api/profesional-apoyo", reporteGeneralRoutes);
+app.use("/api/notificaciones", notificacionRoutes);
 
 export default app;

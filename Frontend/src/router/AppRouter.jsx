@@ -21,6 +21,7 @@ import SecretariaDashboard from "../pages/secretaria/Dashboard.jsx";
 import SecretariaFichaAcademics from "../pages/secretaria/ficha/Ficha-Academicas.jsx";
 import EditarFicha from "../pages/secretaria/ficha/components/EditarFicha.jsx";
 import ReportesSecretaria from "../pages/secretaria/reports/ReportesSecretaria.jsx";
+import Notificaciones from "../pages/secretaria/Notificaciones.jsx";
 
 // Admin (placeholder)
 import AdminLayout from "../layouts/AdminLayout.jsx";
@@ -66,6 +67,7 @@ export default function App() {
         <Route path="ficha-academicas" element={<SecretariaFichaAcademics />} />
         <Route path="ficha/:usuarioId/editar" element={<EditarFicha />} />
         <Route path="reportes" element={<ReportesSecretaria />} />
+        <Route path="notificaciones" element={<Notificaciones />} />
       </Route>
 
       {/* ADMIN */}
