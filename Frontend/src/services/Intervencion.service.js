@@ -1,12 +1,21 @@
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = `${import.meta.env.VITE_API_URL}/proyectos-intervencion`;
+
+function getAuthHeaders() {
+  const token = localStorage.getItem("token");
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
 
 /* =========================
    OBTENER MIS PROYECTOS
 ========================= */
 
 export async function getMisIntervenciones() {
-  const res = await fetch(`${API_URL}/proyectos-intervencion/mis-proyectos`, {
-    credentials: "include",
+  const res = await fetch(`${API_URL}/mis-proyectos`, {
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok) {
@@ -21,12 +30,9 @@ export async function getMisIntervenciones() {
 ========================= */
 
 export async function createIntervencion(data) {
-  const res = await fetch(`${API_URL}/proyectos-intervencion/mis-proyectos`, {
+  const res = await fetch(`${API_URL}/mis-proyectos`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
@@ -42,12 +48,9 @@ export async function createIntervencion(data) {
 ========================= */
 
 export async function updateIntervencion(id, data) {
-  const res = await fetch(`${API_URL}/proyectos-intervencion/mis-proyectos/${id}`, {
+  const res = await fetch(`${API_URL}/mis-proyectos/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
+    headers: getAuthHeaders(),
     body: JSON.stringify(data),
   });
 
@@ -63,9 +66,9 @@ export async function updateIntervencion(id, data) {
 ========================= */
 
 export async function deleteIntervencion(id) {
-  const res = await fetch(`${API_URL}/proyectos-intervencion/mis-proyectos/${id}`, {
+  const res = await fetch(`${API_URL}/mis-proyectos/${id}`, {
     method: "DELETE",
-    credentials: "include",
+    headers: getAuthHeaders(),
   });
 
   if (!res.ok) {

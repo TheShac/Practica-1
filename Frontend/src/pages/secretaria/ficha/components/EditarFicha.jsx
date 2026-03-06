@@ -28,9 +28,6 @@ import {
   deletePatenteParaAcademico,
 } from "../../../../services/api.service";
 
-// ── Config de campos y columnas por sección ───────────────────────────────────
-// tipo: "estado" → renderiza EstadoSelect
-// tipo: "input"  → renderiza input de texto (por defecto)
 const SECCIONES_CONFIG = {
   magister: {
     titulo:    "Tesis Magíster",
@@ -72,7 +69,7 @@ const SECCIONES_CONFIG = {
     icono:     "bi-file-earmark-text-fill",
     idKey:     "publicacion_id",
     campo:     "titulo_articulo",
-    columnas:  ["autores", "autor_principal", "ano", "categoria_nombre", "nombre_revista", "titulo_articulo", "estado", "ISSN", "link_verificacion"],
+    columnas:  ["autores", "autor_principal", "ano", "categoria", "nombre_revista", "titulo_articulo", "estado", "ISSN", "link_verificacion"],
     emptyForm: { autores: "", autor_principal: "", ano: "", categoria_id: "", nombre_revista: "", titulo_articulo: "", estado: "Publicado", ISSN: "", link_verificacion: "" },
     campos: [
       { key: "autores",           label: "Autores",          col: "col-md-6", required: false },
@@ -179,7 +176,7 @@ function nombreCompleto(academico) {
 
 function labelCol(key) {
   if (key === "link_verificacion") return "Respaldo";
-  if (key === "categoria_nombre")  return "Indexados";
+  if (key === "categoria")  return "Indexados";
   if (key === "ano_adjudicacion")  return "Año Adjud.";
   if (key === "ISSN")              return "ISSN";
   if (key === "autor_principal")   return "Autor Principal";

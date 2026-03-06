@@ -5,7 +5,7 @@ import { pool } from "../../config/db.js"
 export async function listProyectosByUser(usuario_id) {
   const [rows] = await pool.query(
     `SELECT *
-     FROM proyecto_intervencion
+     FROM proyectos_intervencion
      WHERE usuario_id = ?
      ORDER BY ano_adjudicacion DESC`,
     [usuario_id]
@@ -20,7 +20,7 @@ export async function listProyectosByUser(usuario_id) {
 export async function getProyectoById(id) {
   const [rows] = await pool.query(
     `SELECT *
-     FROM proyecto_intervencion
+     FROM proyectos_intervencion
      WHERE proyecto_id = ?`,
     [id]
   );
@@ -42,7 +42,7 @@ export async function createProyecto(usuario_id, data) {
   } = data;
 
   const [result] = await pool.query(
-    `INSERT INTO proyecto_intervencion
+    `INSERT INTO proyectos_intervencion
      (usuario_id, titulo, fuente_financiamiento, ano_adjudicacion, periodo_ejecucion, rol_proyecto, link_verificacion)
      VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
@@ -73,7 +73,7 @@ export async function updateProyecto(id, data) {
   } = data;
 
   await pool.query(
-    `UPDATE proyecto_intervencion
+    `UPDATE proyectos_intervencion
      SET
        titulo = ?,
        fuente_financiamiento = ?,
@@ -99,7 +99,7 @@ export async function updateProyecto(id, data) {
 ========================= */
 export async function deleteProyecto(id) {
   await pool.query(
-    `DELETE FROM proyecto_intervencion
+    `DELETE FROM proyectos_intervencion
      WHERE proyecto_id = ?`,
     [id]
   );

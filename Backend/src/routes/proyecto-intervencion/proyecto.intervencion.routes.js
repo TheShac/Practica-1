@@ -25,25 +25,25 @@ router.delete("/mis-proyectos/:id", auth, deleteProyectoHandler);
 
 
 router.get(
-  "/academicos/:usuarioId/proyectos-",
+  "/academicos/:usuarioId/proyectos",
   auth,
   listProyectosDeAcademico
 );
 
 router.post(
-  "/academicos/:usuarioId/proyectos-",
+  "/academicos/:usuarioId/proyectos",
   auth,
   createProyectoParaAcademico
 );
 
 router.put(
-  "/academicos/:usuarioId/proyectos-/:id",
+  "/academicos/:usuarioId/proyectos/:id",
   auth,
   updateProyectoParaAcademico
 );
 
 router.delete(
-  "/academicos/:usuarioId/proyectos-/:id",
+  "/academicos/:usuarioId/proyectos/:id",
   auth,
   deleteProyectoParaAcademico
 );

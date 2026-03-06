@@ -230,6 +230,7 @@ export default function Publicaciones() {
                       <td>{r.autorPrincipal}</td>
                       <td>{r.anio}</td>
                       <td>{r.categoria}</td>
+                      <td>{r.revista}</td>
                       <td>{r.titulo}</td>
                       <td>
                         <span

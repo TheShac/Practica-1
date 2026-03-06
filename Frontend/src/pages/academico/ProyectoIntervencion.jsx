@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import FormModal from "@/components/FormModal.jsx";
+import FormModal from "../../components/FormModal.jsx";
 import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
 
 import {
@@ -11,11 +11,11 @@ import {
 
 const emptyForm = {
   titulo: "",
-  institucion: "",
-  anio: "",
-  rol: "",
-  descripcion: "",
-  respaldo: "",
+  fuente_financiamiento: "",
+  ano_adjudicacion: "",
+  periodo_ejecucion: "",
+  rol_proyecto: "",
+  link_verificacion: "",
 };
 
 export default function ProyectoIntervencion() {
@@ -34,34 +34,37 @@ export default function ProyectoIntervencion() {
       : "Editar Proyecto de Intervención";
   }, [mode]);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  const load = async () => {
+    const data = await getMisIntervenciones();
 
-  const loadData = async () => {
-    try {
-      setLoading(true);
-
-      const proyectos = await getMisIntervenciones();
-
-      const mapped = proyectos.map((p) => ({
+    setRows(
+      data.map((p) => ({
         id: p.proyecto_id,
-        titulo: p.titulo_proyecto || "",
-        institucion: p.institucion || "",
-        anio: p.ano ? String(p.ano) : "",
-        rol: p.rol || "",
-        descripcion: p.descripcion || "",
-        respaldo: p.link_verificacion || "",
-      }));
-
-      setRows(mapped);
-    } catch (err) {
-      console.error(err);
-      alert("Error cargando proyectos");
-    } finally {
-      setLoading(false);
-    }
+        titulo: p.titulo || "",
+        fuente_financiamiento: p.fuente_financiamiento || "",
+        ano_adjudicacion: p.ano_adjudicacion
+          ? String(p.ano_adjudicacion)
+          : "",
+        periodo_ejecucion: p.periodo_ejecucion || "",
+        rol_proyecto: p.rol_proyecto || "",
+        link_verificacion: p.link_verificacion || "",
+      }))
+    );
   };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        await load();
+      } catch (err) {
+        console.error(err);
+        alert(err.message || "Error cargando proyectos");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const openCreate = () => {
     setMode("create");
@@ -73,21 +76,23 @@ export default function ProyectoIntervencion() {
   const openEdit = (row) => {
     setMode("edit");
     setEditingId(row.id);
+
     setForm({
       titulo: row.titulo,
-      institucion: row.institucion,
-      anio: row.anio,
-      rol: row.rol,
-      descripcion: row.descripcion,
-      respaldo: row.respaldo,
+      fuente_financiamiento: row.fuente_financiamiento,
+      ano_adjudicacion: row.ano_adjudicacion,
+      periodo_ejecucion: row.periodo_ejecucion,
+      rol_proyecto: row.rol_proyecto,
+      link_verificacion: row.link_verificacion,
     });
+
     setShowModal(true);
   };
 
   const close = () => setShowModal(false);
 
   const submit = async () => {
-    if (!form.titulo || !form.anio) {
+    if (!form.titulo || !form.ano_adjudicacion) {
       alert("Completa al menos Título y Año.");
       return;
     }
@@ -96,12 +101,14 @@ export default function ProyectoIntervencion() {
 
     try {
       const payload = {
-        titulo_proyecto: form.titulo,
-        institucion: form.institucion,
-        ano: Number(form.anio),
-        rol: form.rol,
-        descripcion: form.descripcion,
-        link_verificacion: form.respaldo,
+        titulo: form.titulo,
+        fuente_financiamiento: form.fuente_financiamiento,
+        ano_adjudicacion: form.ano_adjudicacion
+          ? Number(form.ano_adjudicacion)
+          : null,
+        periodo_ejecucion: form.periodo_ejecucion,
+        rol_proyecto: form.rol_proyecto,
+        link_verificacion: form.link_verificacion,
       };
 
       if (mode === "create") {
@@ -110,12 +117,11 @@ export default function ProyectoIntervencion() {
         await updateIntervencion(editingId, payload);
       }
 
-      await loadData();
+      await load();
       setShowModal(false);
-
     } catch (err) {
       console.error(err);
-      alert("Error guardando proyecto");
+      alert(err.message || "Error guardando proyecto");
     } finally {
       setSaving(false);
     }
@@ -129,7 +135,7 @@ export default function ProyectoIntervencion() {
       setRows((prev) => prev.filter((r) => r.id !== id));
     } catch (err) {
       console.error(err);
-      alert("Error eliminando proyecto");
+      alert(err.message || "Error eliminando proyecto");
     }
   };
 
@@ -142,12 +148,7 @@ export default function ProyectoIntervencion() {
           <div style={{ color: "var(--muted)" }}>
             Tabla de proyectos de intervención
           </div>
-
-          <BtnNuevo
-            label="Nuevo Proyecto"
-            onClick={openCreate}
-            disabled={loading}
-          />
+          <BtnNuevo label="Nueva Proyecto" onClick={openCreate} disabled={loading} />
         </div>
 
         {loading ? (
@@ -159,8 +160,9 @@ export default function ProyectoIntervencion() {
                 <thead>
                   <tr>
                     <th>Título</th>
-                    <th>Institución</th>
+                    <th>Fuente financiamiento</th>
                     <th>Año</th>
+                    <th>Periodo</th>
                     <th>Rol</th>
                     <th>Respaldo</th>
                     <th className="text-end">Acciones</th>
@@ -171,13 +173,14 @@ export default function ProyectoIntervencion() {
                   {rows.map((r) => (
                     <tr key={r.id}>
                       <td>{r.titulo}</td>
-                      <td>{r.institucion}</td>
-                      <td>{r.anio}</td>
-                      <td>{r.rol}</td>
+                      <td>{r.fuente_financiamiento}</td>
+                      <td>{r.ano_adjudicacion}</td>
+                      <td>{r.periodo_ejecucion}</td>
+                      <td>{r.rol_proyecto}</td>
 
                       <td>
                         <a
-                          href={r.respaldo || "#"}
+                          href={r.link_verificacion || "#"}
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -205,7 +208,7 @@ export default function ProyectoIntervencion() {
 
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan="6" style={{ color: "var(--muted)" }}>
+                      <td colSpan="7" style={{ color: "var(--muted)" }}>
                         Sin registros.
                       </td>
                     </tr>
@@ -231,7 +234,6 @@ export default function ProyectoIntervencion() {
             : "Guardar cambios"
         }
       >
-
         <div className="row g-3">
 
           <div className="col-12">
@@ -249,13 +251,16 @@ export default function ProyectoIntervencion() {
 
           <div className="col-12 col-md-6">
             <label className="form-label" style={{ color: "var(--muted)" }}>
-              Institución
+              Fuente de financiamiento
             </label>
             <input
               className="form-control input-dark"
-              value={form.institucion}
+              value={form.fuente_financiamiento}
               onChange={(e) =>
-                setForm({ ...form, institucion: e.target.value })
+                setForm({
+                  ...form,
+                  fuente_financiamiento: e.target.value,
+                })
               }
             />
           </div>
@@ -266,9 +271,12 @@ export default function ProyectoIntervencion() {
             </label>
             <input
               className="form-control input-dark"
-              value={form.anio}
+              value={form.ano_adjudicacion}
               onChange={(e) =>
-                setForm({ ...form, anio: e.target.value })
+                setForm({
+                  ...form,
+                  ano_adjudicacion: e.target.value,
+                })
               }
             />
           </div>
@@ -279,23 +287,28 @@ export default function ProyectoIntervencion() {
             </label>
             <input
               className="form-control input-dark"
-              value={form.rol}
+              value={form.rol_proyecto}
               onChange={(e) =>
-                setForm({ ...form, rol: e.target.value })
+                setForm({
+                  ...form,
+                  rol_proyecto: e.target.value,
+                })
               }
             />
           </div>
 
           <div className="col-12">
             <label className="form-label" style={{ color: "var(--muted)" }}>
-              Descripción
+              Periodo de ejecución
             </label>
-            <textarea
+            <input
               className="form-control input-dark"
-              rows="3"
-              value={form.descripcion}
+              value={form.periodo_ejecucion}
               onChange={(e) =>
-                setForm({ ...form, descripcion: e.target.value })
+                setForm({
+                  ...form,
+                  periodo_ejecucion: e.target.value,
+                })
               }
             />
           </div>
@@ -306,16 +319,18 @@ export default function ProyectoIntervencion() {
             </label>
             <input
               className="form-control input-dark"
-              value={form.respaldo}
+              value={form.link_verificacion}
               onChange={(e) =>
-                setForm({ ...form, respaldo: e.target.value })
+                setForm({
+                  ...form,
+                  link_verificacion: e.target.value,
+                })
               }
               placeholder="https://..."
             />
           </div>
 
         </div>
-
       </FormModal>
     </div>
   );
