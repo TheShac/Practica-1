@@ -175,6 +175,38 @@ CREATE TABLE patente (
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE proyectos_intervencion (
+    proyecto_id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    titulo VARCHAR(300) NOT NULL,
+    fuente_financiamiento VARCHAR(200),
+    ano_adjudicacion YEAR,
+    periodo_ejecucion VARCHAR(100),
+    rol_proyecto VARCHAR(150),
+    link_verificacion TEXT,
+
+    FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
+        ON DELETE CASCADE
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE consultorias (
+    consultoria_id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    titulo VARCHAR(300) NOT NULL,
+    institucion_contratante VARCHAR(200),
+    ano_adjudicacion YEAR,
+    periodo_ejecucion VARCHAR(100),
+    objetivo TEXT,
+    link_verificacion TEXT,
+
+    FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
+        ON DELETE CASCADE
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE reporte_academico (
   id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -219,4 +251,42 @@ CREATE TABLE reporte_wos_global (
     ON UPDATE CURRENT_TIMESTAMP
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notificacion (
+    notificacion_id INT AUTO_INCREMENT PRIMARY KEY,
+    remitente_id    INT NOT NULL,
+    asunto          VARCHAR(200) NOT NULL,
+    mensaje         TEXT NOT NULL,
+    es_global       TINYINT(1) NOT NULL DEFAULT 0,   
+    creado_en       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notif_remitente FOREIGN KEY (remitente_id)
+        REFERENCES usuario(usuario_id) ON DELETE CASCADE
+) ENGINE=InnoDB 
+DEFAULT CHARSET=utf8mb4 
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notificacion_destinatario (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    notificacion_id INT NOT NULL,
+    usuario_id      INT NOT NULL,
+    leido           TINYINT(1) NOT NULL DEFAULT 0,
+    leido_en        TIMESTAMP NULL,
+    CONSTRAINT fk_nd_notif   FOREIGN KEY (notificacion_id) REFERENCES notificacion(notificacion_id) ON DELETE CASCADE,
+    CONSTRAINT fk_nd_usuario FOREIGN KEY (usuario_id)      REFERENCES usuario(usuario_id)           ON DELETE CASCADE,
+    UNIQUE KEY uq_nd (notificacion_id, usuario_id)
+) ENGINE=InnoDB 
+DEFAULT CHARSET=utf8mb4 
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE notificacion_global_leido (
+    id              INT AUTO_INCREMENT PRIMARY KEY,
+    notificacion_id INT NOT NULL,
+    usuario_id      INT NOT NULL,
+    leido_en        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_ngl_notif   FOREIGN KEY (notificacion_id) REFERENCES notificacion(notificacion_id) ON DELETE CASCADE,
+    CONSTRAINT fk_ngl_usuario FOREIGN KEY (usuario_id)      REFERENCES usuario(usuario_id)           ON DELETE CASCADE,
+    UNIQUE KEY uq_ngl (notificacion_id, usuario_id)
+) ENGINE=InnoDB 
+DEFAULT CHARSET=utf8mb4 
 COLLATE=utf8mb4_unicode_ci;

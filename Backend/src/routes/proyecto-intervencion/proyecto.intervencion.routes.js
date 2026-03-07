@@ -14,38 +14,16 @@ import {
 
 const router = Router();
 
-
 router.get("/mis-proyectos", auth, listMisProyectos);
-
 router.post("/mis-proyectos", auth, createProyectoHandler);
-
 router.put("/mis-proyectos/:id", auth, updateProyectoHandler);
-
 router.delete("/mis-proyectos/:id", auth, deleteProyectoHandler);
 
+const sec = [auth, authorizeRoles("Secretaria")];
 
-router.get(
-  "/academicos/:usuarioId/proyectos",
-  auth,
-  listProyectosDeAcademico
-);
-
-router.post(
-  "/academicos/:usuarioId/proyectos",
-  auth,
-  createProyectoParaAcademico
-);
-
-router.put(
-  "/academicos/:usuarioId/proyectos/:id",
-  auth,
-  updateProyectoParaAcademico
-);
-
-router.delete(
-  "/academicos/:usuarioId/proyectos/:id",
-  auth,
-  deleteProyectoParaAcademico
-);
+router.get("/academicos/:usuarioId/proyectos", ...sec, listProyectosDeAcademico);
+router.post( "/academicos/:usuarioId/proyectos", ...sec, createProyectoParaAcademico);
+router.put( "/academicos/:usuarioId/proyectos/:id", ...sec, updateProyectoParaAcademico);
+router.delete( "/academicos/:usuarioId/proyectos/:id", ...sec, deleteProyectoParaAcademico);
 
 export default router;
