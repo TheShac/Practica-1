@@ -238,12 +238,12 @@ export default function PerfilAcademico() {
         <h2>Información Laboral</h2>
         <div className="perfil-grid">
 
-          <div>
+          <div className="form-group">
             <label>Tipo de Contrato</label>
             <input value={formData.contrato || ""} disabled />
           </div>
 
-          <div>
+          <div className="form-group">
             <label>Rol</label>
             <input value={formData.rol_nombre || ""} disabled />
           </div>
@@ -257,7 +257,7 @@ export default function PerfilAcademico() {
 
         {/* TELÉFONO */}
         <div className="perfil-grid">
-          <div>
+          <div className="form-group">
             <label>Teléfono</label>
             <input
               name="telefono"
@@ -312,31 +312,41 @@ export default function PerfilAcademico() {
       <div className="perfil-card">
         <h2>Grado Académico</h2>
         <div className="perfil-grid">
+          <div className="form-group">
+            <label>Nombre del Grado</label>
+            <input
+              name="nombre_grado"
+              value={formData.grado_academico?.nombre_grado || ""}
+              onChange={handleGradoChange}
+              disabled={!editando}
+              placeholder="Nombre del Grado"
+            />
+          </div>
 
-          <input
-            name="nombre_grado"
-            value={formData.grado_academico?.nombre_grado || ""}
-            onChange={handleGradoChange}
-            disabled={!editando}
-            placeholder="Nombre del Grado"
-          />
+          <div className="form-group">
+            <label>Institucion Grado</label>
+            <input
+              name="institucion_grado"
+              value={formData.grado_academico?.institucion_grado || ""}
+              onChange={handleGradoChange}
+              disabled={!editando}
+              placeholder="Institución"
+            />
+          </div>
 
-          <input
-            name="institucion_grado"
-            value={formData.grado_academico?.institucion_grado || ""}
-            onChange={handleGradoChange}
-            disabled={!editando}
-            placeholder="Institución"
-          />
+          <div className="form-group">
+            <label>Pais del Grado</label>
+            <input
+              name="pais_grado"
+              value={formData.grado_academico?.pais_grado || ""}
+              onChange={handleGradoChange}
+              disabled={!editando}
+              placeholder="País"
+            />
+          </div>
 
-          <input
-            name="pais_grado"
-            value={formData.grado_academico?.pais_grado || ""}
-            onChange={handleGradoChange}
-            disabled={!editando}
-            placeholder="País"
-          />
-
+          <div className="form-group">
+          <label>Año del Grado</label>
           <input
             type="number"
             name="ano_grado"
@@ -345,6 +355,7 @@ export default function PerfilAcademico() {
             disabled={!editando}
             placeholder="Año"
           />
+          </div>
 
         </div>
       </div>
@@ -357,42 +368,53 @@ export default function PerfilAcademico() {
           <div key={index} className="perfil-titulacion-item">
 
           <div className="perfil-grid">
-        <input
-          placeholder="Título"
-          value={t.titulo}
-          onChange={(e) =>
-            handleTitulacionChange(index, "titulo", e.target.value)
-          }
-          disabled={!editando}
-        />
+            <div className="form-group">
+              <label>Nombre del Titulo</label>
+              <input
+                placeholder="Título"
+                value={t.titulo}
+                onChange={(e) =>
+                  handleTitulacionChange(index, "titulo", e.target.value)
+                }
+                disabled={!editando}
+              />
+            </div>
 
-        <input
-          placeholder="Institución"
-          value={t.institucion_titulacion}
-          onChange={(e) =>
-            handleTitulacionChange(index, "institucion_titulacion", e.target.value)
-          }
-          disabled={!editando}
-        />
+            <div className="form-group">
+              <label>Nombre de la Institucion</label>
+              <input
+                placeholder="Institución"
+                value={t.institucion_titulacion}
+                onChange={(e) =>
+                  handleTitulacionChange(index, "institucion_titulacion", e.target.value)
+                }
+                disabled={!editando}
+              />
+            </div>
+            <div className="form-group">
+              <label>Pais de la Titulacion</label>
+              <input
+                placeholder="País"
+                value={t.pais_titulacion}
+                onChange={(e) =>
+                  handleTitulacionChange(index, "pais_titulacion", e.target.value)
+                }
+                disabled={!editando}
+              />
+            </div>
 
-        <input
-          placeholder="País"
-          value={t.pais_titulacion}
-          onChange={(e) =>
-            handleTitulacionChange(index, "pais_titulacion", e.target.value)
-          }
-          disabled={!editando}
-        />
-
-        <input
-          type="number"
-          placeholder="Año"
-          value={t.ano_titulacion}
-          onChange={(e) =>
-            handleTitulacionChange(index, "ano_titulacion", e.target.value)
-          }
-          disabled={!editando}
-        />
+            <div className="form-group">
+            <label>Año de Titulacion</label>
+            <input
+              type="number"
+              placeholder="Año"
+              value={t.ano_titulacion}
+              onChange={(e) =>
+                handleTitulacionChange(index, "ano_titulacion", e.target.value)
+              }
+              disabled={!editando}
+            />
+            </div>
       </div>
 
       {editando && (
