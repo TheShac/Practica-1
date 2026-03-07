@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getReporteGeneral, updateReporteGeneral } from "../../../services/reporteGeneral.service";
+import { getReporteGeneral, updateReporteGeneral, downloadReporteGeneralExcel } from "../../../services/reporteGeneral.service";
 import ReporteSeccionGrupo from "./components/ReporteSeccionGrupo";
 import ReporteTablaPromedios from "./components/ReporteTablaPromedios";
 import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
@@ -76,13 +76,33 @@ export default function ReportesSecretaria() {
     }
   };
 
+  const handleDescargarExcel = async () => {
+    try {
+      const blob = await downloadReporteGeneralExcel();
+      const url  = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href     = url;
+      link.download = `reporte_general_${new Date().getFullYear()}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Error al descargar el reporte");
+    }
+  };
+
+  const anioActual = new Date().getFullYear();
+  const anioInicio = anioActual - 4;
+
   return (
     <div>
       <h3 className="mb-3">Reporte General Académico</h3>
       <div className="panel-card">
 
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <button className="btn btn-outline-success btn-sm">
+          <button className="btn btn-outline-success btn-sm" onClick={handleDescargarExcel}>
             <i className="bi bi-file-earmark-excel me-2" />
             Descargar Excel
           </button>
@@ -98,19 +118,19 @@ export default function ReportesSecretaria() {
               <table className="table table-dark table-dark-custom align-middle text-center fa-table small">
                 <thead>
                   <tr>
-                    <th>Nombre Académico</th>
-                    <th>Año ingreso al programa</th>
-                    <th>Total publ. WoS/SCOPUS (1)</th>
-                    <th>Artículos Scielo/Latindex/ERIH</th>
-                    <th>Otros artículos</th>
-                    <th>Libros en editorial de relevancia en el área, referato externo y comité editorial</th>
-                    <th>Libro en otra editorial</th>
-                    <th>Capitulo de libro en editorial de relevancia en el área, referato externo y comité editorial</th>
-                    <th>Capítulo de libro en otra editorial</th>
-                    <th>Edición crítica y traducción anotada de un libro en editorial de relevancia en el área, referato externo y comité editorial</th>
-                    <th>Edición crítica y traducción anotada de un libro en otra editorial</th>
-                    <th>Proyectos FONDECYT, FONDEF, FONDAP, BASALES, CORFO, ANILLO, FONIS, FONIDE o Instituto Milenio como investigador responsable (2)</th>
-                    <th>Otros proyectos con: <br/>1) evaluación externa por pares. <br/>2) Financiamiento externo. <br/>3) investigación de carácter claramente disciplinar</th>
+                    <th style={{ minWidth: 160, verticalAlign: "middle" }}>Nombre Académico</th>
+                    <th style={{ minWidth: 80, verticalAlign: "middle" }}>Año ingreso al programa</th>
+                    <th style={{ minWidth: 120, verticalAlign: "middle" }}>Total publ. WoS/SCOPUS (1)</th>
+                    <th style={{ minWidth: 120, verticalAlign: "middle" }}>Artículos Scielo/Latindex/ERIH</th>
+                    <th style={{ minWidth: 100, verticalAlign: "middle" }}>Otros artículos</th>
+                    <th style={{ minWidth: 180, verticalAlign: "middle" }}>Libros en editorial de relevancia en el área, referato externo y comité editorial</th>
+                    <th style={{ minWidth: 140, verticalAlign: "middle" }}>Libro en otra editorial</th>
+                    <th style={{ minWidth: 180, verticalAlign: "middle" }}>Capitulo de libro en editorial de relevancia en el área, referato externo y comité editorial</th>
+                    <th style={{ minWidth: 140, verticalAlign: "middle" }}>Capítulo de libro en otra editorial</th>
+                    <th style={{ minWidth: 200, verticalAlign: "middle" }}>Edición crítica y traducción anotada de un libro en editorial de relevancia en el área, referato externo y comité editorial</th>
+                    <th style={{ minWidth: 160, verticalAlign: "middle" }}>Edición crítica y traducción anotada de un libro en otra editorial</th>
+                    <th style={{ minWidth: 200, verticalAlign: "middle" }}>Proyectos FONDECYT, FONDEF, FONDAP, BASALES, CORFO, ANILLO, FONIS, FONIDE o Instituto Milenio como investigador responsable (2)</th>
+                    <th style={{ minWidth: 180, verticalAlign: "middle" }}>Otros proyectos con: <br/>1) evaluación externa por pares. <br/>2) Financiamiento externo. <br/>3) investigación de carácter claramente disciplinar</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -140,7 +160,7 @@ export default function ReportesSecretaria() {
 
         <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
           <div>(1) Sólo se registran artículos como primer autor.</div>
-          <div>(2) Se registran los proyectos obtenidos desde 2019, sin considerar los proyectos en curso.</div>
+          <div>(2) Se registran los proyectos obtenidos desde {anioInicio}, sin considerar los proyectos en curso.</div>
         </div>
 
         <ReporteTablaPromedios

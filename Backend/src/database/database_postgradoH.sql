@@ -251,6 +251,38 @@ CREATE TABLE reporte_wos_global (
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE proyectos_intervencion (
+    proyecto_id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    titulo VARCHAR(300) NOT NULL,
+    fuente_financiamiento VARCHAR(200),
+    ano_adjudicacion YEAR,
+    periodo_ejecucion VARCHAR(100),
+    rol_proyecto VARCHAR(150),
+    link_verificacion TEXT,
+
+    FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
+        ON DELETE CASCADE
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE consultorias (
+    consultoria_id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NOT NULL,
+    titulo VARCHAR(300) NOT NULL,
+    institucion_contratante VARCHAR(200),
+    ano_adjudicacion YEAR,
+    periodo_ejecucion VARCHAR(100),
+    objetivo TEXT,
+    link_verificacion TEXT,
+
+    FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
+        ON DELETE CASCADE
+)ENGINE=InnoDB
+DEFAULT CHARSET=utf8mb4
+COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE notificacion (
     notificacion_id INT AUTO_INCREMENT PRIMARY KEY,
     remitente_id    INT NOT NULL,

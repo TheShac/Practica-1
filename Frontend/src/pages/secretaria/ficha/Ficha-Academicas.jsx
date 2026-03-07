@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAcademicos, downloadFichaExcel } from "../../../services/api.js";
+import { getAcademicos, downloadFichaExcel, downloadFichaExcelMagister } from "../../../services/api.js";
 import FichaAcademicaModal from "../../../components/FichaAcademicaModal.jsx";
 
 const ITEMS_PER_PAGE = 15;
@@ -109,6 +109,23 @@ export default function FichaAcademicas() {
       alert("Error al descargar ficha académica");
     }
   }
+
+  async function handleDownloadM(usuarioId) {
+    try {
+      const blob = await downloadFichaExcelMagister(usuarioId);
+      const url  = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href     = url;
+      link.download = `ficha_magister_${usuarioId}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      alert("Error al descargar ficha magister");
+    }
+  }
   
   return (
     <div>
@@ -211,7 +228,8 @@ export default function FichaAcademicas() {
 
                           <button
                             type="button"
-                            className="btn btn-sm btn-outline-warning me-2"
+                            className="btn btn-sm me-2"
+                            style={{ borderColor: "#f97316", color: "#f97316" }}
                             onClick={() => handleEdit(a.usuario_id)}
                           >
                             <i className="bi bi-pencil" />
@@ -225,10 +243,21 @@ export default function FichaAcademicas() {
                           </button>
 
                           <button
-                            className="btn btn-sm btn-outline-success me-2"
+                            className="btn btn-sm me-2"
+                            style={{ borderColor: "#0ea5e9", color: "#0ea5e9" }}
                             onClick={() => handleDownload(a.usuario_id)}
                           >
-                            <i className="bi bi-download" />
+                            <i className="bi bi-download me-1" />
+                            <span style={{ fontWeight: 700, fontSize: 14 }}>D</span>
+                          </button>
+
+                          <button
+                            className="btn btn-sm"
+                            style={{ borderColor: "#eab308", color: "#eab308" }}
+                            onClick={() => handleDownloadM(a.usuario_id)}
+                          >
+                            <i className="bi bi-download me-1" />
+                            <span style={{ fontWeight: 700, fontSize: 14 }}>M</span>
                           </button>
 
                         </td>

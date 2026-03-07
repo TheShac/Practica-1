@@ -46,3 +46,13 @@ export async function updateReporteGeneral(reporte, wosGlobal) {
 
   return await response.json();
 }
+
+export async function downloadReporteGeneralExcel() {
+  const token = localStorage.getItem("token");
+  const res   = await fetch(
+    `${import.meta.env.VITE_API_URL}/profesional-apoyo/export-excel`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  if (!res.ok) throw new Error("Error descargando reporte");
+  return res.blob();
+}

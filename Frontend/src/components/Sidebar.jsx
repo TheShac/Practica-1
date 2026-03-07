@@ -64,27 +64,34 @@ export default function Sidebar({ collapsed }) {
   }, [rol]);
 
   const title =
-    rol === "Secretaria" ? "Secretaría" : rol === "Admin" ? "Admin" : "Académico";
+    rol === "Secretaria" ? "Profesional de Apoyo" : rol === "Admin" ? "Admin" : "Académico";
+
+  const sidebarWidth = collapsed ? "80px" : "260px";
 
   return (
     <aside
       style={{
-        width: collapsed ? "80px" : "260px",
+        width: sidebarWidth,
+        minWidth: sidebarWidth,
+        maxWidth: sidebarWidth,
+        flexShrink: 0,
         background: "#2a406a",
-        transition: "all .2s ease",
+        transition: "width .2s ease, min-width .2s ease, max-width .2s ease",
         minHeight: "100vh",
         padding: "20px 15px",
+        overflowX: "hidden",
+        boxSizing: "border-box",
       }}
     >
       <div className="d-flex align-items-center gap-2 mb-4">
         <img
           src="/logo_UTA.png"
           alt="UTA"
-          style={{ width: 42, height: 42, objectFit: "contain" }}
+          style={{ width: 42, height: 42, objectFit: "contain", flexShrink: 0 }}
         />
 
         {!collapsed && (
-          <div>
+          <div style={{ overflow: "hidden", whiteSpace: "nowrap" }}>
             <div style={{ color: "#daa136", fontWeight: 700, fontSize: "16px" }}>
               {title}
             </div>
@@ -110,6 +117,8 @@ export default function Sidebar({ collapsed }) {
                     color: "#daa136",
                     fontWeight: 600,
                     paddingLeft: 10,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
                   }}
                 >
                   {item.label}
@@ -123,9 +132,9 @@ export default function Sidebar({ collapsed }) {
               <div key={`submenu-${idx}`}>
                 <div
                   className="d-flex align-items-center gap-2 px-3 py-2 rounded"
-                  style={{ color: "#fff" }}
+                  style={{ color: "#fff", whiteSpace: "nowrap", overflow: "hidden" }}
                 >
-                  <i className={`bi ${item.icon}`} />
+                  <i className={`bi ${item.icon}`} style={{ flexShrink: 0 }} />
                   {!collapsed && <span>{item.label}</span>}
                 </div>
 
@@ -140,7 +149,7 @@ export default function Sidebar({ collapsed }) {
                             isActive ? "bg-secondary bg-opacity-50" : ""
                           }`
                         }
-                        style={{ color: "#fff", fontSize: "14px" }}
+                        style={{ color: "#fff", fontSize: "14px", whiteSpace: "nowrap", overflow: "hidden" }}
                       >
                         {child.label}
                       </NavLink>
@@ -160,9 +169,9 @@ export default function Sidebar({ collapsed }) {
                   isActive ? "bg-secondary bg-opacity-50" : ""
                 }`
               }
-              style={{ color: "#fff", textDecoration: "none" }}
+              style={{ color: "#fff", textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden" }}
             >
-              <i className={`bi ${item.icon}`} />
+              <i className={`bi ${item.icon}`} style={{ flexShrink: 0 }} />
               {!collapsed && <span>{item.label}</span>}
             </NavLink>
           );

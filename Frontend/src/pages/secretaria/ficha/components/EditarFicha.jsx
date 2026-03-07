@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getFichaAcademica } from "../../../../services/ficha.service";
 import { getAcademicos, getCategorias } from "../../../../services/api";
 import FormModal from "../../../../components/FormModal";
-import EstadoSelect from "../../../../components/forms/statusSelect/EstadoSelect.jsx";
+import EstadoSelect from "../../../../components/forms/statusSelect/EstadoSelect";
 import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
 import IssnInput from "@/components/ui/inputs/IssnInput.jsx";
 
@@ -27,6 +27,19 @@ import {
   updatePatenteParaAcademico,
   deletePatenteParaAcademico,
 } from "../../../../services/api.service";
+
+import {
+  listIntervencionesDeAcademico,
+  createIntervencionParaAcademico,
+  updateIntervencionParaAcademico,
+  deleteIntervencionParaAcademico,
+} from "../../../../services/Intervencion.service.js";
+
+import {
+  createConsultoriaParaAcademico,
+  updateConsultoriaParaAcademico,
+  deleteConsultoriaParaAcademico,
+} from "../../../../services/consultoria.service.js";
 
 const SECCIONES_CONFIG = {
   magister: {
@@ -69,7 +82,7 @@ const SECCIONES_CONFIG = {
     icono:     "bi-file-earmark-text-fill",
     idKey:     "publicacion_id",
     campo:     "titulo_articulo",
-    columnas:  ["autores", "autor_principal", "ano", "categoria", "nombre_revista", "titulo_articulo", "estado", "ISSN", "link_verificacion"],
+    columnas:  ["autores", "autor_principal", "ano", "categoria_nombre", "nombre_revista", "titulo_articulo", "estado", "ISSN", "link_verificacion"],
     emptyForm: { autores: "", autor_principal: "", ano: "", categoria_id: "", nombre_revista: "", titulo_articulo: "", estado: "Publicado", ISSN: "", link_verificacion: "" },
     campos: [
       { key: "autores",           label: "Autores",          col: "col-md-6", required: false },
@@ -153,6 +166,40 @@ const SECCIONES_CONFIG = {
       { key: "link_verificacion", label: "Respaldo (link)",       col: "col-12",   required: false, tipo: "respaldo" },
     ],
   },
+
+  intervenciones: {
+    titulo:    "Proy. Intervención",
+    icono:     "bi-briefcase",
+    idKey:     "proyecto_id",
+    campo:     "titulo",
+    columnas:  ["titulo", "fuente_financiamiento", "ano_adjudicacion", "periodo_ejecucion", "rol_proyecto", "link_verificacion"],
+    emptyForm: { titulo: "", fuente_financiamiento: "", ano_adjudicacion: "", periodo_ejecucion: "", rol_proyecto: "", link_verificacion: "" },
+    campos: [
+      { key: "titulo",                label: "Título*",                  col: "col-12",   required: true  },
+      { key: "fuente_financiamiento", label: "Fuente financiamiento",    col: "col-md-6", required: false },
+      { key: "ano_adjudicacion",      label: "Año adjudicación",         col: "col-md-3", required: false },
+      { key: "periodo_ejecucion",     label: "Período ejecución",        col: "col-md-3", required: false },
+      { key: "rol_proyecto",          label: "Rol",                      col: "col-md-4", required: false },
+      { key: "link_verificacion",     label: "Respaldo (link)",          col: "col-12",   required: false, tipo: "respaldo" },
+    ],
+  },
+
+  consultorias: {
+    titulo:    "Consultorías",
+    icono:     "bi-briefcase-fill",
+    idKey:     "consultoria_id",
+    campo:     "titulo",
+    columnas:  ["titulo", "institucion_contratante", "ano_adjudicacion", "periodo_ejecucion", "objetivo", "link_verificacion"],
+    emptyForm: { titulo: "", institucion_contratante: "", ano_adjudicacion: "", periodo_ejecucion: "", objetivo: "", link_verificacion: "" },
+    campos: [
+      { key: "titulo",                  label: "Título*",                  col: "col-12",   required: true  },
+      { key: "institucion_contratante", label: "Institución contratante",  col: "col-md-6", required: false },
+      { key: "ano_adjudicacion",        label: "Año adjudicación",         col: "col-md-3", required: false },
+      { key: "periodo_ejecucion",       label: "Período ejecución",        col: "col-md-3", required: false },
+      { key: "objetivo",                label: "Objetivo",                 col: "col-12",   required: false, tipo: "textarea" },
+      { key: "link_verificacion",       label: "Respaldo (link)",          col: "col-12",   required: false, tipo: "respaldo" },
+    ],
+  },
 };
 
 const SECCIONES_LIST = Object.entries(SECCIONES_CONFIG).map(([key, cfg]) => ({
@@ -176,7 +223,7 @@ function nombreCompleto(academico) {
 
 function labelCol(key) {
   if (key === "link_verificacion") return "Respaldo";
-  if (key === "categoria")  return "Indexados";
+  if (key === "categoria_nombre")  return "Indexados";
   if (key === "ano_adjudicacion")  return "Año Adjud.";
   if (key === "ISSN")              return "ISSN";
   if (key === "autor_principal")   return "Autor Principal";
@@ -196,6 +243,11 @@ function labelCol(key) {
   if (key === "rol_guia")          return "Rol";
   if (key === "titulo_tesis")      return "Título";
   if (key === "nombre_programa")   return "Programa";
+  if (key === "fuente_financiamiento")  return "Fuente Financiamiento";
+  if (key === "rol_proyecto")           return "Rol";
+  if (key === "periodo_ejecucion")      return "Período";
+  if (key === "institucion_contratante") return "Institución";
+  if (key === "objetivo")               return "Objetivo";
   return key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
@@ -254,6 +306,16 @@ export default function EditarFicha() {
       update: (id, f) => updatePatenteParaAcademico(usuarioId, id, f),
       delete: (id) => deletePatenteParaAcademico(usuarioId, id),
     },
+    intervenciones: {
+      create: (f) => createIntervencionParaAcademico(usuarioId, f),
+      update: (id, f) => updateIntervencionParaAcademico(usuarioId, id, f),
+      delete: (id) => deleteIntervencionParaAcademico(usuarioId, id),
+    },
+    consultorias: {
+      create: (f) => createConsultoriaParaAcademico(usuarioId, f),
+      update: (id, f) => updateConsultoriaParaAcademico(usuarioId, id, f),
+      delete: (id) => deleteConsultoriaParaAcademico(usuarioId, id),
+    },
   }), [usuarioId]);
 
   const modalTitle = useMemo(() => {
@@ -264,20 +326,39 @@ export default function EditarFicha() {
   }, [mode, config]);
 
   const loadFicha = async () => {
-    const res = await getFichaAcademica(usuarioId);
-    setData(res);
+    const [fichaRes, intervencionesRes, consultoriasRes] = await Promise.all([
+      getFichaAcademica(usuarioId),
+      listIntervencionesDeAcademico(usuarioId),
+      fetch(`${import.meta.env.VITE_API_URL}/consultorias/academico/${usuarioId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      }).then((r) => r.json()),
+    ]);
+    setData({
+      ...fichaRes,
+      intervenciones: intervencionesRes,
+      consultorias:   consultoriasRes,
+    });
   };
 
   useEffect(() => {
     (async () => {
       try {
         setLoading(true);
-        const [fichaRes, academicosRes, categoriasRes] = await Promise.all([
-          getFichaAcademica(usuarioId),
-          getAcademicos(),
-          getCategorias(),
-        ]);
-        setData(fichaRes);
+        const [fichaRes, academicosRes, categoriasRes, intervencionesRes, consultoriasRes] =
+          await Promise.all([
+            getFichaAcademica(usuarioId),
+            getAcademicos(),
+            getCategorias(),
+            listIntervencionesDeAcademico(usuarioId),
+            fetch(`${import.meta.env.VITE_API_URL}/consultorias/academico/${usuarioId}`, {
+              headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+            }).then((r) => r.json()),
+          ]);
+        setData({
+          ...fichaRes,
+          intervenciones: intervencionesRes,
+          consultorias:   consultoriasRes,
+        });
         setCategorias(categoriasRes);
         const found = academicosRes.find(
           (a) => String(a.usuario_id) === String(usuarioId)
@@ -377,6 +458,8 @@ export default function EditarFicha() {
       case "capitulos":       return data.capitulos ?? [];
       case "investigaciones": return data.investigaciones ?? [];
       case "patentes":        return data.patentes ?? [];
+      case "intervenciones":  return data.intervenciones ?? [];
+      case "consultorias":    return data.consultorias ?? [];
       default:                return [];
     }
   };
@@ -597,6 +680,18 @@ export default function EditarFicha() {
                     {errors[key] && (
                       <div className="invalid-feedback">{errors[key]}</div>
                     )}
+                  </div>
+                ) : tipo === "textarea" ? (
+                  <div>
+                    <label className="form-label" style={{ color: "var(--muted)" }}>{label}</label>
+                    <textarea
+                      className={`form-control input-dark${errors[key] ? " is-invalid" : ""}`}
+                      rows={3}
+                      value={form[key] ?? ""}
+                      onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                      placeholder={placeholder ?? ""}
+                    />
+                    {errors[key] && <div className="invalid-feedback">{errors[key]}</div>}
                   </div>
                 ) : (
                   <>

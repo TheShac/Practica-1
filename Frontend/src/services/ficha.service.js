@@ -17,3 +17,5 @@ export async function getFichaAcademica(usuarioId) {
 
   return await response.json();
 }
+
+

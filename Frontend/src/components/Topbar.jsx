@@ -22,7 +22,13 @@ export default function Topbar({ collapsed, onToggleSidebar }) {
   }, [user]);
 
   const displayRole = useMemo(() => {
-    return user?.rol || "—";
+    if (!user?.rol) return "—";
+
+    if (user.rol === "Secretaria") {
+      return "Profesional de Apoyo";
+    }
+
+    return user.rol;
   }, [user]);
 
   const roleIcon = useMemo(() => {

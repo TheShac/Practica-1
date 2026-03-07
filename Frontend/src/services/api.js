@@ -177,3 +177,19 @@ export async function downloadFichaExcel(usuarioId) {
 
   return await res.blob();
 }
+
+export async function downloadFichaExcelMagister(usuarioId) {
+  const res = await fetch(`${API_URL}/ficha/${usuarioId}/export-magister`, {
+    method: "GET",
+    headers: {
+      ...authHeader(),
+    },
+  });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data?.message || "Error descargando ficha magister");
+  }
+
+  return await res.blob();
+}

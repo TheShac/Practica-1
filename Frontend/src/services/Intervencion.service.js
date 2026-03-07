@@ -77,3 +77,42 @@ export async function deleteIntervencion(id) {
 
   return res.json();
 }
+
+// Secretaria
+
+export async function listIntervencionesDeAcademico(usuarioId) {
+  const res = await fetch(`${API_URL}/academicos/${usuarioId}/proyectos`, {
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Error obteniendo proyectos de intervención");
+  return res.json();
+}
+
+export async function createIntervencionParaAcademico(usuarioId, data) {
+  const res = await fetch(`${API_URL}/academicos/${usuarioId}/proyectos`, {
+    method: "POST",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Error creando proyecto de intervención");
+  return res.json();
+}
+
+export async function updateIntervencionParaAcademico(usuarioId, id, data) {
+  const res = await fetch(`${API_URL}/academicos/${usuarioId}/proyectos/${id}`, {
+    method: "PUT",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Error actualizando proyecto de intervención");
+  return res.json();
+}
+
+export async function deleteIntervencionParaAcademico(usuarioId, id) {
+  const res = await fetch(`${API_URL}/academicos/${usuarioId}/proyectos/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(),
+  });
+  if (!res.ok) throw new Error("Error eliminando proyecto de intervención");
+  return res.json();
+}
