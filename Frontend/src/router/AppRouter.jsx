@@ -14,6 +14,7 @@ import CapLibro from "../pages/academico/CapLibro.jsx";
 import Investigacion from "../pages/academico/Investigacion.jsx";
 import Patente from "../pages/academico/Patente.jsx";
 import ProyectoIntervencion from "../pages/academico/ProyectoIntervencion.jsx";
+import Consultorias from "../pages/academico/Consultorias.jsx";
 
 // Secretaria
 import SecretariaLayout from "../layouts/SecretariaLayout.jsx";
@@ -51,6 +52,7 @@ export default function App() {
         <Route path="investigacion" element={<Investigacion />} />
         <Route path="patentes" element={<Patente />} />
         <Route path="intervencion" element={<ProyectoIntervencion />} />
+        <Route path="consultorias" element={<Consultorias />} />
       </Route>
 
       {/* SECRETARIA */}

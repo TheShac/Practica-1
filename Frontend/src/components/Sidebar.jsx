@@ -38,6 +38,7 @@ export default function Sidebar({ collapsed }) {
       { to: "/academico/investigacion", icon: "bi-diagram-3", label: "Investigación" },
       { to: "/academico/patentes", icon: "bi-award", label: "Patentes" },
       { to: "/academico/intervencion", icon: "bi-briefcase", label: "Proyecto de Intervencion"},
+      { to: "/academico/consultorias", icon: "bi-briefcase-fill", label: "Consultorías" },
     ];
 
     // Menú Secretaria
