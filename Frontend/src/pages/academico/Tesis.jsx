@@ -185,7 +185,7 @@ export default function Tesis() {
 
   return (
     <div>
-      <h3 className="mb-3">
+      <h3 className="mb-3 perfil-title">
         Tesis {nivelUpper === "MAGISTER" ? "Magíster" : "Doctorado"}
       </h3>
 

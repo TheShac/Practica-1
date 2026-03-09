@@ -152,7 +152,7 @@ export default function CapLibro() {
 
   return (
     <div>
-      <h3 className="mb-3">Capítulos de libro</h3>
+      <h3 className="mb-3 perfil-title">Capítulos de libro</h3>
 
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">

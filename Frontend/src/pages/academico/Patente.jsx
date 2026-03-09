@@ -123,7 +123,7 @@ export default function Patente() {
 
   return (
     <div>
-      <h3 className="mb-3">Patentes</h3>
+      <h3 className="mb-3 perfil-title">Patentes</h3>
 
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
@@ -179,7 +179,7 @@ export default function Patente() {
                               ? "badge-publicado"
                               : r.estado === "En revisión"
                               ? "badge-revision"
-                              : r.estado === "Aceptado")
+                              : r.estado === "Aceptado" ? "badge-aceptado" : "")
                           }
                         >
                           {r.estado}

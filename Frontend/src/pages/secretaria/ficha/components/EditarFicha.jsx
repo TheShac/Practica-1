@@ -474,7 +474,7 @@ export default function EditarFicha() {
 
   return (
     <div>
-      <h3 className="mb-3">
+      <h3 className="mb-3 perfil-title">
         Ficha Académica{academico ? ` — ${nombreCompleto(academico)}` : ""}
       </h3>
 

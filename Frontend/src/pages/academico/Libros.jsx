@@ -143,7 +143,7 @@ export default function Libros() {
 
   return (
     <div>
-      <h3 className="mb-3">Libros</h3>
+      <h3 className="mb-3 perfil-title">Libros</h3>
 
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">

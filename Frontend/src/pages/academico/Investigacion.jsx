@@ -136,7 +136,7 @@ export default function Investigacion() {
 
   return (
     <div>
-      <h3 className="mb-3">Investigación</h3>
+      <h3 className="mb-3 perfil-title">Investigación</h3>
 
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">

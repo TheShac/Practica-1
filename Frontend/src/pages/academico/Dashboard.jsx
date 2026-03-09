@@ -115,7 +115,7 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h3 className="mb-3">Dashboard</h3>
+      <h3 className="mb-3 perfil-title">Dashboard</h3>
 
       <div className="row g-3">
 
@@ -151,7 +151,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Accesos rápidos ── */}
+        {/* ── Accesos rápidos ── 
         <div className="col-12 col-lg-6">
           <div className="card-dark p-3">
             <div className="fw-semibold mb-2">Accesos rápidos</div>
@@ -159,7 +159,7 @@ export default function Dashboard() {
               Botones / métricas
             </div>
           </div>
-        </div>
+        </div>*/}
 
       </div>
     </div>

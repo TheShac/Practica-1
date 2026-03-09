@@ -129,7 +129,7 @@ export default function FichaAcademicas() {
   
   return (
     <div>
-      <h3 className="mb-3">Fichas Académicas</h3>
+      <h3 className="mb-3 perfil-title">Fichas Académicas</h3>
 
       <div className="panel-card">
         {/* HEADER */}
