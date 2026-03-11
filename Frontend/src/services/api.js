@@ -37,22 +37,22 @@ export async function getMisPublicaciones() {
   return data;
 }
 
-export async function createPublicacion(payload) {
+export async function createPublicacion(formData) {
   const res = await fetch(`${API_URL}/publicaciones`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify(payload),
+    headers: { ...authHeader() },
+    body: formData,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message || "Error creando publicación");
   return data;
 }
 
-export async function updatePublicacion(id, payload) {
+export async function updatePublicacion(id, formData) {
   const res = await fetch(`${API_URL}/publicaciones/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify(payload),
+    headers: { ...authHeader() },
+    body: formData,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message || "Error actualizando publicación");

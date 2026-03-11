@@ -5,6 +5,18 @@ import {
   updatePublicacion,
   deletePublicacion,
 } from "../../models/publicaciones/publicacion.model.js";
+import { uploadToGoogleDrive } from "../../service/storage.service.js";
+
+async function handleDriveUpload(req, currentLink, currentId) {
+  if (req.file) {
+    const driveFile = await uploadToGoogleDrive(req.file);
+    return {
+      link: driveFile.webViewLink,
+      id: driveFile.id
+    };
+  }
+  return { link: currentLink, id: currentId };
+}
 
 function isOwner(row, usuario_id) {
   return row && Number(row.usuario_id) === Number(usuario_id);
@@ -34,12 +46,15 @@ export async function createPublicacionHandler(req, res) {
       autor_principal,
       autores,
       link_verificacion,
+      google_drive_id,
       estado,
     } = req.body;
 
     if (!categoria_id || !titulo_articulo) {
       return res.status(400).json({ message: "categoria_id y titulo_articulo son obligatorios" });
     }
+
+    const driveData = await handleDriveUpload(req, req.body.link_verificacion, null);
 
     const newId = await createPublicacion(usuario_id, {
       categoria_id,
@@ -49,7 +64,8 @@ export async function createPublicacionHandler(req, res) {
       ano,
       autor_principal,
       autores,
-      link_verificacion,
+      link_verificacion: driveData.link,
+      google_drive_id: driveData.id,
       estado,
     });
 
@@ -75,7 +91,13 @@ export async function updatePublicacionHandler(req, res) {
       return res.status(400).json({ message: "categoria_id y titulo_articulo son obligatorios" });
     }
 
-    await updatePublicacion(id, req.body);
+    const driveData = await handleDriveUpload(req, req.body.link_verificacion, existing.google_drive_id);
+
+    await updatePublicacion(id, {
+      ...req.body,
+      link_verificacion: driveData.link,
+      google_drive_id: driveData.id
+    });
 
     const updated = await getPublicacionById(id);
     res.json(updated);
@@ -116,12 +138,13 @@ export async function listPublicacionesDeAcademico(req, res) {
 export async function createPublicacionParaAcademico(req, res) {
   try {
     const { usuarioId } = req.params;
-    const { categoria_id, titulo_articulo, nombre_revista, ISSN, ano, autor_principal, autores, link_verificacion, estado } = req.body;
+    const { categoria_id, titulo_articulo, nombre_revista, ISSN, ano, autor_principal, autores, link_verificacion, google_drive_id, estado } = req.body;
 
-    if (!categoria_id || !titulo_articulo)
-      return res.status(400).json({ message: "categoria_id y titulo_articulo son obligatorios" });
+    if (!categoria_id || !titulo_articulo) return res.status(400).json({ message: "categoria_id y titulo_articulo son obligatorios" });
 
-    const newId = await createPublicacion(usuarioId, { categoria_id, titulo_articulo, nombre_revista, ISSN, ano, autor_principal, autores, link_verificacion, estado });
+    const driveData = await handleDriveUpload(req, req.body.link_verificacion, null);
+
+    const newId = await createPublicacion(usuarioId, { categoria_id, titulo_articulo, nombre_revista, ISSN, ano, autor_principal, autores, link_verificacion: driveData.link, google_drive_id: driveData.id, estado });
     const created = await getPublicacionById(newId);
     res.status(201).json(created);
   } catch (err) {
@@ -140,7 +163,13 @@ export async function updatePublicacionParaAcademico(req, res) {
     if (!req.body.categoria_id || !req.body.titulo_articulo)
       return res.status(400).json({ message: "categoria_id y titulo_articulo son obligatorios" });
 
-    await updatePublicacion(id, req.body);
+    const driveData = await handleDriveUpload(req, req.body.link_verificacion, existing.google_drive_id);
+
+    await updatePublicacion(id, {
+      ...req.body,
+      link_verificacion: driveData.link,
+      google_drive_id: driveData.id
+    });
     const updated = await getPublicacionById(id);
     res.json(updated);
   } catch (err) {

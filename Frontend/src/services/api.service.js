@@ -39,22 +39,22 @@ export async function deleteLibroParaAcademico(usuarioId, id) {
 }
 
 // ── PUBLICACIONES ─────────────────────────────────────────────────────────────
-export async function createPublicacionParaAcademico(usuarioId, payload) {
+export async function createPublicacionParaAcademico(usuarioId, formData) {
   const res = await fetch(`${API_URL}/publicaciones/academico/${usuarioId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify(payload),
+    body: formData,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message || "Error creando publicación");
   return data;
 }
 
-export async function updatePublicacionParaAcademico(usuarioId, id, payload) {
+export async function updatePublicacionParaAcademico(usuarioId, id, formData) {
   const res = await fetch(`${API_URL}/publicaciones/academico/${usuarioId}/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json", ...authHeader() },
-    body: JSON.stringify(payload),
+    body: formData,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message || "Error actualizando publicación");

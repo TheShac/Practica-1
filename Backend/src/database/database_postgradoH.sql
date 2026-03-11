@@ -316,3 +316,37 @@ CREATE TABLE notificacion_global_leido (
     CONSTRAINT fk_ngl_usuario FOREIGN KEY (usuario_id)      REFERENCES usuario(usuario_id)           ON DELETE CASCADE,
     UNIQUE KEY uq_ngl (notificacion_id, usuario_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+USE postgrado_historia;
+
+-- Actualización para Publicaciones
+ALTER TABLE publicaciones 
+  ADD COLUMN google_drive_id VARCHAR(255) AFTER link_verificacion;
+
+-- Actualización para Libros
+ALTER TABLE libro 
+  ADD COLUMN google_drive_id VARCHAR(255) AFTER link_verificacion;
+
+-- Actualización para Capítulos de Libros
+ALTER TABLE cap_libro 
+  ADD COLUMN google_drive_id VARCHAR(255) AFTER link_verificacion;
+
+-- Actualización para Investigaciones
+ALTER TABLE investigacion 
+  ADD COLUMN google_drive_id VARCHAR(255) AFTER link_verificacion;
+
+-- Actualización para Tesis
+ALTER TABLE tesis 
+  ADD COLUMN google_drive_id VARCHAR(255) AFTER link_verificacion;
+
+-- Actualización para Patentes
+ALTER TABLE patente 
+  ADD COLUMN google_drive_id VARCHAR(255) AFTER link_verificacion;
+
+-- Actualización para Proyectos de Intervención
+ALTER TABLE proyectos_intervencion 
+  ADD COLUMN google_drive_id VARCHAR(255) AFTER link_verificacion;
+
+-- Actualización para Consultorías
+ALTER TABLE consultorias 
+  ADD COLUMN google_drive_id VARCHAR(255) AFTER link_verificacion;

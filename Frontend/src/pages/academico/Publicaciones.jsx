@@ -23,6 +23,7 @@ const emptyForm = {
   revista: "",
   issn: "",
   respaldo: "",
+  archivoPdf: null,
 };
 
 export default function Publicaciones() {
@@ -65,6 +66,7 @@ export default function Publicaciones() {
           estado: p.estado || "Publicado",
           issn: p.ISSN || "",
           respaldo: p.link_verificacion || "",
+          driveId: p.google_drive_id || "",
         }));
 
         setRows(mapped);
@@ -106,6 +108,8 @@ export default function Publicaciones() {
       revista: row.revista,
       issn: row.issn,
       respaldo: row.respaldo,
+      archivoPdf: null,
+      driveId: row.driveId,
     });
     setShowModal(true);
   };
@@ -121,55 +125,26 @@ export default function Publicaciones() {
     setSaving(true);
 
     try {
-      const payload = {
-        autores: form.autores,
-        autor_principal: form.autorPrincipal,
-        ano: Number(form.anio),
-        categoria_id: Number(form.categoria_id),
-        titulo_articulo: form.titulo,
-        revista: form.revista,
-        estado: form.estado,
-        nombre_revista: form.revista,
-        ISSN: form.issn,
-        link_verificacion: form.respaldo,
-      };
+      const formData = new FormData();
+
+      formData.append("autores", form.autores);
+      formData.append("autor_principal", form.autorPrincipal);
+      formData.append("ano", Number(form.anio));
+      formData.append("categoria_id", Number(form.categoria_id));
+      formData.append("titulo_articulo", form.titulo);
+      formData.append("nombre_revista", form.revista);
+      formData.append("ISSN", form.issn);
+      formData.append("estado", form.estado);
+      formData.append("link_verificacion", form.respaldo);
+
+      if (form.archivoPdf) {
+        formData.append("pdf", form.archivoPdf);
+      }
 
       if (mode === "create") {
-        await createPublicacion(payload);
-
-        const pubs = await getMisPublicaciones();
-        const mapped = pubs.map((p) => ({
-          id: p.publicacion_id,
-          categoria_id: p.categoria_id,
-          categoria: p.categoria_nombre,
-          autores: p.autores || "",
-          autorPrincipal: p.autor_principal || "",
-          anio: p.ano ? String(p.ano) : "",
-          titulo: p.titulo_articulo || "",
-          revista: p.nombre_revista || "",
-          estado: p.estado || "Publicado",
-          issn: p.ISSN || "",
-          respaldo: p.link_verificacion || "",
-        }));
-        setRows(mapped);
+        await createPublicacion(formData);
       } else {
-        await updatePublicacion(editingId, payload);
-
-        const pubs = await getMisPublicaciones();
-        const mapped = pubs.map((p) => ({
-          id: p.publicacion_id,
-          categoria_id: p.categoria_id,
-          categoria: p.categoria_nombre,
-          autores: p.autores || "",
-          autorPrincipal: p.autor_principal || "",
-          anio: p.ano ? String(p.ano) : "",
-          titulo: p.titulo_articulo || "",
-          revista: p.nombre_revista || "",
-          estado: p.estado || "Publicado",
-          issn: p.ISSN || "",
-          respaldo: p.link_verificacion || "",
-        }));
-        setRows(mapped);
+        await updatePublicacion(editingId, formData);
       }
 
       setShowModal(false);
@@ -220,6 +195,7 @@ export default function Publicaciones() {
                     <th>Estado</th>
                     <th>ISSN</th>
                     <th>Respaldo</th>
+                    <th>PDF Drive</th>
                     <th className="text-end">Acciones</th>
                   </tr>
                 </thead>
@@ -255,6 +231,20 @@ export default function Publicaciones() {
                         >
                           Ver
                         </a>
+                      </td>
+                      <td>
+                        {r.driveId ? (
+                          <a
+                            href={`https://drive.google.com/file/d/${r.driveId}/view`}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Ver PDF en Drive"
+                          >
+                            Ver PDF
+                          </a>
+                        ) : (
+                          <span style={{ color: "var(--muted)" }}>—</span>
+                        )}
                       </td>
                       <td className="text-end">
                         <button
@@ -394,6 +384,30 @@ export default function Publicaciones() {
               value={form.respaldo}
               onChange={(e) => setForm({ ...form, respaldo: e.target.value })}
             />
+          </div>
+
+          {/* PDF */}
+          <div className="col-12">
+            <label className="form-label" style={{ color: "var(--muted)" }}>
+              {mode === "edit" ? "Reemplazar PDF (Opcional)" : "Subir PDF de respaldo (Opcional)"}
+            </label>
+            <input
+              type="file"
+              className="form-control input-dark"
+              accept=".pdf"
+              onChange={(e) => setForm({ ...form, archivoPdf: e.target.files[0] || null })}
+            />
+            {form.archivoPdf ? (
+              <small className="text-info">
+                📎 Se subirá a Drive y reemplazará el link actual.
+              </small>
+            ) : (
+              <small className="text-muted">
+                {mode === "edit"
+                  ? "Deja vacío para conservar el link actual."
+                  : "Si subes archivo, se usará el link de Drive."}
+              </small>
+            )}
           </div>
         </div>
       </FormModal>

@@ -15,6 +15,7 @@ export async function listPublicacionesByUser(usuario_id) {
       p.autor_principal,
       p.autores,
       p.link_verificacion,
+      google_drive_id,
       p.estado
     FROM publicaciones p
     JOIN categoria c ON c.categoria_id = p.categoria_id
@@ -44,15 +45,16 @@ export async function createPublicacion(usuario_id, data) {
     autor_principal,
     autores,
     link_verificacion,
+    google_drive_id,
     estado,
   } = data;
 
   const [result] = await pool.query(
     `
     INSERT INTO publicaciones
-      (usuario_id, categoria_id, titulo_articulo, nombre_revista, ISSN, ano, autor_principal, autores, link_verificacion, estado)
+      (usuario_id, categoria_id, titulo_articulo, nombre_revista, ISSN, ano, autor_principal, autores, link_verificacion, google_drive_id, estado)
     VALUES
-      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     [
       usuario_id,
@@ -64,6 +66,7 @@ export async function createPublicacion(usuario_id, data) {
       autor_principal || null,
       autores || null,
       link_verificacion || null,
+      google_drive_id || null,
       estado || null,
     ]
   );
@@ -81,6 +84,7 @@ export async function updatePublicacion(publicacion_id, data) {
     autor_principal,
     autores,
     link_verificacion,
+    google_drive_id,
     estado,
   } = data;
 
@@ -95,6 +99,7 @@ export async function updatePublicacion(publicacion_id, data) {
         autor_principal = ?,
         autores = ?,
         link_verificacion = ?,
+        google_drive_id = ?,
         estado = ?
     WHERE publicacion_id = ?
     `,
@@ -107,6 +112,7 @@ export async function updatePublicacion(publicacion_id, data) {
       autor_principal || null,
       autores || null,
       link_verificacion || null,
+      google_drive_id || null,
       estado || null,
       publicacion_id,
     ]
