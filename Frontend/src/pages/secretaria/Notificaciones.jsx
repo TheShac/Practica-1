@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import FormModal from "@/components/overlays/formModal/FormModal";
+import Toast from "@/components/ui/feedback/Toast";
 import {
   enviarNotificacion,
   getNotificacionesEnviadas,
@@ -35,6 +36,7 @@ export default function Notificaciones() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm]           = useState(emptyForm);
   const [errors, setErrors]       = useState({});
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
   const load = async () => {
     const [enviadas, acs] = await Promise.all([
@@ -90,6 +92,7 @@ export default function Notificaciones() {
       await load();
       setShowModal(false);
       setForm(emptyForm);
+      setToast({ show: true, message: "Notificación enviada correctamente", type: "success" });
     } catch (err) {
       alert(err.message);
     } finally {
@@ -159,7 +162,7 @@ export default function Notificaciones() {
                     </td>
                     <td>
                       {r.es_global ? (
-                        <span style={{ color: "var(--muted)" }}>—</span>
+                        <span style={{ color: "var(--muted)" }}>{r.total_leidos} / {r.total_destinatarios}</span>
                       ) : (
                         <span style={{ color: "var(--muted)" }}>
                           {r.total_leidos} / {r.total_destinatarios}
@@ -283,6 +286,12 @@ export default function Notificaciones() {
 
         </div>
       </FormModal>
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
     </div>
   );
 }

@@ -42,8 +42,19 @@ export async function getNotificacionesEnviadas(remitente_id) {
        n.mensaje,
        n.es_global,
        n.creado_en,
-       COUNT(nd.usuario_id)                          AS total_destinatarios,
-       SUM(COALESCE(nd.leido, 0))                    AS total_leidos
+       CASE
+         WHEN n.es_global = 1 THEN (
+           SELECT COUNT(*) FROM usuario WHERE rol_id = 3
+         )
+         ELSE COUNT(nd.usuario_id)
+       END AS total_destinatarios,
+       CASE
+         WHEN n.es_global = 1 THEN (
+           SELECT COUNT(*) FROM notificacion_global_leido ngl
+           WHERE ngl.notificacion_id = n.notificacion_id
+         )
+         ELSE SUM(COALESCE(nd.leido, 0))
+       END AS total_leidos
      FROM notificacion n
      LEFT JOIN notificacion_destinatario nd ON nd.notificacion_id = n.notificacion_id
      WHERE n.remitente_id = ?
