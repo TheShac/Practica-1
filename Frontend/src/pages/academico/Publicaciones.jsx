@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import FormModal from "../../components/FormModal.jsx";
+import FormModal from "@/components/overlays/formModal/FormModal";
 import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
 import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
 import IssnInput from "@/components/ui/inputs/IssnInput.jsx";
@@ -211,12 +211,12 @@ export default function Publicaciones() {
               <table className="table table-dark table-dark-custom align-middle">
                 <thead>
                   <tr>
-                    <th>Autores</th>
-                    <th>Autor principal</th>
+                    <th>Autor(es)</th>
+                    <th>Autor/a principal</th>
                     <th>Año</th>
-                    <th>Indexados</th>
-                    <th>Revista</th>
-                    <th>Título</th>
+                    <th>Indexada</th>
+                    <th>Título del artículo</th>
+                    <th>Nombre Revista</th>
                     <th>Estado</th>
                     <th>ISSN</th>
                     <th>Respaldo</th>
@@ -230,8 +230,8 @@ export default function Publicaciones() {
                       <td>{r.autorPrincipal}</td>
                       <td>{r.anio}</td>
                       <td>{r.categoria}</td>
-                      <td>{r.revista}</td>
                       <td>{r.titulo}</td>
+                      <td>{r.revista}</td>
                       <td>
                         <span
                           className={

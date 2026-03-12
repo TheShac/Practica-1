@@ -21,6 +21,7 @@ import consultoriaRoutes from "./routes/academico/consultorias/consultorias.rout
 import fichaRoutes from "./routes/ficha.routes.js";
 import reporteGeneralRoutes from "./routes/profesional-apoyo/profesionalApoyo.routes.js";
 import notificacionRoutes from "./routes/profesional-apoyo/notificacion.routes.js";
+import dashboardSecretariaRoutes from "./routes/profesional-apoyo/dashboard.routes.js";
 
 dotenv.config();
 
@@ -49,5 +50,6 @@ app.use("/api/consultorias", consultoriaRoutes);
 app.use("/api/ficha", fichaRoutes);
 app.use("/api/profesional-apoyo", reporteGeneralRoutes);
 app.use("/api/notificaciones", notificacionRoutes);
+app.use("/api/home-profesional", dashboardSecretariaRoutes);
 
 export default app;

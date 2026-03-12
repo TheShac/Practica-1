@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import FormModal from "../../components/FormModal.jsx";
+import FormModal from "@/components/overlays/formModal/FormModal";
 import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
 import { createLibro, deleteLibro, getMisLibros, updateLibro } from "../../services/api.js";
 
@@ -20,7 +20,7 @@ export default function Libros() {
   const [saving, setSaving] = useState(false);
 
   const [showModal, setShowModal] = useState(false);
-  const [mode, setMode] = useState("create"); // create | edit
+  const [mode, setMode] = useState("create");
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
 

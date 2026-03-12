@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import FormModal from "../../components/FormModal";
-import YearInput from "../../components/YearInput";
+import FormModal from "@/components/overlays/formModal/FormModal";
+import YearInput from "../../components/ui/inputs/YearInput";
 import {
   fetchInvestigaciones,
   createInvestigacion,
@@ -159,10 +159,10 @@ export default function Investigacion() {
                 <thead>
                   <tr>
                     <th>Título</th>
-                    <th>Fuente</th>
-                    <th>Año</th>
-                    <th>Período</th>
-                    <th>Rol</th>
+                    <th>Fuente de financiamiento</th>
+                    <th>Año de adjudicación</th>
+                    <th>Período de ejecución</th>
+                    <th>Rol en el proyecto</th>
                     <th>Respaldo</th>
                     <th className="text-end">Acciones</th>
                   </tr>
@@ -265,7 +265,7 @@ export default function Investigacion() {
           </div>
 
           <div className="col-12 col-md-3">
-            <label className="form-label">Período ejecución</label>
+            <label className="form-label">Período de ejecución</label>
             <input
               className="form-control input-dark"
               value={form.periodo_ejecucion}
@@ -283,11 +283,16 @@ export default function Investigacion() {
             <label className="form-label">Rol en el proyecto</label>
             <input
               className="form-control input-dark"
+              list="roles-proyecto"
               value={form.rol_proyecto}
-              onChange={(e) =>
-                setForm({ ...form, rol_proyecto: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, rol_proyecto: e.target.value })}
+              placeholder="Selecciona o escribe un rol..."
             />
+            <datalist id="roles-proyecto">
+              <option value="Investigador Responsable" />
+              <option value="Director" />
+              <option value="Co-Investigador" />
+            </datalist>
           </div>
 
           <div className="col-12">

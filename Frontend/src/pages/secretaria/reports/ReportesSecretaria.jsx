@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getReporteGeneral, updateReporteGeneral, downloadReporteGeneralExcel } from "../../../services/reporteGeneral.service";
+import { getReporteGeneral, updateReporteGeneral, downloadReporteGeneralExcel } from "../../../services/profesional/reporteGeneral.service";
 import ReporteSeccionGrupo from "./components/ReporteSeccionGrupo";
 import ReporteTablaPromedios from "./components/ReporteTablaPromedios";
 import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";

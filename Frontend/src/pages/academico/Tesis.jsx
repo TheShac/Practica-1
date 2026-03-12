@@ -1,7 +1,8 @@
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import FormModal from "../../components/FormModal";
-import YearInput from "../../components/YearInput";
+import FormModal from "@/components/overlays/formModal/FormModal";
+import YearInput from "@/components/ui/inputs/YearInput";
+import RespaldoInput from "@/components/forms/backupLink/RespaldoInput";
 import {
   fetchTesis,
   createTesis,
@@ -126,14 +127,10 @@ export default function Tesis() {
   };
 
   const close = () => {
-    if (loadingSubmit) return; // evita cerrar mientras guarda
+    if (loadingSubmit) return;
     setShowModal(false);
     setErrors({});
   };
-
-  /* =========================
-     SUBMIT
-  ========================== */
 
   const submit = async () => {
     if (!validate()) return;
@@ -213,13 +210,14 @@ export default function Tesis() {
                   <tr>
                     <th>Autor</th>
                     <th>Año</th>
-                    <th>Título</th>
-                    <th>Programa</th>
+                    <th>Título de la Tesis</th>
+                    <th>Nombre del programa</th>
                     <th>Institución</th>
                     {nivelUpper === "DOCTORADO" && (
                       <th>¿La tesis fue dirigida en el mismo programa?</th>
                     )}
                     <th>Rol</th>
+                    <th>Respaldo</th>
                     <th className="text-end">Acciones</th>
                   </tr>
                 </thead>
@@ -235,6 +233,15 @@ export default function Tesis() {
                         <td>{r.tesis_dirigida}</td>
                       )}
                       <td>{r.rol_guia}</td>
+                      <td>
+                        <a
+                          href={r.link_verificacion ? r.link_verificacion : "#"}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Ver
+                        </a>
+                      </td>
                       <td className="text-end">
                         <button
                           className="btn btn-sm btn-outline-light me-2"
@@ -399,12 +406,19 @@ export default function Tesis() {
                   })
                 }
               >
-                <option value="">Seleccione</option>
+                <option value="" disabled>Seleccione</option>
                 <option value="Si">Si</option>
                 <option value="No">No</option>
               </select>
             </div>
           )}
+        </div>
+
+        <div className="col-12 col-md">
+          <RespaldoInput
+            value={form.link_verificacion}
+            onChange={(e) => setForm({ ...form, link_verificacion: e.target.value })}
+          />
         </div>
       </FormModal>
     </div>

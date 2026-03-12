@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAcademicos, downloadFichaExcel, downloadFichaExcelMagister } from "../../../services/api.js";
-import FichaAcademicaModal from "../../../components/FichaAcademicaModal.jsx";
+import FichaAcademicaModal from "../../../components/overlays/fichaModal/FichaAcademicaModal.jsx";
 
 const ITEMS_PER_PAGE = 15;
 

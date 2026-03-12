@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import FormModal from "../../components/FormModal.jsx";
+import FormModal from "@/components/overlays/formModal/FormModal";
 import {
   enviarNotificacion,
   getNotificacionesEnviadas,

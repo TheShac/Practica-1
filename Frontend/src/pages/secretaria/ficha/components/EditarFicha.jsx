@@ -1,9 +1,9 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
-import { getFichaAcademica } from "../../../../services/ficha.service";
+import { getFichaAcademica } from "../../../../services/profesional/ficha.service.js";
 import { getAcademicos, getCategorias } from "../../../../services/api";
-import FormModal from "../../../../components/FormModal";
-import EstadoSelect from "../../../../components/forms/statusSelect/EstadoSelect";
+import FormModal from "@/components/overlays/formModal/FormModal";
+import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect";
 import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
 import IssnInput from "@/components/ui/inputs/IssnInput.jsx";
 
@@ -26,7 +26,7 @@ import {
   createPatenteParaAcademico,
   updatePatenteParaAcademico,
   deletePatenteParaAcademico,
-} from "../../../../services/api.service";
+} from "../../../../services/profesional/api.service.js";
 
 import {
   listIntervencionesDeAcademico,

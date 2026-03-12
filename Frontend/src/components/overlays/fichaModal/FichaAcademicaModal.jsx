@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { getFichaAcademica } from "../services/ficha.service";
+import { getFichaAcademica } from "../../../services/profesional/ficha.service";
 
 export default function FichaAcademicaModal({ show, academico, onClose }) {
   const [ficha, setFicha] = useState(null);

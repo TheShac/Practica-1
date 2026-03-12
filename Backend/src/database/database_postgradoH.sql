@@ -316,3 +316,12 @@ CREATE TABLE notificacion_global_leido (
     CONSTRAINT fk_ngl_usuario FOREIGN KEY (usuario_id)      REFERENCES usuario(usuario_id)           ON DELETE CASCADE,
     UNIQUE KEY uq_ngl (notificacion_id, usuario_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+ALTER TABLE publicaciones      ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE libro               ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE cap_libro           ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE investigacion       ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE tesis               ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE patente             ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE proyectos_intervencion ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE consultorias        ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;

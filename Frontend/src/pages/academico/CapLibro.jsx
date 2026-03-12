@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import FormModal from "../../components/FormModal.jsx";
+import FormModal from "@/components/overlays/formModal/FormModal";
 import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
 import {
   createCapLibro,

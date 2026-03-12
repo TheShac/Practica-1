@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router-dom";
-import Sidebar from "../components/Sidebar.jsx";
-import Topbar from "../components/Topbar.jsx";
+import Sidebar from "@/components/navigation/Sidebar.jsx";
+import Topbar from "@/components/navigation/Topbar.jsx";
 
 export default function AcademicLayout() {
   const [collapsed, setCollapsed] = useState(false);

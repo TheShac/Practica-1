@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import FormModal from "../../components/FormModal.jsx";
+import FormModal from "@/components/overlays/formModal/FormModal";
 import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
 
 import {
@@ -161,9 +161,9 @@ export default function ProyectoIntervencion() {
                   <tr>
                     <th>Título</th>
                     <th>Fuente financiamiento</th>
-                    <th>Año</th>
-                    <th>Periodo</th>
-                    <th>Rol</th>
+                    <th>Año de adjudicación</th>
+                    <th>Período de ejecución</th>
+                    <th>Rol en el proyecto</th>
                     <th>Respaldo</th>
                     <th className="text-end">Acciones</th>
                   </tr>
@@ -281,22 +281,6 @@ export default function ProyectoIntervencion() {
             />
           </div>
 
-          <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Rol
-            </label>
-            <input
-              className="form-control input-dark"
-              value={form.rol_proyecto}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  rol_proyecto: e.target.value,
-                })
-              }
-            />
-          </div>
-
           <div className="col-12">
             <label className="form-label" style={{ color: "var(--muted)" }}>
               Periodo de ejecución
@@ -311,6 +295,22 @@ export default function ProyectoIntervencion() {
                 })
               }
             />
+          </div>
+
+          <div className="col-12">
+            <label className="form-label">Rol en el proyecto</label>
+            <input
+              className="form-control input-dark"
+              list="roles-proyecto"
+              value={form.rol_proyecto}
+              onChange={(e) => setForm({ ...form, rol_proyecto: e.target.value })}
+              placeholder="Selecciona o escribe un rol..."
+            />
+            <datalist id="roles-proyecto">
+              <option value="Investigador Responsable" />
+              <option value="Director" />
+              <option value="Co-Investigador" />
+            </datalist>
           </div>
 
           <div className="col-12">

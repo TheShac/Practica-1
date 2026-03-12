@@ -1,7 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { useState } from "react";
-import Sidebar from "../components/Sidebar.jsx";
-import Topbar from "../components/Topbar.jsx";
+import Sidebar from "@/components/navigation/Sidebar.jsx";
+import Topbar from "@/components/navigation/Topbar.jsx";
 
 export default function SecretariaLayout() {
   const [collapsed, setCollapsed] = useState(false);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import FormModal from "@/components/FormModal.jsx";
+import FormModal from "@/components/overlays/formModal/FormModal";
 import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
 import {
   getMisConsultorias,
@@ -154,8 +154,8 @@ export default function Consultorias() {
                   <tr>
                     <th>Título</th>
                     <th>Institución contratante</th>
-                    <th>Año adjudicación</th>
-                    <th>Período ejecución</th>
+                    <th>Año de adjudicación</th>
+                    <th>Período de ejecución</th>
                     <th>Objetivo</th>
                     <th>Respaldo</th>
                     <th className="text-center">Acciones</th>
@@ -252,7 +252,7 @@ export default function Consultorias() {
           </div>
 
           <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Año adjudicación</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Año de adjudicación</label>
             <input
               className={`form-control input-dark${errors.ano_adjudicacion ? " is-invalid" : ""}`}
               value={form.ano_adjudicacion}
@@ -263,7 +263,7 @@ export default function Consultorias() {
           </div>
 
           <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Período ejecución</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Período de ejecución</label>
             <input
               className="form-control input-dark"
               value={form.periodo_ejecucion}
