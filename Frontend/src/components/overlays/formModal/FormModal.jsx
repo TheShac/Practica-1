@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+
 export default function FormModal({
   show,
   title,
@@ -6,11 +8,19 @@ export default function FormModal({
   onSubmit,
   submitText = "Guardar",
 }) {
+
+  useEffect(() => {
+    if (!show) return;
+    const handleKeyDown = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [show, onClose]);
+
   if (!show) return null;
 
   return (
     <>
-      <div className="modal fade show" style={{ display: "block" }} tabIndex="-1">
+      <div className="modal fade show" style={{ display: "block" }} tabIndex="-1" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
         <div className="modal-dialog modal-lg modal-dialog-centered">
           <div
             className="modal-content"
