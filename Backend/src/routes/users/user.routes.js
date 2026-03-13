@@ -9,22 +9,37 @@ import {
   deleteUserHandler,
   getAcademicos,
   getAcademicoFullProfileHandler,
-  updateAcademicoProfileHandler
+  updateAcademicoProfileHandler,
+  getRoles,
+  getRolesAcademico,
+  createRolHandler, updateRolHandler, deleteRolHandler,
+  createRolAcademicoHandler, updateRolAcademicoHandler, deleteRolAcademicoHandler,
 } from "../../controllers/users/user.controller.js";
 
 const router = Router();
+const adm = [auth, authorizeRoles("Admin")];
 
-// Académicos
-router.get("/academicos", auth, authorizeRoles("Secretaria"), getAcademicos);
+// ── Rutas fijas primero (antes de /:id) ──────────────────
+router.get(   "/roles",              ...adm, getRoles);
+router.post(  "/roles",              ...adm, createRolHandler);
+router.put(   "/roles/:id",          ...adm, updateRolHandler);
+router.delete("/roles/:id",          ...adm, deleteRolHandler);
+
+router.get(   "/roles-academico",    ...adm, getRolesAcademico);
+router.post(  "/roles-academico",    ...adm, createRolAcademicoHandler);
+router.put(   "/roles-academico/:id",...adm, updateRolAcademicoHandler);
+router.delete("/roles-academico/:id",...adm, deleteRolAcademicoHandler);
+
+router.get("/academicos",            auth, authorizeRoles("Secretaria"), getAcademicos);
 router.get("/academicos/:id/perfil", auth, authorizeRoles("Admin", "Secretaria", "Academico"), getAcademicoFullProfileHandler);
 router.put("/academicos/:id/perfil", auth, authorizeRoles("Academico", "Admin"), updateAcademicoProfileHandler);
 
-// Administración de usuarios
-router.get("/", auth, authorizeRoles("Admin"), getAllUsers);
-router.get("/:id", auth, authorizeRoles("Admin"), getUser);
-router.post("/", auth, authorizeRoles("Admin"), createUserHandler);
-router.put("/:id", auth, authorizeRoles("Admin"), updateUserHandler);
-router.put("/:id/password", auth, authorizeRoles("Admin"), updatePasswordHandler);
-router.delete("/:id", auth, authorizeRoles("Admin"), deleteUserHandler);
+// ── Rutas con parámetro /:id al final ────────────────────
+router.get(   "/",    ...adm, getAllUsers);
+router.post(  "/",    ...adm, createUserHandler);
+router.get(   "/:id", ...adm, getUser);
+router.put(   "/:id", ...adm, updateUserHandler);
+router.put(   "/:id/password", ...adm, updatePasswordHandler);
+router.delete("/:id", ...adm, deleteUserHandler);
 
 export default router;

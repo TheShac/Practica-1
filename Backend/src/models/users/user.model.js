@@ -119,6 +119,44 @@ export async function getRoleIdByName(roleName) {
   return rows[0]?.rol_id || null;
 }
 
+export async function listRoles() {
+  const [rows] = await pool.query(`SELECT rol_id, nombre FROM rol ORDER BY rol_id`);
+  return rows;
+}
+
+export async function listRolesAcademico() {
+  const [rows] = await pool.query(`SELECT rolaca_id, tipo_academico FROM rol_academico ORDER BY rolaca_id`);
+  return rows;
+}
+
+// ── ROL ──────────────────────────────────────────────────
+export async function createRol(nombre) {
+  const [result] = await pool.query(`INSERT INTO rol (nombre) VALUES (?)`, [nombre]);
+  return result.insertId;
+}
+
+export async function updateRol(rol_id, nombre) {
+  await pool.query(`UPDATE rol SET nombre = ? WHERE rol_id = ?`, [nombre, rol_id]);
+}
+
+export async function deleteRol(rol_id) {
+  await pool.query(`DELETE FROM rol WHERE rol_id = ?`, [rol_id]);
+}
+
+// ── ROL ACADÉMICO ────────────────────────────────────────
+export async function createRolAcademico(tipo_academico) {
+  const [result] = await pool.query(`INSERT INTO rol_academico (tipo_academico) VALUES (?)`, [tipo_academico]);
+  return result.insertId;
+}
+
+export async function updateRolAcademico(rolaca_id, tipo_academico) {
+  await pool.query(`UPDATE rol_academico SET tipo_academico = ? WHERE rolaca_id = ?`, [tipo_academico, rolaca_id]);
+}
+
+export async function deleteRolAcademico(rolaca_id) {
+  await pool.query(`DELETE FROM rol_academico WHERE rolaca_id = ?`, [rolaca_id]);
+}
+
 export async function listAcademicos() {
   const [rows] = await pool.query(
     `

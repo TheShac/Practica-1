@@ -325,3 +325,33 @@ ALTER TABLE tesis               ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_
 ALTER TABLE patente             ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE proyectos_intervencion ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
 ALTER TABLE consultorias        ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+
+CREATE TABLE reporte_promedios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+ 
+  -- Promedio publicaciones WOS últimos 5 años
+  prom_wos_claustro        DECIMAL(5,1) DEFAULT 0.0,
+  prom_wos_cuerpo          DECIMAL(5,1) DEFAULT 0.0,
+ 
+  -- Promedio publicaciones WOS por académico últimos 5 años
+  prom_wos_acad_claustro   DECIMAL(5,1) DEFAULT 0.0,
+  prom_wos_acad_cuerpo     DECIMAL(5,1) DEFAULT 0.0,
+ 
+  -- Promedio libros o capítulos últimos 5 años
+  prom_libros_claustro     DECIMAL(5,1) DEFAULT 0.0,
+  prom_libros_cuerpo       DECIMAL(5,1) DEFAULT 0.0,
+ 
+  -- Promedio proyectos FONDECYT en calidad de IP últimos 5 años
+  prom_fondecyt_claustro   DECIMAL(5,1) DEFAULT 0.0,
+  prom_fondecyt_cuerpo     DECIMAL(5,1) DEFAULT 0.0,
+ 
+  actualizado_en TIMESTAMP
+    DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+ 
+-- Insertar fila única (siempre será id=1)
+INSERT INTO reporte_promedios (id) VALUES (1);
+SELECT * FROM reporte_promedios;

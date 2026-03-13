@@ -27,6 +27,8 @@ import Notificaciones from "../pages/secretaria/Notificaciones.jsx";
 // Admin (placeholder)
 import AdminLayout from "../layouts/AdminLayout.jsx";
 import AdminDashboard from "../pages/admin/Dashboard.jsx";
+import AdminUsuarios from "../pages/admin/Usuarios.jsx";
+import AdminRoles from "../pages/admin/Roles.jsx";
 
 export default function App() {
   return (
@@ -82,7 +84,9 @@ export default function App() {
         }
       >
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="dashboard"  element={<AdminDashboard />} />
+        <Route path="usuarios"   element={<AdminUsuarios />} />
+        <Route path="roles"      element={<AdminRoles />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
