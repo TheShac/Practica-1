@@ -89,7 +89,9 @@ CREATE TABLE publicaciones (
     autor_principal VARCHAR(200),
     autores TEXT,
     link_verificacion TEXT,
+    google_drive_link VARCHAR(255),
     estado VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_pub_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE CASCADE,
     CONSTRAINT fk_pub_categoria FOREIGN KEY (categoria_id) REFERENCES categoria(categoria_id)
 )ENGINE=InnoDB
@@ -106,7 +108,9 @@ CREATE TABLE libro (
     autor_principal VARCHAR(200),
     autores TEXT,
     link_verificacion TEXT,
+    google_drive_link VARCHAR(255),
     estado VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_libro_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -123,7 +127,9 @@ CREATE TABLE cap_libro (
     autor_principal VARCHAR(200),
     autores TEXT,
     link_verificacion TEXT,
+    google_drive_link VARCHAR(255),
     estado VARCHAR(100),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_cap_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -138,6 +144,8 @@ CREATE TABLE investigacion (
     periodo_ejecucion VARCHAR(100),
     rol_proyecton VARCHAR(100),
     link_verificacion TEXT,
+    google_drive_link VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_inv_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -155,6 +163,8 @@ CREATE TABLE tesis (
     rol_guia ENUM('GUIA', 'CO_GUIA'),
     nivel_programa ENUM('MAGISTER', 'DOCTORADO'),
     link_verificacion TEXT,
+    google_drive_link VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_tesis_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -170,6 +180,8 @@ CREATE TABLE patente (
     fecha_publicacion DATE,
     estado VARCHAR(100),
     link_verificacion TEXT,
+    google_drive_link VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_patente_usuario FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id) ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
@@ -184,7 +196,8 @@ CREATE TABLE proyectos_intervencion (
     periodo_ejecucion VARCHAR(100),
     rol_proyecto VARCHAR(150),
     link_verificacion TEXT,
-
+    google_drive_link VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
 )ENGINE=InnoDB
@@ -200,13 +213,15 @@ CREATE TABLE consultorias (
     periodo_ejecucion VARCHAR(100),
     objetivo TEXT,
     link_verificacion TEXT,
-
+    google_drive_link VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (usuario_id) REFERENCES usuario(usuario_id)
         ON DELETE CASCADE
 )ENGINE=InnoDB
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
+-- 5. Tablas reportes y estadísticas
 CREATE TABLE reporte_academico (
   id INT AUTO_INCREMENT PRIMARY KEY,
 
@@ -253,6 +268,35 @@ CREATE TABLE reporte_wos_global (
 DEFAULT CHARSET=utf8mb4
 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE reporte_promedios (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+ 
+  -- Promedio publicaciones WOS últimos 5 años
+  prom_wos_claustro        DECIMAL(5,1) DEFAULT 0.0,
+  prom_wos_cuerpo          DECIMAL(5,1) DEFAULT 0.0,
+ 
+  -- Promedio publicaciones WOS por académico últimos 5 años
+  prom_wos_acad_claustro   DECIMAL(5,1) DEFAULT 0.0,
+  prom_wos_acad_cuerpo     DECIMAL(5,1) DEFAULT 0.0,
+ 
+  -- Promedio libros o capítulos últimos 5 años
+  prom_libros_claustro     DECIMAL(5,1) DEFAULT 0.0,
+  prom_libros_cuerpo       DECIMAL(5,1) DEFAULT 0.0,
+ 
+  -- Promedio proyectos FONDECYT en calidad de IP últimos 5 años
+  prom_fondecyt_claustro   DECIMAL(5,1) DEFAULT 0.0,
+  prom_fondecyt_cuerpo     DECIMAL(5,1) DEFAULT 0.0,
+ 
+  actualizado_en TIMESTAMP
+    DEFAULT CURRENT_TIMESTAMP
+    ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB
+  DEFAULT CHARSET=utf8mb4
+  COLLATE=utf8mb4_unicode_ci;
+-- Insertar fila única (siempre será id=1)
+INSERT INTO reporte_promedios (id) VALUES (1);
+
+-- 6. Tablas de notificaciones
 CREATE TABLE notificacion (
     notificacion_id INT AUTO_INCREMENT PRIMARY KEY,
     remitente_id    INT NOT NULL,
