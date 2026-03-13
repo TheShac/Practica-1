@@ -1,7 +1,35 @@
-const ReporteTablaPromedios = ({ promedioWosClaustro, promedioWosCuerpo, promedioLibrosClaustro, promedioLibrosCuerpo }) => {
+const FILAS = [
+  {
+    label:      "Promedio de publicaciones WOS últimos 5 años",
+    keyClaustro: "prom_wos_claustro",
+    keyCuerpo:   "prom_wos_cuerpo",
+  },
+  {
+    label:      "Promedio de publicaciones WOS, por académico, últimos 5 años",
+    keyClaustro: "prom_wos_acad_claustro",
+    keyCuerpo:   "prom_wos_acad_cuerpo",
+  },
+  {
+    label:      "Promedio de Libros o capítulos de libros, últimos 5 años",
+    keyClaustro: "prom_libros_claustro",
+    keyCuerpo:   "prom_libros_cuerpo",
+  },
+  {
+    label:      "Promedio de Proyectos FONDECYT, en calidad de IP, últimos 5 años",
+    keyClaustro: "prom_fondecyt_claustro",
+    keyCuerpo:   "prom_fondecyt_cuerpo",
+  },
+];
 
+const ReporteTablaPromedios = ({ promedios, onChange }) => {
   const anioActual = new Date().getFullYear();
   const anioInicio = anioActual - 4;
+
+  const handleChange = (key, value) => {
+    const num = value === "" ? "" : Number(value);
+    if (num !== "" && num < 0) return;
+    onChange({ ...promedios, [key]: num });
+  };
 
   return (
     <div className="mt-4">
@@ -10,43 +38,41 @@ const ReporteTablaPromedios = ({ promedioWosClaustro, promedioWosCuerpo, promedi
           <table className="table table-dark table-dark-custom align-middle small text-center">
             <thead>
               <tr>
-                <th></th>
+                <th className="text-start"></th>
                 <th>Claustro</th>
                 <th>Cuerpo Académico</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="text-start">
-                  Promedio de publicaciones WOS últimos 5 años ({anioInicio}-{anioActual})
-                </td>
-                <td>{promedioWosClaustro}</td>
-                <td>{promedioWosCuerpo}</td>
-              </tr>
-
-              <tr>
-                <td className="text-start">
-                  Promedio de publicaciones WOS, por académico, últimos 5 años ({anioInicio}-{anioActual})
-                </td>
-                <td>0</td>
-                <td>0</td>
-              </tr>
-
-              <tr>
-                <td className="text-start">
-                  Promedio de Libros o capítulos de libros, últimos 5 años ({anioInicio}-{anioActual})
-                </td>
-                <td>{promedioLibrosClaustro}</td>
-                <td>{promedioLibrosCuerpo}</td>
-              </tr>
-
-              <tr>
-                <td className="text-start">
-                  Promedio de Proyectos FONDECYT, en calidad de IP, últimos 5 años ({anioInicio}-{anioActual})
-                </td>
-                <td>0</td>
-                <td>0</td>
-              </tr>
+              {FILAS.map((fila) => (
+                <tr key={fila.keyClaustro}>
+                  <td className="text-start">
+                    {fila.label} ({anioInicio}-{anioActual})
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="text-center excel-input"
+                      value={promedios[fila.keyClaustro] ?? 0}
+                      min={0}
+                      step={0.1}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => handleChange(fila.keyClaustro, e.target.value)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="number"
+                      className="text-center excel-input"
+                      value={promedios[fila.keyCuerpo] ?? 0}
+                      min={0}
+                      step={0.1}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => handleChange(fila.keyCuerpo, e.target.value)}
+                    />
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

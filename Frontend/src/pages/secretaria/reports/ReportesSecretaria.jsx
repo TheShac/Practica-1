@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { getReporteGeneral, updateReporteGeneral, downloadReporteGeneralExcel } from "../../../services/profesional/reporteGeneral.service";
+import { getReporteGeneral, updateReporteGeneral, downloadReporteGeneralExcel, getReportePromedios, updateReportePromedios } from "../../../services/profesional/reporteGeneral.service";
 import ReporteSeccionGrupo from "./components/ReporteSeccionGrupo";
 import ReporteTablaPromedios from "./components/ReporteTablaPromedios";
 import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
@@ -8,6 +8,17 @@ const FIELDS_DEFAULT = {
   total_wos_scopus_5_anios: 0, total_scielo_5_anios: 0, otros_articulos: 0,
   libros_area: 0, libros_otro: 0, cap_area: 0, cap_otro: 0,
   edicion_area: 0, edicion_otro: 0, proyectos_fondecyt: 0, otros_proyectos: 0,
+};
+
+const PROMEDIOS_DEFAULT = {
+  prom_wos_claustro:      0,
+  prom_wos_cuerpo:        0,
+  prom_wos_acad_claustro: 0,
+  prom_wos_acad_cuerpo:   0,
+  prom_libros_claustro:   0,
+  prom_libros_cuerpo:     0,
+  prom_fondecyt_claustro: 0,
+  prom_fondecyt_cuerpo:   0,
 };
 
 const calcularTotales = (lista) => ({
@@ -24,23 +35,26 @@ const calcularTotales = (lista) => ({
   otros_proyectos:       lista.reduce((a, b) => a + b.otros_proyectos, 0),
 });
 
-const totalLibros = (t) => t.libros_area + t.libros_otro + t.cap_area + t.cap_otro;
-
 export default function ReportesSecretaria() {
   const [data, setData]               = useState([]);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState("");
   const [wosClaustro, setWosClaustro] = useState(0);
   const [wosColaborador, setWosColaborador] = useState(0);
+  const [promedios, setPromedios]               = useState(PROMEDIOS_DEFAULT);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const result = await getReporteGeneral();
+        const [result, prom] = await Promise.all([
+          getReporteGeneral(),
+          getReportePromedios(),
+        ]);
         setData(result.map(item => ({ ...FIELDS_DEFAULT, ...item })));
 
         setWosClaustro(result.find(r => r.tipo_academico === "Claustro")?.total_wos_global || 0);
         setWosColaborador(result.find(r => r.tipo_academico === "Colaborador")?.total_wos_global || 0);
+        setPromedios({ ...PROMEDIOS_DEFAULT, ...prom });
       } catch (err) {
         setError(err.message);
       } finally {
@@ -56,11 +70,6 @@ export default function ReportesSecretaria() {
   const totalClaustro      = calcularTotales(claustro);
   const totalColaboradores = calcularTotales(colaboradores);
 
-  const promedioWosClaustro  = claustro.length > 0 ? (wosClaustro / claustro.length).toFixed(1) : 0;
-  const promedioWosCuerpo    = data.length > 0 ? ((wosClaustro + wosColaborador) / data.length).toFixed(1) : 0;
-  const promedioLibrosClaustro = claustro.length > 0 ? (totalLibros(totalClaustro) / claustro.length).toFixed(1) : 0;
-  const promedioLibrosCuerpo   = data.length > 0 ? ((totalLibros(totalClaustro) + totalLibros(totalColaboradores)) / data.length).toFixed(1) : 0;
-
   const handleChange = (id, field, value) => {
     const newValue = value === "" ? "" : Number(value);
     if (newValue < 0) return;
@@ -69,7 +78,10 @@ export default function ReportesSecretaria() {
 
   const handleGuardar = async () => {
     try {
-      await updateReporteGeneral(data, { Claustro: wosClaustro, Colaborador: wosColaborador });
+      await Promise.all([
+        updateReporteGeneral(data, { Claustro: wosClaustro, Colaborador: wosColaborador }),
+        updateReportePromedios(promedios),
+      ]);
       alert("Reporte guardado correctamente");
     } catch (err) {
       alert(err.message);
@@ -119,7 +131,7 @@ export default function ReportesSecretaria() {
                 <thead>
                   <tr>
                     <th style={{ minWidth: 160, verticalAlign: "middle" }}>Nombre Académico</th>
-                    <th style={{ minWidth: 80, verticalAlign: "middle" }}>Año ingreso al programa</th>
+                    <th style={{ minWidth: 80,  verticalAlign: "middle" }}>Año ingreso al programa</th>
                     <th style={{ minWidth: 120, verticalAlign: "middle" }}>Total publ. WoS/SCOPUS (1)</th>
                     <th style={{ minWidth: 120, verticalAlign: "middle" }}>Artículos Scielo/Latindex/ERIH</th>
                     <th style={{ minWidth: 100, verticalAlign: "middle" }}>Otros artículos</th>
@@ -164,10 +176,8 @@ export default function ReportesSecretaria() {
         </div>
 
         <ReporteTablaPromedios
-          promedioWosClaustro={promedioWosClaustro}
-          promedioWosCuerpo={promedioWosCuerpo}
-          promedioLibrosClaustro={promedioLibrosClaustro}
-          promedioLibrosCuerpo={promedioLibrosCuerpo}
+          promedios={promedios}
+          onChange={setPromedios}
         />
 
       </div>

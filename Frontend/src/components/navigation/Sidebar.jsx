@@ -81,6 +81,8 @@ export default function Sidebar({ collapsed }) {
         padding: "20px 15px",
         overflowX: "hidden",
         boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       <div className="d-flex align-items-center gap-2 mb-4">
@@ -102,7 +104,7 @@ export default function Sidebar({ collapsed }) {
         )}
       </div>
 
-      <nav className="d-flex flex-column gap-2">
+      <nav className="d-flex flex-column gap-2" style={{ flexGrow: 1 }}>
         {menu.map((item, idx) => {
           if (item.type === "section") {
             return (
@@ -149,7 +151,12 @@ export default function Sidebar({ collapsed }) {
                             isActive ? "bg-secondary bg-opacity-50" : ""
                           }`
                         }
-                        style={{ color: "#fff", fontSize: "14px", whiteSpace: "nowrap", overflow: "hidden" }}
+                        style={{
+                          color: "#fff",
+                          fontSize: "14px",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                        }}
                       >
                         {child.label}
                       </NavLink>
@@ -169,7 +176,12 @@ export default function Sidebar({ collapsed }) {
                   isActive ? "bg-secondary bg-opacity-50" : ""
                 }`
               }
-              style={{ color: "#fff", textDecoration: "none", whiteSpace: "nowrap", overflow: "hidden" }}
+              style={{
+                color: "#fff",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+              }}
             >
               <i className={`bi ${item.icon}`} style={{ flexShrink: 0 }} />
               {!collapsed && <span>{item.label}</span>}
@@ -177,6 +189,31 @@ export default function Sidebar({ collapsed }) {
           );
         })}
       </nav>
+
+      {!collapsed && (
+        <div
+          style={{
+            marginTop: "20px",
+            paddingTop: "12px",
+            borderTop: "1px solid rgba(255,255,255,0.15)",
+            fontSize: "11px",
+            color: "rgba(255,255,255,0.65)",
+            lineHeight: "1.4",
+          }}
+        >
+          <div style={{ marginBottom: "6px" }}>
+            <strong>Creado por</strong><br />
+            Trinidad Aguirre L.<br />
+            Profesional – Postgrado Historia
+          </div>
+
+          <div>
+            <strong>Desarrollado por</strong><br />
+            Leonardo Rodríguez L.<br />
+            Isabel Condori G.
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

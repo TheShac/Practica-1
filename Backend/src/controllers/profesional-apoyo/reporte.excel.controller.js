@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { getReporteGeneral } from "../../models/profesional-apoyo/profesionalApoyo.model.js";
+import { getPromedios } from "../../models/profesional-apoyo/reporte.promedios.model.js";
 
 const COLOR = {
   headerBg: "1F3864",
@@ -124,12 +125,11 @@ function writeGrupo(ws, startRow, titulo, bgTitulo, rows, wosValue) {
 
 export async function exportReporteGeneralExcel(req, res) {
   try {
-    const allRows = await getReporteGeneral();
+    const [allRows, promedios] = await Promise.all([getReporteGeneral(), getPromedios()]);
 
     const claustro      = allRows.filter(a => a.tipo_academico === "Claustro");
     const colaboradores = allRows.filter(a => a.tipo_academico === "Colaborador");
 
-    // total_wos_global viene del JOIN con reporte_wos_global, mismo valor por grupo
     const wosClaustro = claustro[0]?.total_wos_global     ?? 0;
     const wosColab    = colaboradores[0]?.total_wos_global ?? 0;
 
@@ -141,7 +141,6 @@ export async function exportReporteGeneralExcel(req, res) {
 
     COL_WIDTHS.forEach((w, i) => { ws.getColumn(i + 1).width = w; });
 
-    // Cabecera
     ws.getRow(1).height = 100;
     HEADERS.forEach((h, i) => {
       const c = ws.getCell(1, i + 1);
@@ -154,7 +153,6 @@ export async function exportReporteGeneralExcel(req, res) {
     currentRow++;
     currentRow = writeGrupo(ws, currentRow, "COLABORADORES", COLOR.colab,    colaboradores, wosColab);
 
-    // Notas al pie
     currentRow++;
     const n1 = ws.getCell(currentRow, 1);
     n1.value = "(1) Sólo se registran artículos como primer autor.";
@@ -166,25 +164,13 @@ export async function exportReporteGeneralExcel(req, res) {
     n2.font  = { name: "Arial", size: 8, italic: true };
     ws.mergeCells(currentRow, 1, currentRow, 13);
     currentRow += 2;
-
-    // Tabla promedios — columna A=label, B=Claustro, C=Cuerpo Académico
-    const sumLibros   = (rows) => rows.reduce((a, b) =>
-      a + (b.libros_area||0) + (b.libros_otro||0) + (b.cap_area||0) + (b.cap_otro||0), 0);
-    const sumFondecyt = (rows) => rows.reduce((a, b) => a + (b.proyectos_fondecyt||0), 0);
-
-    const nC = claustro.length;
-    const nT = allRows.length;
-
-    // Cabecera promedios
     ws.getRow(currentRow).height = 18;
     const ph1 = ws.getCell(currentRow, 1);
     ph1.value = "";
     styleCell(ph1, { bold: true, bg: COLOR.headerBg, fontColor: COLOR.white, alignH: "left" });
-
     const ph2 = ws.getCell(currentRow, 2);
     ph2.value = "Claustro";
     styleCell(ph2, { bold: true, bg: COLOR.headerBg, fontColor: COLOR.white });
-
     const ph3 = ws.getCell(currentRow, 3);
     ph3.value = "Cuerpo Académico";
     styleCell(ph3, { bold: true, bg: COLOR.headerBg, fontColor: COLOR.white });
@@ -193,23 +179,23 @@ export async function exportReporteGeneralExcel(req, res) {
     const promData = [
       {
         label:    `Promedio de publicaciones WOS, últimos 5 años (${anioInicio}-${anioActual})`,
-        claustro: nC > 0 ? Number((wosClaustro / nC).toFixed(1)) : 0,
-        cuerpo:   nT > 0 ? Number(((wosClaustro + wosColab) / nT).toFixed(1)) : 0,  
+        claustro: promedios.prom_wos_claustro,
+        cuerpo:   promedios.prom_wos_cuerpo,
       },
       {
         label:    `Promedio de publicaciones WOS, por académico, últimos 5 años (${anioInicio}-${anioActual})`,
-        claustro: wosClaustro,
-        cuerpo:   wosClaustro + wosColab,
+        claustro: promedios.prom_wos_acad_claustro,
+        cuerpo:   promedios.prom_wos_acad_cuerpo,
       },
       {
         label:    `Promedio de Libros o capítulos de libros, últimos 5 años (${anioInicio}-${anioActual})`,
-        claustro: nC > 0 ? Number((sumLibros(claustro) / nC).toFixed(1)) : 0,
-        cuerpo:   nT > 0 ? Number(((sumLibros(claustro) + sumLibros(colaboradores)) / nT).toFixed(1)) : 0,
+        claustro: promedios.prom_libros_claustro,
+        cuerpo:   promedios.prom_libros_cuerpo,
       },
       {
         label:    `Promedio de Proyectos FONDECYT, en calidad de IP, últimos 5 años (${anioInicio}-${anioActual})`,
-        claustro: nC > 0 ? Number((sumFondecyt(claustro) / nC).toFixed(1)) : 0,
-        cuerpo:   nT > 0 ? Number(((sumFondecyt(claustro) + sumFondecyt(colaboradores)) / nT).toFixed(1)) : 0,
+        claustro: promedios.prom_fondecyt_claustro,
+        cuerpo:   promedios.prom_fondecyt_cuerpo,
       },
     ];
 
@@ -225,11 +211,11 @@ export async function exportReporteGeneralExcel(req, res) {
       lc.fill      = { type: "pattern", pattern: "solid", fgColor: { argb: "FF" + altBg } };
 
       const cc = ws.getCell(currentRow, 2);
-      cc.value = prom.claustro;
+      cc.value = Number(prom.claustro);
       styleCell(cc, { bold: true, bg: altBg });
 
       const cu = ws.getCell(currentRow, 3);
-      cu.value = prom.cuerpo;
+      cu.value = Number(prom.cuerpo);
       styleCell(cu, { bold: true, bg: altBg });
 
       currentRow++;
