@@ -187,7 +187,6 @@ export default function Notificaciones() {
         )}
       </div>
 
-      {/* ── Modal Nueva Notificación ── */}
       <FormModal
         show={showModal}
         title="Nueva Notificación"
@@ -197,7 +196,6 @@ export default function Notificaciones() {
       >
         <div className="row g-3">
 
-          {/* Asunto */}
           <div className="col-12">
             <label className="form-label" style={{ color: "var(--muted)" }}>Asunto*</label>
             <input
@@ -209,7 +207,6 @@ export default function Notificaciones() {
             {errors.asunto && <div className="invalid-feedback">{errors.asunto}</div>}
           </div>
 
-          {/* Mensaje */}
           <div className="col-12">
             <label className="form-label" style={{ color: "var(--muted)" }}>Mensaje*</label>
             <textarea
@@ -222,7 +219,6 @@ export default function Notificaciones() {
             {errors.mensaje && <div className="invalid-feedback">{errors.mensaje}</div>}
           </div>
 
-          {/* Tipo de destinatario */}
           <div className="col-12">
             <label className="form-label" style={{ color: "var(--muted)" }}>Destinatarios</label>
             <div className="d-flex gap-3">
@@ -249,7 +245,6 @@ export default function Notificaciones() {
             </div>
           </div>
 
-          {/* Lista de académicos (solo si es específico) */}
           {!form.es_global && (
             <div className="col-12">
               <label className="form-label" style={{ color: "var(--muted)" }}>

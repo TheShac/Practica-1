@@ -22,7 +22,13 @@ export default function SecretariaDashboard() {
 
   const formatFecha = (fecha) => {
     if (!fecha) return "-";
-    return new Date(fecha).toLocaleDateString("es-CL");
+    return new Date(fecha).toLocaleDateString("es-CL", {
+      day:   "2-digit",
+      month: "2-digit",
+      year:  "numeric",
+      hour:  "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -35,7 +41,7 @@ export default function SecretariaDashboard() {
             Últimas Actualizaciones de Académicos
           </div>
           <div style={{ color: "var(--muted)", fontSize: 13 }}>
-            Registros más recientes ingresados por los académicos
+            Registros más recientes creados o editados por los académicos
           </div>
         </div>
 
@@ -71,7 +77,7 @@ export default function SecretariaDashboard() {
 
                   {actualizaciones.length === 0 && (
                     <tr>
-                      <td colSpan="4" style={{ color: "var(--muted)" }}>
+                      <td colSpan="5" style={{ color: "var(--muted)" }}>
                         Sin registros recientes.
                       </td>
                     </tr>
