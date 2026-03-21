@@ -1,11 +1,6 @@
 import { useState, useEffect } from "react";
 
-export default function YearInput({
-  value,
-  onChange,
-  error,
-  required,
-}) {
+export default function YearInput({ value, onChange, error, required, label }) {
   const currentYear = new Date().getFullYear();
 
   const handleChange = (e) => {
@@ -15,8 +10,8 @@ export default function YearInput({
 
   return (
     <div>
-      <label className="form-label text-light">
-        Año {required && "*"}
+      <label className="form-label" style={{ color: "var(--muted)" }}>
+        {label ?? "Año"}*
       </label>
 
       <input

@@ -3,7 +3,7 @@ const EstadoSelect = ({ value, onChange, label = "Estado" }) => {
     <div>
       {label && (
         <label className="form-label" style={{ color: "var(--muted)" }}>
-          {label}
+          {label}*
         </label>
       )}
       <select

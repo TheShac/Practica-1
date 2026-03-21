@@ -1,6 +1,15 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import FormModal from "@/components/overlays/formModal/FormModal";
 import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
+import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
+import AutoresInput from "@/components/forms/authorInput/AutoresInput.jsx";
+import AutorPrincipalInput from "@/components/forms/authorInput/AutorPrincipalInput.jsx";
+import NombreLibroInput from "@/components/forms/book/NombreLibroInput";
+import LugarInput from "@/components/forms/book/LugarInput";
+import EditorialInput from "@/components/forms/book/EditorialInput";
+import YearInput from "@/components/ui/inputs/YearInput.jsx";
+import ActionButtons from "@/components/ui/buttons/ActionButtons";
+import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
 import {
   createCapLibro,
   deleteCapLibro,
@@ -20,6 +29,27 @@ const emptyForm = {
   link_verificacion: "",
 };
 
+const REQUIRED_FIELDS = [
+  { key: "autores",         label: "Autor(es)" },
+  { key: "autor_principal", label: "Autor/a principal" },
+  { key: "ano",             label: "Año" },
+  { key: "nombre_capitulo", label: "Nombre del capítulo" },
+  { key: "nombre_libro",    label: "Nombre del libro" },
+  { key: "lugar",           label: "Lugar" },
+  { key: "editorial",       label: "Editorial" },
+  { key: "estado",          label: "Estado" },
+];
+
+const validate = (form) => {
+  const errs = {};
+  REQUIRED_FIELDS.forEach(({ key, label }) => {
+    if (!form[key] || String(form[key]).trim() === "") {
+      errs[key] = `${label} es obligatorio.`;
+    }
+  });
+  return errs;
+};
+
 export default function CapLibro() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,9 +60,23 @@ export default function CapLibro() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
+  const [touched, setTouched] = useState({});
+  const errors = useMemo(() => validate(form), [form]);
+
+  const isFormInvalid = Object.keys(errors).length > 0;
+
   const modalTitle = useMemo(() => {
-    return mode === "create" ? "Nuevo Capítulo de Libro" : "Editar Capítulo de Libro";
+    return mode === "create"
+      ? "Nuevo Capítulo de Libro"
+      : "Editar Capítulo de Libro";
   }, [mode]);
+
+  const setField = useCallback((key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }, []);
+
+  const errorMsg = (key) => (touched[key] && errors[key]) ? errors[key] : null;
 
   const load = async () => {
     const data = await getMisCapLibros();
@@ -48,7 +92,7 @@ export default function CapLibro() {
         editorial: c.editorial || "",
         estado: c.estado || "Publicado",
         link_verificacion: c.link_verificacion || "",
-      }))
+      })),
     );
   };
 
@@ -70,6 +114,7 @@ export default function CapLibro() {
     setMode("create");
     setEditingId(null);
     setForm(emptyForm);
+    setTouched({});
     setShowModal(true);
   };
 
@@ -87,14 +132,18 @@ export default function CapLibro() {
       estado: row.estado || "Publicado",
       link_verificacion: row.link_verificacion,
     });
+    setTouched({});
     setShowModal(true);
   };
 
-  const close = () => setShowModal(false);
+  const close = () => {
+    setShowModal(false);
+    setTouched({});
+  };
 
   const submit = async () => {
-    if (!form.ano || !form.nombre_capitulo) {
-      alert("Completa al menos Año y Nombre del capítulo.");
+    if (isFormInvalid) {
+      setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
       return;
     }
 
@@ -139,16 +188,15 @@ export default function CapLibro() {
     }
   };
 
-  const badgeClass =
-    (estado) =>
-      "badge-status " +
-      (estado === "Publicado"
-        ? "badge-publicado"
-        : estado === "En revisión"
+  const badgeClass = (estado) =>
+    "badge-status " +
+    (estado === "Publicado"
+      ? "badge-publicado"
+      : estado === "En revisión"
         ? "badge-revision"
         : estado === "Aceptado"
-        ? "badge-aceptado"
-        : "badge-rechazado");
+          ? "badge-aceptado"
+          : "");
 
   return (
     <div>
@@ -157,11 +205,7 @@ export default function CapLibro() {
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div style={{ color: "var(--muted)" }}>Tabla de capítulos de libro</div>
-
-          <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
-            <i className="bi bi-plus-lg me-2" />
-            Nuevo Capítulo
-          </button>
+          <BtnNuevo label="Nueva Capítulo" onClick={openCreate} disabled={loading} />
         </div>
 
         {loading ? (
@@ -207,12 +251,10 @@ export default function CapLibro() {
                         </a>
                       </td>
                       <td className="text-end">
-                        <button className="btn btn-sm btn-outline-light me-2" onClick={() => openEdit(r)}>
-                          Editar
-                        </button>
-                        <button className="btn btn-sm btn-outline-danger" onClick={() => remove(r.id)}>
-                          Eliminar
-                        </button>
+                        <ActionButtons
+                          onEdit={() => openEdit(r)}
+                          onDelete={() => remove(r.id)}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -236,50 +278,55 @@ export default function CapLibro() {
         title={modalTitle}
         onClose={close}
         onSubmit={submit}
-        submitText={saving ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"}
+        submitDisabled={isFormInvalid || saving}
+        submitText={
+          saving ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"
+        }
       >
         <div className="row g-3">
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Autor(es)
-            </label>
-            <input
-              className="form-control input-dark"
+            <AutoresInput
               value={form.autores}
-              onChange={(e) => setForm({ ...form, autores: e.target.value })}
-              placeholder="Ej: García J., Martínez L."
+              onChange={(e) => setField("autores", e.target.value)}
+              className={errorMsg("autores") ? "is-invalid" : ""}
             />
+            {errorMsg("autores") && (
+              <div className="invalid-feedback d-block">{errorMsg("autores")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Autor/a principal
-            </label>
-            <input
-              className="form-control input-dark"
+            <AutorPrincipalInput
               value={form.autor_principal}
-              onChange={(e) => setForm({ ...form, autor_principal: e.target.value })}
-              placeholder="Ej: García J."
+              onChange={(e) => setField("autor_principal", e.target.value)}
+              className={errorMsg("autor_principal") ? "is-invalid" : ""}
             />
+            {errorMsg("autor_principal") && (
+              <div className="invalid-feedback d-block">{errorMsg("autor_principal")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Año*
-            </label>
-            <input
-              className="form-control input-dark"
+            <YearInput
               value={form.ano}
-              onChange={(e) => setForm({ ...form, ano: e.target.value })}
-              placeholder="2024"
+              onChange={(val) => setField("ano", val)}
+              className={errorMsg("ano") ? "is-invalid" : ""}
+              required
             />
+            {errorMsg("ano") && (
+              <div className="invalid-feedback d-block">{errorMsg("ano")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-4">
-              <EstadoSelect
-                value={form.estado}
-                onChange={(e) => setForm({ ...form, estado: e.target.value })}
-              />
+            <EstadoSelect
+              value={form.estado}
+              onChange={(e) => setField("estado", e.target.value)}
+              className={errorMsg("estado") ? "is-invalid" : ""}
+            />
+            {errorMsg("estado") && (
+              <div className="invalid-feedback d-block">{errorMsg("estado")}</div>
+            )}
           </div>
 
           <div className="col-12">
@@ -287,58 +334,53 @@ export default function CapLibro() {
               Nombre del capítulo*
             </label>
             <input
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("nombre_capitulo") ? " is-invalid" : ""}`}
               value={form.nombre_capitulo}
-              onChange={(e) => setForm({ ...form, nombre_capitulo: e.target.value })}
+              onChange={(e) => setField("nombre_capitulo", e.target.value)}
               placeholder="Nombre del capítulo"
             />
+            {errorMsg("nombre_capitulo") && (
+              <div className="invalid-feedback">{errorMsg("nombre_capitulo")}</div>
+            )}
           </div>
 
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Nombre libro
-            </label>
-            <input
-              className="form-control input-dark"
+            <NombreLibroInput
               value={form.nombre_libro}
-              onChange={(e) => setForm({ ...form, nombre_libro: e.target.value })}
-              placeholder="Nombre del libro"
+              onChange={(e) => setField("nombre_libro", e.target.value)}
+              className={errorMsg("nombre_libro") ? "is-invalid" : ""}
             />
+            {errorMsg("nombre_libro") && (
+              <div className="invalid-feedback d-block">{errorMsg("nombre_libro")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Lugar
-            </label>
-            <input
-              className="form-control input-dark"
+            <LugarInput
               value={form.lugar}
-              onChange={(e) => setForm({ ...form, lugar: e.target.value })}
-              placeholder="Lugar"
+              onChange={(e) => setField("lugar", e.target.value)}
+              className={errorMsg("lugar") ? "is-invalid" : ""}
             />
+            {errorMsg("lugar") && (
+              <div className="invalid-feedback d-block">{errorMsg("lugar")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Editorial
-            </label>
-            <input
-              className="form-control input-dark"
+            <EditorialInput
               value={form.editorial}
-              onChange={(e) => setForm({ ...form, editorial: e.target.value })}
-              placeholder="Editorial"
+              onChange={(e) => setField("editorial", e.target.value)}
+              className={errorMsg("editorial") ? "is-invalid" : ""}
             />
+            {errorMsg("editorial") && (
+              <div className="invalid-feedback d-block">{errorMsg("editorial")}</div>
+            )}
           </div>
 
-          <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Respaldo (link)
-            </label>
-            <input
-              className="form-control input-dark"
+          <div className="col-12 col-md">
+            <RespaldoInput
               value={form.link_verificacion}
-              onChange={(e) => setForm({ ...form, link_verificacion: e.target.value })}
-              placeholder="https://..."
+              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
             />
           </div>
         </div>

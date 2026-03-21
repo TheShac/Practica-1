@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import FormModal from "@/components/overlays/formModal/FormModal";
 import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
+import YearInput from "@/components/ui/inputs/YearInput.jsx";
+import TituloInput from "@/components/ui/inputs/TituloInput";
+import PeriodoEjecucionInput from "@/components/ui/inputs/PeriodoEjecucionInput";
+import ActionButtons from "@/components/ui/buttons/ActionButtons";
+import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
 import {
   getMisConsultorias,
   createConsultoria,
@@ -17,6 +22,26 @@ const emptyForm = {
   link_verificacion: "",
 };
 
+const REQUIRED_FIELDS = [
+  { key: "titulo",                  label: "Título" },
+  { key: "institucion_contratante", label: "Institución contratante" },
+  { key: "ano_adjudicacion",        label: "Año de adjudicación" },
+  { key: "periodo_ejecucion",       label: "Período de ejecución" },
+  { key: "objetivo",                label: "Objetivo" },
+];
+
+const validate = (form) => {
+  const errs = {};
+
+  REQUIRED_FIELDS.forEach(({ key, label }) => {
+    if (!form[key] || String(form[key]).trim() === "") {
+      errs[key] = `${label} es obligatorio.`;
+    }
+  });
+
+  return errs;
+};
+
 export default function Consultorias() {
   const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,12 +51,22 @@ export default function Consultorias() {
   const [mode, setMode]           = useState("create");
   const [editingId, setEditingId] = useState(null);
   const [form, setForm]           = useState(emptyForm);
-  const [errors, setErrors]       = useState({});
+  const [touched, setTouched]     = useState({});
+
+  const errors      = useMemo(() => validate(form), [form]);
+  const isFormInvalid = Object.keys(errors).length > 0;
 
   const modalTitle = useMemo(
     () => mode === "create" ? "Nueva Consultoría" : "Editar Consultoría",
-    [mode]
+    [mode],
   );
+
+  const setField = useCallback((key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }, []);
+
+  const errorMsg = (key) => (touched[key] && errors[key]) ? errors[key] : null;
 
   const load = async () => {
     const data = await getMisConsultorias();
@@ -52,29 +87,11 @@ export default function Consultorias() {
     })();
   }, []);
 
-  const validate = () => {
-    const e = {};
-    const currentYear = new Date().getFullYear();
-
-    if (!form.titulo.trim())
-      e.titulo = "El título es obligatorio";
-
-    if (form.ano_adjudicacion) {
-      if (!/^\d{4}$/.test(form.ano_adjudicacion))
-        e.ano_adjudicacion = "Debe tener 4 dígitos";
-      else if (Number(form.ano_adjudicacion) < 1900 || Number(form.ano_adjudicacion) > currentYear)
-        e.ano_adjudicacion = `Entre 1900 y ${currentYear}`;
-    }
-
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
-
   const openCreate = () => {
     setMode("create");
     setEditingId(null);
     setForm(emptyForm);
-    setErrors({});
+    setTouched({});
     setShowModal(true);
   };
 
@@ -89,14 +106,21 @@ export default function Consultorias() {
       objetivo:                row.objetivo || "",
       link_verificacion:       row.link_verificacion || "",
     });
-    setErrors({});
+    setTouched({});
     setShowModal(true);
   };
 
-  const close = () => setShowModal(false);
+  const close = () => {
+    setShowModal(false);
+    setTouched({});
+  };
 
   const submit = async () => {
-    if (!validate()) return;
+    if (isFormInvalid) {
+      setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -138,10 +162,7 @@ export default function Consultorias() {
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div style={{ color: "var(--muted)" }}>Tabla de consultorías</div>
-          <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
-            <i className="bi bi-plus-lg me-2" />
-            Nueva Consultoría
-          </button>
+          <BtnNuevo label="Nueva Consultoría" onClick={openCreate} disabled={loading} />
         </div>
 
         {loading ? (
@@ -180,29 +201,15 @@ export default function Consultorias() {
                         {r.objetivo || "—"}
                       </td>
                       <td>
-                        <a
-                          href={r.link_verificacion || "#"}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
+                        <a href={r.link_verificacion || "#"} target="_blank" rel="noreferrer">
                           Ver
                         </a>
                       </td>
                       <td className="text-center">
-                        <button
-                          className="btn btn-sm btn-outline-light me-2"
-                          onClick={() => openEdit(r)}
-                        >
-                          <i className="bi bi-pencil me-1" />
-                          Editar
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => remove(r.consultoria_id)}
-                        >
-                          <i className="bi bi-trash me-1" />
-                          Eliminar
-                        </button>
+                        <ActionButtons
+                          onEdit={() => openEdit(r)}
+                          onDelete={() => remove(r.consultoria_id)}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -226,67 +233,77 @@ export default function Consultorias() {
         title={modalTitle}
         onClose={close}
         onSubmit={submit}
+        submitDisabled={isFormInvalid || saving}
         submitText={saving ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"}
       >
         <div className="row g-3">
 
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Título*</label>
-            <input
-              className={`form-control input-dark${errors.titulo ? " is-invalid" : ""}`}
+            <TituloInput
               value={form.titulo}
-              onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+              onChange={(e) => setField("titulo", e.target.value)}
               placeholder="Título de la consultoría"
+              className={errorMsg("titulo") ? "is-invalid" : ""}
             />
-            {errors.titulo && <div className="invalid-feedback">{errors.titulo}</div>}
+            {errorMsg("titulo") && (
+              <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Institución contratante</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>
+              Institución contratante*
+            </label>
             <input
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("institucion_contratante") ? " is-invalid" : ""}`}
               value={form.institucion_contratante}
-              onChange={(e) => setForm({ ...form, institucion_contratante: e.target.value })}
+              onChange={(e) => setField("institucion_contratante", e.target.value)}
               placeholder="Nombre de la institución"
             />
+            {errorMsg("institucion_contratante") && (
+              <div className="invalid-feedback">{errorMsg("institucion_contratante")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Año de adjudicación</label>
-            <input
-              className={`form-control input-dark${errors.ano_adjudicacion ? " is-invalid" : ""}`}
+            <YearInput
               value={form.ano_adjudicacion}
-              onChange={(e) => setForm({ ...form, ano_adjudicacion: e.target.value })}
-              placeholder="2024"
+              onChange={(val) => setField("ano_adjudicacion", val)}
+              error={errorMsg("ano_adjudicacion")}
+              label="Año de adjudicación"
+              required
             />
-            {errors.ano_adjudicacion && <div className="invalid-feedback">{errors.ano_adjudicacion}</div>}
           </div>
 
           <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Período de ejecución</label>
-            <input
-              className="form-control input-dark"
+            <PeriodoEjecucionInput
               value={form.periodo_ejecucion}
-              onChange={(e) => setForm({ ...form, periodo_ejecucion: e.target.value })}
-              placeholder="Ej: 2024-2026"
+              onChange={(e) => setField("periodo_ejecucion", e.target.value)}
+              className={errorMsg("periodo_ejecucion") ? "is-invalid" : ""}
             />
+            {errorMsg("periodo_ejecucion") && (
+              <div className="invalid-feedback d-block">{errorMsg("periodo_ejecucion")}</div>
+            )}
           </div>
 
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>Objetivo</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Objetivo*</label>
             <textarea
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("objetivo") ? " is-invalid" : ""}`}
               rows={3}
               value={form.objetivo}
-              onChange={(e) => setForm({ ...form, objetivo: e.target.value })}
+              onChange={(e) => setField("objetivo", e.target.value)}
               placeholder="Descripción del objetivo de la consultoría"
             />
+            {errorMsg("objetivo") && (
+              <div className="invalid-feedback">{errorMsg("objetivo")}</div>
+            )}
           </div>
 
           <div className="col-12">
             <RespaldoInput
               value={form.link_verificacion}
-              onChange={(e) => setForm({ ...form, link_verificacion: e.target.value })}
+              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
             />
           </div>
 

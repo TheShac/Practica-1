@@ -1,8 +1,10 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import FormModal from "@/components/overlays/formModal/FormModal";
-import YearInput from "@/components/ui/inputs/YearInput";
+import FormModal from "@/components/overlays/formModal/FormModal.jsx";
+import YearInput from "@/components/ui/inputs/YearInput.jsx";
 import RespaldoInput from "@/components/forms/backupLink/RespaldoInput";
+import ActionButtons from "@/components/ui/buttons/ActionButtons";
+import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
 import {
   fetchTesis,
   createTesis,
@@ -21,31 +23,63 @@ const emptyForm = {
   rol_guia: "GUIA",
 };
 
+const getRequiredFields = (nivelUpper) => [
+  { key: "autor",          label: "Autor" },
+  { key: "ano",            label: "Año" },
+  { key: "titulo_tesis",   label: "Título" },
+  { key: "nombre_programa", label: "Programa" },
+  { key: "institucion",    label: "Institución" },
+  ...(nivelUpper === "DOCTORADO"
+    ? [{ key: "tesis_dirigida", label: "Tesis dirigida en el mismo programa" }]
+    : []),
+];
+
+const validate = (form, nivelUpper) => {
+  const errs = {};
+  const requiredFields = getRequiredFields(nivelUpper);
+
+  requiredFields.forEach(({ key, label }) => {
+    if (!form[key] || String(form[key]).trim() === "") {
+      errs[key] = `${label} es obligatorio.`;
+    }
+  });
+  
+  return errs;
+};
+
 export default function Tesis() {
   const { nivel } = useParams();
   const nivelUpper = nivel?.toUpperCase();
+  const nivelValido = nivelUpper === "MAGISTER" || nivelUpper === "DOCTORADO";
 
-  const nivelValido =
-    nivelUpper === "MAGISTER" || nivelUpper === "DOCTORADO";
-
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [rows, setRows]               = useState([]);
+  const [loading, setLoading]         = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
+
   const [showModal, setShowModal] = useState(false);
-  const [mode, setMode] = useState("create");
+  const [mode, setMode]           = useState("create");
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
-  const [errors, setErrors] = useState({});
+  const [form, setForm]           = useState(emptyForm);
+  const [touched, setTouched]     = useState({});
 
-  useEffect(() => {
-    if (nivelValido) loadTesis();
-  }, [nivelUpper]);
+  const errors        = useMemo(() => validate(form, nivelUpper), [form, nivelUpper]);
+  const isFormInvalid = Object.keys(errors).length > 0;
 
-  useEffect(() => {
-    if (showModal) validate();
-  }, [form]);
+  const modalTitle = useMemo(() => {
+    const nivelTexto = nivelUpper === "MAGISTER" ? "Magíster" : "Doctorado";
+    return mode === "create"
+      ? `Nueva Tesis (${nivelTexto})`
+      : `Editar Tesis (${nivelTexto})`;
+  }, [mode, nivelUpper]);
 
-  async function loadTesis() {
+  const setField = useCallback((key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }, []);
+
+  const errorMsg = (key) => (touched[key] && errors[key]) ? errors[key] : null;
+
+  const loadTesis = async () => {
     try {
       setLoading(true);
       const data = await fetchTesis(nivelUpper);
@@ -56,96 +90,49 @@ export default function Tesis() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-  const modalTitle = useMemo(() => {
-    const nivelTexto =
-      nivelUpper === "MAGISTER" ? "Magíster" : "Doctorado";
-
-    return mode === "create"
-      ? `Nueva Tesis (${nivelTexto})`
-      : `Editar Tesis (${nivelTexto})`;
-  }, [mode, nivelUpper]);
-
-  function validate() {
-    const newErrors = {};
-    const currentYear = new Date().getFullYear();
-    const anoNumber = Number(form.ano);
-
-    if (!form.autor.trim())
-      newErrors.autor = "El autor es obligatorio";
-
-    if (!form.titulo_tesis.trim())
-      newErrors.titulo_tesis = "El título es obligatorio";
-
-    if (!form.nombre_programa.trim())
-      newErrors.nombre_programa = "El programa es obligatorio";
-
-    if (!form.institucion.trim())
-      newErrors.institucion = "La institución es obligatoria";
-
-    if (!form.ano)
-      newErrors.ano = "El año es obligatorio";
-    else if (!/^\d{4}$/.test(form.ano))
-      newErrors.ano = "Debe tener 4 dígitos numéricos";
-    else if (anoNumber < 1900 || anoNumber > currentYear)
-      newErrors.ano = `Debe estar entre 1900 y ${currentYear}`;
-
-    if (
-      nivelUpper === "DOCTORADO" &&
-      !form.tesis_dirigida
-    ) {
-      newErrors.tesis_dirigida =
-        "Debe indicar si fue dirigida en el mismo programa";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  }
-
-  const isFormValid =
-    Object.keys(errors).length === 0 &&
-    form.ano.length === 4;
+  useEffect(() => {
+    if (nivelValido) loadTesis();
+  }, [nivelUpper]);
 
   const openCreate = () => {
     setMode("create");
     setEditingId(null);
     setForm(emptyForm);
-    setErrors({});
+    setTouched({});
     setShowModal(true);
   };
 
   const openEdit = (row) => {
     setMode("edit");
     setEditingId(row.tesis_id);
-    setForm({
-      ...row,
-      ano: String(row.ano),
-    });
-    setErrors({});
+    setForm({ ...row, ano: String(row.ano) });
+    setTouched({});
     setShowModal(true);
   };
 
   const close = () => {
     if (loadingSubmit) return;
     setShowModal(false);
-    setErrors({});
+    setTouched({});
   };
 
   const submit = async () => {
-    if (!validate()) return;
+    if (isFormInvalid) {
+      setTouched(
+        Object.fromEntries(getRequiredFields(nivelUpper).map(({ key }) => [key, true]))
+      );
+      return;
+    }
 
     try {
       setLoadingSubmit(true);
-
       const payload = {
         ...form,
-        ano: Number(form.ano),
-        nivel_programa: nivelUpper,
-        tesis_dirigida:
-          nivelUpper === "DOCTORADO"
-          ? form.tesis_dirigida
-          : null,
+        ano:             Number(form.ano),
+        nivel_programa:  nivelUpper,
+        tesis_dirigida:  nivelUpper === "DOCTORADO" ? form.tesis_dirigida : null,
       };
 
       if (mode === "create") {
@@ -155,7 +142,7 @@ export default function Tesis() {
       }
 
       setShowModal(false);
-      loadTesis();
+      await loadTesis();
     } catch (err) {
       console.error(err);
       alert(err.message || "Error guardando tesis");
@@ -166,19 +153,18 @@ export default function Tesis() {
 
   const remove = async (id) => {
     if (!confirm("¿Eliminar esta tesis?")) return;
-
     try {
       await deleteTesis(id);
-      loadTesis();
+      await loadTesis();
     } catch (err) {
       console.error(err);
       alert("Error eliminando tesis");
     }
   };
 
-  if (!nivelValido) {
-    return <div>Nivel inválido.</div>;
-  }
+  const colSpanTotal = nivelUpper === "DOCTORADO" ? 9 : 8;
+
+  if (!nivelValido) return <div>Nivel inválido.</div>;
 
   return (
     <div>
@@ -188,14 +174,8 @@ export default function Tesis() {
 
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <div style={{ color: "var(--muted)" }}>
-            Listado de tesis
-          </div>
-
-          <button className="btn btn-primary" onClick={openCreate}>
-            <i className="bi bi-plus-lg me-2" />
-            Nueva Tesis
-          </button>
+           <div style={{ color: "var(--muted)" }}>Listado de tesis</div>
+          <BtnNuevo label="Nueva Tesis" onClick={openCreate} disabled={loading} />
         </div>
 
         {loading ? (
@@ -230,7 +210,7 @@ export default function Tesis() {
                       <td>{r.nombre_programa}</td>
                       <td>{r.institucion}</td>
                       {nivelUpper === "DOCTORADO" && (
-                        <td>{r.tesis_dirigida}</td>
+                        <td>{r.tesis_dirigida || "—"}</td>
                       )}
                       <td>{r.rol_guia}</td>
                       <td>
@@ -243,28 +223,19 @@ export default function Tesis() {
                         </a>
                       </td>
                       <td className="text-end">
-                        <button
-                          className="btn btn-sm btn-outline-light me-2"
-                          onClick={() => openEdit(r)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => remove(r.tesis_id)}
-                        >
-                          Eliminar
-                        </button>
+                        <ActionButtons
+                          onEdit={() => openEdit(r)}
+                          onDelete={() => remove(r.tesis_id)}
+                        />
                       </td>
                     </tr>
                   ))}
 
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan="6" style={{ color: "var(--muted)" }}>
+                      <td colSpan={colSpanTotal} style={{ color: "var(--muted)" }}>
                         Sin registros.
                       </td>
-                      <td colSpan={nivelUpper === "DOCTORADO" ? 8 : 7}></td>
                     </tr>
                   )}
                 </tbody>
@@ -279,112 +250,74 @@ export default function Tesis() {
         title={modalTitle}
         onClose={close}
         onSubmit={submit}
-        submitText={
-          loadingSubmit
-            ? "Guardando..."
-            : mode === "create"
-            ? "Crear"
-            : "Guardar cambios"
-        }
-        submitDisabled={!isFormValid || loadingSubmit}
+        submitDisabled={isFormInvalid || loadingSubmit}
+        submitText={loadingSubmit ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"}
       >
         <div className="row g-3">
 
           <div className="col-12 col-md-6">
-            <label className="form-label text-light">Autor</label>
+            <label className="form-label text-light">Autor*</label>
             <input
-              className={`form-control input-dark ${errors.autor ? "is-invalid" : ""}`}
+              className={`form-control input-dark${errorMsg("autor") ? " is-invalid" : ""}`}
               value={form.autor}
-              onChange={(e) =>
-                setForm({ ...form, autor: e.target.value })
-              }
+              onChange={(e) => setField("autor", e.target.value)}
             />
-            {errors.autor && (
-              <div className="invalid-feedback d-block">
-                {errors.autor}
-              </div>
+            {errorMsg("autor") && (
+              <div className="invalid-feedback d-block">{errorMsg("autor")}</div>
             )}
           </div>
 
           <div className="col-12 col-md-6">
             <YearInput
               value={form.ano}
-              onChange={(val) =>
-                setForm({ ...form, ano: val })
-              }
-              error={errors.ano}
+              onChange={(val) => setField("ano", val)}
+              error={errorMsg("ano")}
               required
             />
           </div>
 
           <div className="col-12">
-            <label className="form-label text-light">Título</label>
+            <label className="form-label text-light">Título de la Tesis*</label>
             <input
-              className={`form-control input-dark ${errors.titulo_tesis ? "is-invalid" : ""}`}
+              className={`form-control input-dark${errorMsg("titulo_tesis") ? " is-invalid" : ""}`}
               value={form.titulo_tesis}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  titulo_tesis: e.target.value,
-                })
-              }
+              onChange={(e) => setField("titulo_tesis", e.target.value)}
             />
-            {errors.titulo_tesis && (
-              <div className="invalid-feedback d-block">
-                {errors.titulo_tesis}
-              </div>
+            {errorMsg("titulo_tesis") && (
+              <div className="invalid-feedback d-block">{errorMsg("titulo_tesis")}</div>
             )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label text-light">Programa</label>
+            <label className="form-label text-light">Nombre del Programa*</label>
             <input
-              className={`form-control input-dark ${errors.nombre_programa ? "is-invalid" : ""}`}
+              className={`form-control input-dark${errorMsg("nombre_programa") ? " is-invalid" : ""}`}
               value={form.nombre_programa}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  nombre_programa: e.target.value,
-                })
-              }
+              onChange={(e) => setField("nombre_programa", e.target.value)}
             />
-            {errors.nombre_programa && (
-              <div className="invalid-feedback d-block">
-                {errors.nombre_programa}
-              </div>
+            {errorMsg("nombre_programa") && (
+              <div className="invalid-feedback d-block">{errorMsg("nombre_programa")}</div>
             )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label text-light">Institución</label>
+            <label className="form-label text-light">Institución*</label>
             <input
-              className={`form-control input-dark ${errors.institucion ? "is-invalid" : ""}`}
+              className={`form-control input-dark${errorMsg("institucion") ? " is-invalid" : ""}`}
               value={form.institucion}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  institucion: e.target.value,
-                })
-              }
+              onChange={(e) => setField("institucion", e.target.value)}
             />
-            {errors.institucion && (
-              <div className="invalid-feedback d-block">
-                {errors.institucion}
-              </div>
+            {errorMsg("institucion") && (
+              <div className="invalid-feedback d-block">{errorMsg("institucion")}</div>
             )}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label text-light">Rol guía</label>
+            <label className="form-label text-light">Rol guía*</label>
             <select
               className="form-select input-dark"
               value={form.rol_guia}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  rol_guia: e.target.value,
-                })
-              }
+              onChange={(e) => setField("rol_guia", e.target.value)}
             >
               <option value="GUIA">Guía</option>
               <option value="CO_GUIA">Co-Guía</option>
@@ -394,31 +327,29 @@ export default function Tesis() {
           {nivelUpper === "DOCTORADO" && (
             <div className="col-12 col-md-6">
               <label className="form-label text-light">
-                ¿La tesis fue dirigida en el mismo programa?
+                ¿La tesis fue dirigida en el mismo programa?*
               </label>
               <select
-                className="form-select input-dark"
+                className={`form-select input-dark${errorMsg("tesis_dirigida") ? " is-invalid" : ""}`}
                 value={form.tesis_dirigida}
-                onChange={(e) =>
-                  setForm({
-                    ...form,
-                    tesis_dirigida: e.target.value,
-                  })
-                }
+                onChange={(e) => setField("tesis_dirigida", e.target.value)}
               >
                 <option value="" disabled>Seleccione</option>
                 <option value="Si">Si</option>
                 <option value="No">No</option>
               </select>
+              {errorMsg("tesis_dirigida") && (
+                <div className="invalid-feedback d-block">{errorMsg("tesis_dirigida")}</div>
+              )}
             </div>
           )}
         </div>
 
         <div className="col-12 col-md">
           <RespaldoInput
-            value={form.link_verificacion}
-            onChange={(e) => setForm({ ...form, link_verificacion: e.target.value })}
-          />
+              value={form.link_verificacion}
+              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
+            />
         </div>
       </FormModal>
     </div>

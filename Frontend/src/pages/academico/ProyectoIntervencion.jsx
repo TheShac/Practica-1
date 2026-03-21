@@ -1,6 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
-import FormModal from "@/components/overlays/formModal/FormModal";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import FormModal from "@/components/overlays/formModal/FormModal.jsx";
 import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
+import YearInput from "@/components/ui/inputs/YearInput.jsx";
+import TituloInput from "@/components/ui/inputs/TituloInput";
+import PeriodoEjecucionInput from "@/components/ui/inputs/PeriodoEjecucionInput.jsx";
+import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
+import ActionButtons from "@/components/ui/buttons/ActionButtons.jsx";
 
 import {
   getMisIntervenciones,
@@ -18,21 +23,51 @@ const emptyForm = {
   link_verificacion: "",
 };
 
+const REQUIRED_FIELDS = [
+  { key: "titulo",                 label: "Título" },
+  { key: "fuente_financiamiento",  label: "Fuente de financiamiento" },
+  { key: "ano_adjudicacion",       label: "Año de adjudicación" },
+  { key: "periodo_ejecucion",      label: "Período de ejecución" },
+  { key: "rol_proyecto",           label: "Rol en el proyecto" },
+];
+
+const validate = (form) => {
+  const errs = {};
+
+  REQUIRED_FIELDS.forEach(({ key, label }) => {
+    if (!form[key] || String(form[key]).trim() === "") {
+      errs[key] = `${label} es obligatorio.`;
+    }
+  });
+
+  return errs;
+};
+
 export default function ProyectoIntervencion() {
-  const [rows, setRows] = useState([]);
+  const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]   = useState(false);
 
   const [showModal, setShowModal] = useState(false);
-  const [mode, setMode] = useState("create");
+  const [mode, setMode]           = useState("create");
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm]           = useState(emptyForm);
+  const [touched, setTouched]     = useState({});
 
-  const modalTitle = useMemo(() => {
-    return mode === "create"
-      ? "Nuevo Proyecto de Intervención"
-      : "Editar Proyecto de Intervención";
-  }, [mode]);
+  const errors        = useMemo(() => validate(form), [form]);
+  const isFormInvalid = Object.keys(errors).length > 0;
+
+  const modalTitle = useMemo(
+    () => mode === "create" ? "Nuevo Proyecto de Intervención" : "Editar Proyecto de Intervención",
+    [mode],
+  );
+
+  const setField = useCallback((key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }, []);
+
+  const errorMsg = (key) => (touched[key] && errors[key]) ? errors[key] : null;
 
   const load = async () => {
     const data = await getMisIntervenciones();
@@ -70,6 +105,7 @@ export default function ProyectoIntervencion() {
     setMode("create");
     setEditingId(null);
     setForm(emptyForm);
+    setTouched({});
     setShowModal(true);
   };
 
@@ -85,30 +121,30 @@ export default function ProyectoIntervencion() {
       rol_proyecto: row.rol_proyecto,
       link_verificacion: row.link_verificacion,
     });
-
+    setTouched({});
     setShowModal(true);
   };
 
-  const close = () => setShowModal(false);
+  const close = () => {
+    setShowModal(false);
+    setTouched({});
+  };
 
   const submit = async () => {
-    if (!form.titulo || !form.ano_adjudicacion) {
-      alert("Completa al menos Título y Año.");
+    if (isFormInvalid) {
+      setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
       return;
     }
 
     setSaving(true);
-
     try {
       const payload = {
-        titulo: form.titulo,
+        titulo:                form.titulo,
         fuente_financiamiento: form.fuente_financiamiento,
-        ano_adjudicacion: form.ano_adjudicacion
-          ? Number(form.ano_adjudicacion)
-          : null,
-        periodo_ejecucion: form.periodo_ejecucion,
-        rol_proyecto: form.rol_proyecto,
-        link_verificacion: form.link_verificacion,
+        ano_adjudicacion:      form.ano_adjudicacion ? Number(form.ano_adjudicacion) : null,
+        periodo_ejecucion:     form.periodo_ejecucion,
+        rol_proyecto:          form.rol_proyecto,
+        link_verificacion:     form.link_verificacion,
       };
 
       if (mode === "create") {
@@ -145,9 +181,7 @@ export default function ProyectoIntervencion() {
 
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <div style={{ color: "var(--muted)" }}>
-            Tabla de proyectos de intervención
-          </div>
+          <div style={{ color: "var(--muted)" }}> Tabla de proyectos de intervención </div>
           <BtnNuevo label="Nueva Proyecto" onClick={openCreate} disabled={loading} />
         </div>
 
@@ -173,35 +207,22 @@ export default function ProyectoIntervencion() {
                   {rows.map((r) => (
                     <tr key={r.id}>
                       <td>{r.titulo}</td>
-                      <td>{r.fuente_financiamiento}</td>
-                      <td>{r.ano_adjudicacion}</td>
-                      <td>{r.periodo_ejecucion}</td>
-                      <td>{r.rol_proyecto}</td>
+                      <td>{r.fuente_financiamiento || "—"}</td>
+                      <td>{r.ano_adjudicacion || "—"}</td>
+                      <td>{r.periodo_ejecucion || "—"}</td>
+                      <td>{r.rol_proyecto || "—"}</td>
 
                       <td>
-                        <a
-                          href={r.link_verificacion || "#"}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
+                        <a href={r.link_verificacion || "#"} target="_blank" rel="noreferrer">
                           Ver
                         </a>
                       </td>
 
                       <td className="text-end">
-                        <button
-                          className="btn btn-sm btn-outline-light me-2"
-                          onClick={() => openEdit(r)}
-                        >
-                          Editar
-                        </button>
-
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => remove(r.id)}
-                        >
-                          Eliminar
-                        </button>
+                        <ActionButtons
+                          onEdit={() => openEdit(r)}
+                          onDelete={() => remove(r.id)}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -226,84 +247,68 @@ export default function ProyectoIntervencion() {
         title={modalTitle}
         onClose={close}
         onSubmit={submit}
-        submitText={
-          saving
-            ? "Guardando..."
-            : mode === "create"
-            ? "Crear"
-            : "Guardar cambios"
-        }
+        submitDisabled={isFormInvalid || saving}
+        submitText={saving ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"}
       >
         <div className="row g-3">
 
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Título*
-            </label>
-            <input
-              className="form-control input-dark"
+            <TituloInput
               value={form.titulo}
-              onChange={(e) =>
-                setForm({ ...form, titulo: e.target.value })
-              }
+              onChange={(e) => setField("titulo", e.target.value)}
+              placeholder="Título del proyecto"
+              className={errorMsg("titulo") ? "is-invalid" : ""}
             />
+            {errorMsg("titulo") && (
+              <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-6">
             <label className="form-label" style={{ color: "var(--muted)" }}>
-              Fuente de financiamiento
+              Fuente de financiamiento*
             </label>
             <input
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("fuente_financiamiento") ? " is-invalid" : ""}`}
+              list="fuentes-financiamiento"
               value={form.fuente_financiamiento}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  fuente_financiamiento: e.target.value,
-                })
-              }
+              onChange={(e) => setField("fuente_financiamiento", e.target.value)}
             />
+            {errorMsg("fuente_financiamiento") && (
+              <div className="invalid-feedback d-block">{errorMsg("fuente_financiamiento")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-3">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Año*
-            </label>
-            <input
-              className="form-control input-dark"
+            <YearInput
               value={form.ano_adjudicacion}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  ano_adjudicacion: e.target.value,
-                })
-              }
+              onChange={(val) => setField("ano_adjudicacion", val)}
+              error={errorMsg("ano_adjudicacion")}
+              label="Año de adjudicación"
+              required
             />
+          </div>
+
+          <div className="col-12">
+            <PeriodoEjecucionInput
+              value={form.periodo_ejecucion}
+              onChange={(e) => setField("periodo_ejecucion", e.target.value)}
+              className={errorMsg("periodo_ejecucion") ? "is-invalid" : ""}
+            />
+            {errorMsg("periodo_ejecucion") && (
+              <div className="invalid-feedback d-block">{errorMsg("periodo_ejecucion")}</div>
+            )}
           </div>
 
           <div className="col-12">
             <label className="form-label" style={{ color: "var(--muted)" }}>
-              Periodo de ejecución
+              Rol en el proyecto*
             </label>
             <input
-              className="form-control input-dark"
-              value={form.periodo_ejecucion}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  periodo_ejecucion: e.target.value,
-                })
-              }
-            />
-          </div>
-
-          <div className="col-12">
-            <label className="form-label">Rol en el proyecto</label>
-            <input
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("rol_proyecto") ? " is-invalid" : ""}`}
               list="roles-proyecto"
               value={form.rol_proyecto}
-              onChange={(e) => setForm({ ...form, rol_proyecto: e.target.value })}
+              onChange={(e) => setField("rol_proyecto", e.target.value)}
               placeholder="Selecciona o escribe un rol..."
             />
             <datalist id="roles-proyecto">
@@ -311,22 +316,15 @@ export default function ProyectoIntervencion() {
               <option value="Director" />
               <option value="Co-Investigador" />
             </datalist>
+            {errorMsg("rol_proyecto") && (
+              <div className="invalid-feedback d-block">{errorMsg("rol_proyecto")}</div>
+            )}
           </div>
 
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Respaldo (link)
-            </label>
-            <input
-              className="form-control input-dark"
+            <RespaldoInput
               value={form.link_verificacion}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  link_verificacion: e.target.value,
-                })
-              }
-              placeholder="https://..."
+              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
             />
           </div>
 

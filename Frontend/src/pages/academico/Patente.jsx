@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
-import FormModal from "@/components/overlays/formModal/FormModal";
-import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import FormModal from "@/components/overlays/formModal/FormModal.jsx";
+import EstadoSelect from "@/components/forms/statusSelect/EstadoSelect.jsx";
+import RespaldoInput from "@/components/forms/backupLink/RespaldoInput.jsx";
+import ActionButtons from "@/components/ui/buttons/ActionButtons.jsx";
+import BtnNuevo from "@/components/ui/buttons/BtnCreate.jsx";
 import {
   fetchPatentes,
   createPatente,
@@ -18,24 +21,56 @@ const emptyForm = {
   link_verificacion: "",
 };
 
+const REQUIRED_FIELDS = [
+  { key: "inventores",       label: "Inventor(es)" },
+  { key: "nombre_patente",   label: "Nombre patente" },
+  { key: "fecha_solicitud",  label: "Fecha de solicitud" },
+  { key: "num_registro",     label: "N° de registro" },
+  { key: "estado",           label: "Estado" },
+];
+
+const validate = (form) => {
+  const errs = {};
+
+  REQUIRED_FIELDS.forEach(({ key, label }) => {
+    if (!form[key] || String(form[key]).trim() === "") {
+      errs[key] = `${label} es obligatorio.`;
+    }
+  });
+
+  return errs;
+};
+
 function formatDate(date) {
   if (!date) return "";
   return new Date(date).toISOString().split("T")[0];
 }
 
 export default function Patente() {
-  const [rows, setRows] = useState([]);
+  const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saving, setSaving]   = useState(false);
 
   const [showModal, setShowModal] = useState(false);
-  const [mode, setMode] = useState("create");
+  const [mode, setMode]           = useState("create");
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm]           = useState(emptyForm);
+  const [touched, setTouched]     = useState({});
 
-  const modalTitle = useMemo(() => {
-    return mode === "create" ? "Nueva Patente" : "Editar Patente";
-  }, [mode]);
+  const errors        = useMemo(() => validate(form), [form]);
+  const isFormInvalid = Object.keys(errors).length > 0;
+
+  const modalTitle = useMemo(
+    () => mode === "create" ? "Nueva Patente" : "Editar Patente",
+    [mode],
+  );
+
+  const setField = useCallback((key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }, []);
+
+  const errorMsg = (key) => (touched[key] && errors[key]) ? errors[key] : null;
 
   const load = async () => {
     const data = await fetchPatentes();
@@ -72,6 +107,7 @@ export default function Patente() {
     setMode("create");
     setEditingId(null);
     setForm(emptyForm);
+    setTouched({});
     setShowModal(true);
   };
 
@@ -79,19 +115,22 @@ export default function Patente() {
     setMode("edit");
     setEditingId(row.id);
     setForm(row);
+    setTouched({});
     setShowModal(true);
   };
 
-  const close = () => setShowModal(false);
+  const close = () => {
+    setShowModal(false);
+    setTouched({});
+  };
 
   const submit = async () => {
-    if (!form.nombre_patente.trim()) {
-      alert("Nombre patente obligatorio");
+    if (isFormInvalid) {
+      setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
       return;
     }
 
     setSaving(true);
-
     try {
       if (mode === "create") {
         await createPatente(form);
@@ -121,20 +160,24 @@ export default function Patente() {
     }
   };
 
+  const badgeClass = (estado) =>
+    "badge-status " +
+    (estado === "Publicado"
+      ? "badge-publicado"
+      : estado === "En revisión"
+      ? "badge-revision"
+      : estado === "Aceptado"
+      ? "badge-aceptado"
+      : "");
+
   return (
     <div>
       <h3 className="mb-3 perfil-title">Patentes</h3>
 
       <div className="panel-card">
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <div style={{ color: "var(--muted)" }}>
-            Tabla de patentes
-          </div>
-
-          <button className="btn btn-primary" onClick={openCreate} disabled={loading}>
-            <i className="bi bi-plus-lg me-2" />
-            Nueva Patente
-          </button>
+          <div style={{ color: "var(--muted)" }}>Tabla de patentes</div>
+          <BtnNuevo label="Nueva Patente" onClick={openCreate} disabled={loading} />
         </div>
 
         {loading ? (
@@ -160,52 +203,22 @@ export default function Patente() {
                     <tr key={r.id}>
                         <td>{r.inventores}</td>
                         <td>{r.nombre_patente}</td>
+                        <td>{r.fecha_solicitud || "—"}</td>
+                        <td>{r.fecha_publicacion || "—"}</td>
+                        <td>{r.num_registro || "—"}</td>
                         <td>
-                        {r.fecha_solicitud
-                            ? new Date(r.fecha_solicitud).toISOString().split("T")[0]
-                            : ""}
+                          <span className={badgeClass(r.estado)}>{r.estado}</span>
                         </td>
-
                         <td>
-                        {r.fecha_publicacion
-                            ? new Date(r.fecha_publicacion).toISOString().split("T")[0]
-                            : ""}
-                        </td>
-                        <td>{r.num_registro}</td>
-                        <td><span
-                          className={
-                            "badge-status " +
-                            (r.estado === "Publicado"
-                              ? "badge-publicado"
-                              : r.estado === "En revisión"
-                              ? "badge-revision"
-                              : r.estado === "Aceptado" ? "badge-aceptado" : "")
-                          }
-                        >
-                          {r.estado}
-                        </span></td>
-                        <td>
-                        <a
-                          href={r.link_verificacion || "#"}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
+                        <a href={r.link_verificacion || "#"} target="_blank" rel="noreferrer">
                           Ver
                         </a>
                       </td>
                       <td className="text-end">
-                        <button
-                          className="btn btn-sm btn-outline-light me-2"
-                          onClick={() => openEdit(r)}
-                        >
-                          Editar
-                        </button>
-                        <button
-                          className="btn btn-sm btn-outline-danger"
-                          onClick={() => remove(r.id)}
-                        >
-                          Eliminar
-                        </button>
+                        <ActionButtons
+                          onEdit={() => openEdit(r)}
+                          onDelete={() => remove(r.id)}
+                        />
                       </td>
                     </tr>
                   ))}
@@ -229,90 +242,97 @@ export default function Patente() {
         title={modalTitle}
         onClose={close}
         onSubmit={submit}
-        submitText={
-          saving
-            ? "Guardando..."
-            : mode === "create"
-            ? "Crear"
-            : "Guardar cambios"
-        }
+        submitDisabled={isFormInvalid || saving}
+        submitText={saving ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"}
       >
         <div className="row g-3">
           <div className="col-12">
-            <label className="form-label">Inventor(es)</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>
+              Inventor(es)*
+            </label>
             <input
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("inventores") ? " is-invalid" : ""}`}
               value={form.inventores}
-              onChange={(e) =>
-                setForm({ ...form, inventores: e.target.value })
-              }
+              onChange={(e) => setField("inventores", e.target.value)}
+              placeholder="Ej: García J., Martínez L."
             />
+            {errorMsg("inventores") && (
+              <div className="invalid-feedback">{errorMsg("inventores")}</div>
+            )}
           </div>
 
           <div className="col-12">
-            <label className="form-label">Nombre Patente*</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>
+              Nombre Patente*
+            </label>
             <input
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("nombre_patente") ? " is-invalid" : ""}`}
               value={form.nombre_patente}
-              onChange={(e) =>
-                setForm({ ...form, nombre_patente: e.target.value })
-              }
+              onChange={(e) => setField("nombre_patente", e.target.value)}
+              placeholder="Nombre de la patente"
             />
+            {errorMsg("nombre_patente") && (
+              <div className="invalid-feedback">{errorMsg("nombre_patente")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label">Fecha de Solicitud</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>
+              Fecha de Solicitud*
+            </label>
             <input
               type="date"
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("fecha_solicitud") ? " is-invalid" : ""}`}
               value={form.fecha_solicitud}
-              onChange={(e) =>
-                setForm({ ...form, fecha_solicitud: e.target.value })
-              }
+              onChange={(e) => setField("fecha_solicitud", e.target.value)}
             />
+            {errorMsg("fecha_solicitud") && (
+              <div className="invalid-feedback">{errorMsg("fecha_solicitud")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label">Fecha de Publicación</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>
+              Fecha de Publicación
+            </label>
             <input
               type="date"
               className="form-control input-dark"
               value={form.fecha_publicacion}
-              onChange={(e) =>
-                setForm({ ...form, fecha_publicacion: e.target.value })
-              }
+              onChange={(e) => setField("fecha_publicacion", e.target.value)}
             />
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label">N° de registro</label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>
+              N° de registro*
+            </label>
             <input
-              className="form-control input-dark"
+              className={`form-control input-dark${errorMsg("num_registro") ? " is-invalid" : ""}`}
               value={form.num_registro}
-              onChange={(e) =>
-                setForm({ ...form, num_registro: e.target.value })
-              }
+              onChange={(e) => setField("num_registro", e.target.value)}
+              placeholder="Ej: 202400123"
             />
+            {errorMsg("num_registro") && (
+              <div className="invalid-feedback">{errorMsg("num_registro")}</div>
+            )}
           </div>
 
           <div className="col-12 col-md-4">
-              <EstadoSelect
-                value={form.estado}
-                onChange={(e) => setForm({ ...form, estado: e.target.value })}
-              />
+            <EstadoSelect
+              value={form.estado}
+              onChange={(e) => setField("estado", e.target.value)}
+              className={errorMsg("estado") ? "is-invalid" : ""}
+            />
+            {errorMsg("estado") && (
+              <div className="invalid-feedback d-block">{errorMsg("estado")}</div>
+            )}
           </div>
 
           <div className="col-12">
-            <label className="form-label">Respaldo (link)</label>
-            <input
-              className="form-control input-dark"
+            <RespaldoInput
               value={form.link_verificacion}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  link_verificacion: e.target.value,
-                })
-              }
+              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
             />
           </div>
         </div>
