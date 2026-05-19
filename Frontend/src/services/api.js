@@ -22,7 +22,9 @@ function authHeader() {
 }
 
 export async function getCategorias() {
-  const res = await fetch(`${API_URL}/categorias`);
+  const res = await fetch(`${API_URL}/categorias`, {
+    headers: { ...authHeader() },
+  });
   const data = await res.json();
   if (!res.ok) throw new Error(data?.message || "Error cargando categorías");
   return data;
