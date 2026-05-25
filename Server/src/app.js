@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 
 app.use(morgan('dev'));
-app.options("*", cors());
+app.options("/{*path}", cors());
 app.use(cors({
   origin: process.env.FRONTEND_URL,
   credentials: true,
