@@ -1,8 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 
-import { loginRequest } from "../services/api.js";
-import { formatRut, looksLikeEmail } from "../utils/rut.js";
+import { loginRequest } from "@/core/auth/auth.service.js";
+import { formatRut, looksLikeEmail } from "@/shared/utils/rut.js";
+
+import logoElearn from "@/assets/logo_elearn.jpeg";
+import logoUtamed from "@/assets/logo_utamed.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -134,11 +137,17 @@ export default function Login() {
                     type="button"
                     className="input-group-text input-dark"
                     onClick={() => setShowPass((v) => !v)}
-                    style={{ cursor: "pointer" }}
+                    style={{
+                      cursor: "pointer",
+                      background: "transparent",
+                      border: "1px solid var(--border)",
+                      borderLeft: "none",
+                      color: "var(--muted)",
+                    }}
                     aria-label="Mostrar/Ocultar clave"
                     title="Mostrar/Ocultar clave"
                   >
-                    <i className={`bi ${showPass ? "bi-eye-slash" : "bi-eye"}`} />
+                    <i className={`bi ${showPass ? "bi-eye" : "bi-eye-slash"}`} />
                   </button>
                 </div>
               </div>
@@ -187,7 +196,7 @@ export default function Login() {
 
               <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
                 Cuenta Secretaria: 22.222.222-2 / Secretaria123* <br/>
-                Cuenta Academico: 33.333.333-3 / Academico123*
+                Cuenta Academico: 33.333.333-3 / Academico123* <br/>
                 Cuenta Academico: 44.444.444-4 / Academico123*
               </div>
               
@@ -208,26 +217,36 @@ export default function Login() {
               </div>
 
               <div className="d-flex gap-2 flex-wrap">
-                <span
-                  className="px-3 py-2 rounded"
-                  style={{
-                    border: "1px solid var(--border)",
-                    color: "var(--text)",
-                    background: "rgba(255,255,255,.04)",
-                  }}
-                >
-                  DIDO
-                </span>
-                <span
-                  className="px-3 py-2 rounded"
-                  style={{
-                    border: "1px solid var(--border)",
-                    color: "var(--text)",
-                    background: "rgba(255,255,255,.04)",
-                  }}
-                >
-                  UTA Med
-                </span>
+                <a href="https://elearn.uta.cl/" target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={logoElearn}
+                    alt="DIDO Elearn UTA"
+                    style={{
+                      height: 52,
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
+                      background: "#fff",
+                      padding: "4px 8px",
+                      objectFit: "contain",
+                      cursor: "pointer",
+                    }}
+                  />
+                </a>
+                <a href="http://utamed.uta.cl/utamed/" target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={logoUtamed}
+                    alt="UTA Med"
+                    style={{
+                      height: 52,
+                      borderRadius: 8,
+                      border: "1px solid var(--border)",
+                      background: "#fff",
+                      padding: "4px 8px",
+                      objectFit: "contain",
+                      cursor: "pointer",
+                    }}
+                  />
+                </a>
               </div>
             </div>
 
@@ -236,10 +255,15 @@ export default function Login() {
                 Política de Privacidad
               </div>
               <div style={{ color: "var(--muted)" }}>
-                Conoce las políticas de privacidad del sitio web de la Universidad.
-                <span className="ms-2" style={{ color: "#daa136" }}>
+                Conoce las políticas de privacidad del sitio web de la Universidad. <br/>
+                <a
+                  href="https://portal.uta.cl/assets/documentos/Politicas_de_Privacidad_Intranet_y_Decreto.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#daa136", textDecoration: "none" }}
+                >
                   Leer más
-                </span>
+                </a>
               </div>
             </div>
 
@@ -248,7 +272,14 @@ export default function Login() {
                 Solicita Ayuda
               </div>
               <div style={{ color: "var(--muted)" }}>
-                Correo: <span style={{ color: "#daa136" }}>Ver Contactos</span>
+                Correo: <a
+                  href="https://portal.uta.cl/assets/documentos/contactos_intranet.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ color: "#daa136", textDecoration: "none" }}
+                >
+                  Ver Contactos
+                </a>
                 <br />
                 Horario: Lunes a Jueves 08:30 - 17:30
                 <br />

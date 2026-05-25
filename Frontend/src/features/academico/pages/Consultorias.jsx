@@ -1,0 +1,314 @@
+import { useEffect, useMemo, useState, useCallback } from "react";
+import FormModal from "@/shared/components/modals/formModal/FormModal";
+import RespaldoInput from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
+import YearInput from "@/shared/components/ui/inputs/YearInput.jsx";
+import TituloInput from "@/shared/components/ui/inputs/TituloInput";
+import PeriodoEjecucionInput from "@/shared/components/ui/inputs/PeriodoEjecucionInput";
+import ActionButtons from "@/shared/components/ui/buttons/ActionButtons";
+import BtnNuevo from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import {
+  getMisConsultorias,
+  createConsultoria,
+  updateConsultoria,
+  deleteConsultoria,
+} from "@/features/academico/services/produccion-cientifica/consultoria.service.js";
+
+const emptyForm = {
+  titulo: "",
+  institucion_contratante: "",
+  ano_adjudicacion: "",
+  periodo_ejecucion: "",
+  objetivo: "",
+  link_verificacion: "",
+};
+
+const REQUIRED_FIELDS = [
+  { key: "titulo",                  label: "Título" },
+  { key: "institucion_contratante", label: "Institución contratante" },
+  { key: "ano_adjudicacion",        label: "Año de adjudicación" },
+  { key: "periodo_ejecucion",       label: "Período de ejecución" },
+  { key: "objetivo",                label: "Objetivo" },
+];
+
+const validate = (form) => {
+  const errs = {};
+
+  REQUIRED_FIELDS.forEach(({ key, label }) => {
+    if (!form[key] || String(form[key]).trim() === "") {
+      errs[key] = `${label} es obligatorio.`;
+    }
+  });
+
+  return errs;
+};
+
+export default function Consultorias() {
+  const [rows, setRows]       = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving]   = useState(false);
+
+  const [showModal, setShowModal] = useState(false);
+  const [mode, setMode]           = useState("create");
+  const [editingId, setEditingId] = useState(null);
+  const [form, setForm]           = useState(emptyForm);
+  const [touched, setTouched]     = useState({});
+
+  const errors      = useMemo(() => validate(form), [form]);
+  const isFormInvalid = Object.keys(errors).length > 0;
+
+  const modalTitle = useMemo(
+    () => mode === "create" ? "Nueva Consultoría" : "Editar Consultoría",
+    [mode],
+  );
+
+  const setField = useCallback((key, value) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setTouched((prev) => ({ ...prev, [key]: true }));
+  }, []);
+
+  const errorMsg = (key) => (touched[key] && errors[key]) ? errors[key] : null;
+
+  const load = async () => {
+    const data = await getMisConsultorias();
+    setRows(data);
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        await load();
+      } catch (err) {
+        console.error(err);
+        alert(err.message || "Error cargando consultorías");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const openCreate = () => {
+    setMode("create");
+    setEditingId(null);
+    setForm(emptyForm);
+    setTouched({});
+    setShowModal(true);
+  };
+
+  const openEdit = (row) => {
+    setMode("edit");
+    setEditingId(row.consultoria_id);
+    setForm({
+      titulo:                  row.titulo || "",
+      institucion_contratante: row.institucion_contratante || "",
+      ano_adjudicacion:        row.ano_adjudicacion ? String(row.ano_adjudicacion) : "",
+      periodo_ejecucion:       row.periodo_ejecucion || "",
+      objetivo:                row.objetivo || "",
+      link_verificacion:       row.link_verificacion || "",
+    });
+    setTouched({});
+    setShowModal(true);
+  };
+
+  const close = () => {
+    setShowModal(false);
+    setTouched({});
+  };
+
+  const submit = async () => {
+    if (isFormInvalid) {
+      setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const payload = {
+        ...form,
+        ano_adjudicacion: form.ano_adjudicacion ? Number(form.ano_adjudicacion) : null,
+      };
+
+      if (mode === "create") {
+        await createConsultoria(payload);
+      } else {
+        await updateConsultoria(editingId, payload);
+      }
+
+      await load();
+      setShowModal(false);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Error guardando consultoría");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const remove = async (id) => {
+    if (!confirm("¿Eliminar esta consultoría?")) return;
+    try {
+      await deleteConsultoria(id);
+      setRows((prev) => prev.filter((r) => r.consultoria_id !== id));
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Error eliminando consultoría");
+    }
+  };
+
+  return (
+    <div>
+      <h3 className="mb-3 perfil-title">Consultorías</h3>
+
+      <div className="panel-card">
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <div style={{ color: "var(--muted)" }}>Tabla de consultorías</div>
+          <BtnNuevo label="Nueva Consultoría" onClick={openCreate} disabled={loading} />
+        </div>
+
+        {loading ? (
+          <div style={{ color: "var(--muted)" }}>Cargando...</div>
+        ) : (
+          <div className="table-wrap">
+            <div className="table-responsive">
+              <table className="table table-dark table-dark-custom align-middle">
+                <thead>
+                  <tr>
+                    <th>Título</th>
+                    <th>Institución contratante</th>
+                    <th>Año de adjudicación</th>
+                    <th>Período de ejecución</th>
+                    <th>Objetivo</th>
+                    <th>Respaldo</th>
+                    <th className="text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => (
+                    <tr key={r.consultoria_id}>
+                      <td>{r.titulo}</td>
+                      <td>{r.institucion_contratante || "—"}</td>
+                      <td>{r.ano_adjudicacion || "—"}</td>
+                      <td>{r.periodo_ejecucion || "—"}</td>
+                      <td
+                        style={{
+                          maxWidth: 250,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                        title={r.objetivo}
+                      >
+                        {r.objetivo || "—"}
+                      </td>
+                      <td>
+                        <a href={r.link_verificacion || "#"} target="_blank" rel="noreferrer">
+                          Ver
+                        </a>
+                      </td>
+                      <td className="text-center">
+                        <ActionButtons
+                          onEdit={() => openEdit(r)}
+                          onDelete={() => remove(r.consultoria_id)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+
+                  {rows.length === 0 && (
+                    <tr>
+                      <td colSpan="7" style={{ color: "var(--muted)" }}>
+                        Sin registros.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <FormModal
+        show={showModal}
+        title={modalTitle}
+        onClose={close}
+        onSubmit={submit}
+        submitDisabled={isFormInvalid || saving}
+        submitText={saving ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"}
+      >
+        <div className="row g-3">
+
+          <div className="col-12">
+            <TituloInput
+              value={form.titulo}
+              onChange={(e) => setField("titulo", e.target.value)}
+              placeholder="Título de la consultoría"
+              className={errorMsg("titulo") ? "is-invalid" : ""}
+            />
+            {errorMsg("titulo") && (
+              <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>
+            )}
+          </div>
+
+          <div className="col-12 col-md-6">
+            <label className="form-label" style={{ color: "var(--muted)" }}>
+              Institución contratante*
+            </label>
+            <input
+              className={`form-control input-dark${errorMsg("institucion_contratante") ? " is-invalid" : ""}`}
+              value={form.institucion_contratante}
+              onChange={(e) => setField("institucion_contratante", e.target.value)}
+              placeholder="Nombre de la institución"
+            />
+            {errorMsg("institucion_contratante") && (
+              <div className="invalid-feedback">{errorMsg("institucion_contratante")}</div>
+            )}
+          </div>
+
+          <div className="col-12 col-md-3">
+            <YearInput
+              value={form.ano_adjudicacion}
+              onChange={(val) => setField("ano_adjudicacion", val)}
+              error={errorMsg("ano_adjudicacion")}
+              label="Año de adjudicación"
+              required
+            />
+          </div>
+
+          <div className="col-12 col-md-3">
+            <PeriodoEjecucionInput
+              value={form.periodo_ejecucion}
+              onChange={(e) => setField("periodo_ejecucion", e.target.value)}
+              className={errorMsg("periodo_ejecucion") ? "is-invalid" : ""}
+            />
+            {errorMsg("periodo_ejecucion") && (
+              <div className="invalid-feedback d-block">{errorMsg("periodo_ejecucion")}</div>
+            )}
+          </div>
+
+          <div className="col-12">
+            <label className="form-label" style={{ color: "var(--muted)" }}>Objetivo*</label>
+            <textarea
+              className={`form-control input-dark${errorMsg("objetivo") ? " is-invalid" : ""}`}
+              rows={3}
+              value={form.objetivo}
+              onChange={(e) => setField("objetivo", e.target.value)}
+              placeholder="Descripción del objetivo de la consultoría"
+            />
+            {errorMsg("objetivo") && (
+              <div className="invalid-feedback">{errorMsg("objetivo")}</div>
+            )}
+          </div>
+
+          <div className="col-12">
+            <RespaldoInput
+              value={form.link_verificacion}
+              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
+            />
+          </div>
+
+        </div>
+      </FormModal>
+    </div>
+  );
+}
