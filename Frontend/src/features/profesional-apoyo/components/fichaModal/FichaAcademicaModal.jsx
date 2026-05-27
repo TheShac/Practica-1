@@ -8,7 +8,7 @@ function ProgramaBadges({ programas = [] }) {
       {programas.map((p) => (
         <span
           key={p.programa}
-          className={`badge-status ${p.programa === "DOCTORADO" ? "badge-aceptado" : "badge-aceptado"}`}
+          className={p.programa === "DOCTORADO"}
         >
           {p.programa} — {p.tipo_academico}
         </span>

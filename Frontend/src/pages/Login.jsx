@@ -37,7 +37,11 @@ export default function Login() {
 
       redirectByRole(user.rol);
     } catch (err) {
-      setError(err.message || "No se pudo iniciar sesión");
+      if (err?.response?.status === 401) {
+        setError("Rut o contraseña incorrectos.");
+      } else {
+        setError("No se pudo iniciar sesión. Intente nuevamente.");
+      }
     } finally {
       setLoading(false);
     }

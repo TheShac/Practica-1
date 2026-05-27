@@ -2,6 +2,11 @@ import { useEffect, useState } from "react";
 import { getUsuarios, updateUsuario } from "@/features/admin/services/usuario.service.js";
 import { getRoles, getRolesAcademico, createRol, updateRol, deleteRol, createRolAcademico, updateRolAcademico, deleteRolAcademico } from "@/features/admin/services/roles.service.js";
 
+const PROGRAMAS = [
+  { programa_id: 1, nombre: "MAGISTER" },
+  { programa_id: 2, nombre: "DOCTORADO" },
+]
+
 export default function AdminRoles() {
   const [usuarios, setUsuarios] = useState([]);
   const [roles, setRoles]       = useState([]);
@@ -11,8 +16,8 @@ export default function AdminRoles() {
   const [error, setError]       = useState("");
 
   // Edición inline de roles del sistema
-  const [editingRol, setEditingRol]       = useState(null); // { rol_id, nombre }
-  const [editingRolAca, setEditingRolAca] = useState(null); // { rolaca_id, tipo_academico }
+  const [editingRol, setEditingRol]       = useState(null);
+  const [editingRolAca, setEditingRolAca] = useState(null);
   const [newRol, setNewRol]               = useState("");
   const [newRolAca, setNewRolAca]         = useState("");
 
@@ -33,11 +38,18 @@ export default function AdminRoles() {
   }, []);
 
   // ── ASIGNACIÓN DE ROL POR USUARIO ───────────────────────
-  const handleRolChange = (usuario_id, field, value) => {
+  const handleRolChange = (
+    usuario_id,
+    field,
+    value
+  ) => {
     setUsuarios((prev) =>
       prev.map((u) =>
         u.usuario_id === usuario_id
-          ? { ...u, [field]: Number(value) || null }
+          ? {
+              ...u,
+              [field]: value,
+            }
           : u
       )
     );
@@ -45,10 +57,29 @@ export default function AdminRoles() {
 
   const handleGuardarUsuario = async (u) => {
     setSavingU(u.usuario_id);
+
     try {
-      await updateUsuario(u.usuario_id, { rol_id: u.rol_id, rolaca_id: u.rolaca_id || null });
-    } catch (err) {
-      alert(err.message);
+      await updateUsuario(
+        u.usuario_id,
+        {
+          rol_id:
+            u.rol_id || null,
+
+          programas:
+            u.programas?.map(
+              (p) => ({
+                programa_id:
+                  p.programa_id,
+                rolaca_id:
+                  p.rolaca_id,
+              })
+            ) || [],
+        }
+      );
+    } catch {
+      alert(
+        "No se pudo guardar el usuario"
+      );
     } finally {
       setSavingU(null);
     }
@@ -248,74 +279,424 @@ export default function AdminRoles() {
 
       {/* ── SECCIÓN 2: Asignación de roles por usuario ── */}
       <div className="panel-card">
-        <div className="perfil-title" style={{ fontWeight: 600, fontSize: 15, marginBottom: 4 }}>Asignación de roles por usuario</div>
-        <div style={{ color: "var(--muted)", fontSize: 13, marginBottom: 12 }}>
-          Cambia el rol y tipo de contrato de cada usuario y guarda individualmente
+        <div
+          className="perfil-title"
+          style={{
+            fontWeight: 600,
+            fontSize: 15,
+            marginBottom: 4,
+          }}
+        >
+          Asignación de roles por usuario
         </div>
+
+        <div
+          style={{
+            color: "var(--muted)",
+            fontSize: 13,
+            marginBottom: 12,
+          }}
+        >
+          Configura el rol del sistema y la
+          participación académica en
+          Magister y Doctorado.
+        </div>
+
         <div className="table-wrap">
           <div className="table-responsive">
             <table className="table table-dark table-dark-custom align-middle fa-table">
               <thead>
                 <tr>
                   <th>RUT</th>
-                  <th>Nombre</th>
+                  <th>Usuario</th>
                   <th>Rol</th>
-                  <th>Tipo Contrato</th>
-                  <th className="text-center">Guardar</th>
+                  <th>MAGISTER</th>
+                  <th>DOCTORADO</th>
+                  <th className="text-center">
+                    Guardar
+                  </th>
                 </tr>
               </thead>
+
               <tbody>
-                {usuarios.map((u) => (
-                  <tr key={u.usuario_id}>
-                    <td>{u.rut}</td>
-                    <td>{u.primer_nombre} {u.primer_apellido}</td>
-                    <td>
-                      <select
-                        className="form-select input-dark form-select-sm"
-                        style={{ minWidth: 140 }}
-                        value={u.rol_id || ""}
-                        onChange={(e) => handleRolChange(u.usuario_id, "rol_id", e.target.value)}
-                      >
-                        <option value="">Sin rol</option>
-                        {roles.map((r) => (
-                          <option key={r.rol_id} value={r.rol_id}>{r.nombre}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      {u.rol_id === 3 ? (
+                {usuarios.map((u) => {
+                  const rolAcademico =
+                    roles.find(
+                      (r) =>
+                        r.nombre?.toLowerCase() ===
+                        "academico"
+                    );
+
+                  const esAcademico =
+                    Number(u.rol_id) ===
+                    Number(
+                      rolAcademico?.rol_id
+                    );
+
+                  const getPrograma =
+                    (programa_id) =>
+                      u.programas?.find(
+                        (p) =>
+                          Number(
+                            p.programa_id
+                          ) ===
+                          Number(programa_id)
+                      );
+
+                  return (
+                    <tr key={u.usuario_id}>
+                      <td>{u.rut}</td>
+
+                      <td>
+                        {u.primer_nombre}{" "}
+                        {u.primer_apellido}
+                      </td>
+
+                      {/* ROL */}
+                      <td>
                         <select
                           className="form-select input-dark form-select-sm"
-                          style={{ minWidth: 140 }}
-                          value={u.rolaca_id || ""}
-                          onChange={(e) => handleRolChange(u.usuario_id, "rolaca_id", e.target.value)}
+                          value={
+                            u.rol_id || ""
+                          }
+                          onChange={(e) => {
+                            const value =
+                              Number(
+                                e.target.value
+                              ) || null;
+
+                            setUsuarios(
+                              (prev) =>
+                                prev.map(
+                                  (user) => {
+                                    if (
+                                      user.usuario_id !==
+                                      u.usuario_id
+                                    ) {
+                                      return user;
+                                    }
+
+                                    const nuevoAcademico =
+                                      value ===
+                                      Number(
+                                        rolAcademico?.rol_id
+                                      );
+
+                                    return {
+                                      ...user,
+                                      rol_id:
+                                        value,
+                                      programas:
+                                        nuevoAcademico
+                                          ? user.programas ||
+                                            []
+                                          : [],
+                                    };
+                                  }
+                                )
+                            );
+                          }}
                         >
-                          <option value="">Sin contrato</option>
-                          {rolesAca.map((r) => (
-                            <option key={r.rolaca_id} value={r.rolaca_id}>{r.tipo_academico}</option>
-                          ))}
+                          <option value="">
+                            Seleccionar
+                          </option>
+
+                          {roles.map(
+                            (r) => (
+                              <option
+                                key={
+                                  r.rol_id
+                                }
+                                value={
+                                  r.rol_id
+                                }
+                              >
+                                {r.nombre}
+                              </option>
+                            )
+                          )}
                         </select>
-                      ) : (
-                        <span style={{ color: "var(--muted)" }}>—</span>
-                      )}
-                    </td>
-                    <td className="text-center">
-                      <button
-                        className="btn btn-sm"
-                        style={{ borderColor: "#22c55e", color: "#22c55e" }}
-                        disabled={savingU === u.usuario_id}
-                        onClick={() => handleGuardarUsuario(u)}
-                      >
-                        {savingU === u.usuario_id
-                          ? <i className="bi bi-hourglass-split" />
-                          : <i className="bi bi-check-lg" />
-                        }
-                      </button>
+                      </td>
+
+                      {/* MAGISTER */}
+                      <td>
+                        {esAcademico ? (
+                          <select
+                            className="form-select input-dark form-select-sm"
+                            value={
+                              getPrograma(
+                                1
+                              )?.rolaca_id ||
+                              ""
+                            }
+                            onChange={(e) => {
+                              const rolaca_id =
+                                Number(
+                                  e.target
+                                    .value
+                                ) ||
+                                null;
+
+                              setUsuarios(
+                                (
+                                  prev
+                                ) =>
+                                  prev.map(
+                                    (
+                                      user
+                                    ) => {
+                                      if (
+                                        user.usuario_id !==
+                                        u.usuario_id
+                                      ) {
+                                        return user;
+                                      }
+
+                                      let programas =
+                                        user.programas ||
+                                        [];
+
+                                      const existe =
+                                        programas.find(
+                                          (
+                                            p
+                                          ) =>
+                                            p.programa_id ===
+                                            1
+                                        );
+
+                                      if (
+                                        !rolaca_id
+                                      ) {
+                                        programas =
+                                          programas.filter(
+                                            (
+                                              p
+                                            ) =>
+                                              p.programa_id !==
+                                              1
+                                          );
+                                      } else if (
+                                        existe
+                                      ) {
+                                        programas =
+                                          programas.map(
+                                            (
+                                              p
+                                            ) =>
+                                              p.programa_id ===
+                                              1
+                                                ? {
+                                                    ...p,
+                                                    rolaca_id,
+                                                  }
+                                                : p
+                                          );
+                                      } else {
+                                        programas =
+                                          [
+                                            ...programas,
+                                            {
+                                              programa_id: 1,
+                                              rolaca_id,
+                                            },
+                                          ];
+                                      }
+
+                                      return {
+                                        ...user,
+                                        programas,
+                                      };
+                                    }
+                                  )
+                              );
+                            }}
+                          >
+                            <option value="">
+                              Sin asignar
+                            </option>
+
+                            {rolesAca.map(
+                              (r) => (
+                                <option
+                                  key={
+                                    r.rolaca_id
+                                  }
+                                  value={
+                                    r.rolaca_id
+                                  }
+                                >
+                                  {
+                                    r.tipo_academico
+                                  }
+                                </option>
+                              )
+                            )}
+                          </select>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      {/* DOCTORADO */}
+                      <td>
+                        {esAcademico ? (
+                          <select
+                            className="form-select input-dark form-select-sm"
+                            value={
+                              getPrograma(
+                                2
+                              )?.rolaca_id ||
+                              ""
+                            }
+                            onChange={(e) => {
+                              const rolaca_id =
+                                Number(
+                                  e.target
+                                    .value
+                                ) ||
+                                null;
+
+                              setUsuarios(
+                                (
+                                  prev
+                                ) =>
+                                  prev.map(
+                                    (
+                                      user
+                                    ) => {
+                                      if (
+                                        user.usuario_id !==
+                                        u.usuario_id
+                                      ) {
+                                        return user;
+                                      }
+
+                                      let programas =
+                                        user.programas ||
+                                        [];
+
+                                      const existe =
+                                        programas.find(
+                                          (
+                                            p
+                                          ) =>
+                                            p.programa_id ===
+                                            2
+                                        );
+
+                                      if (
+                                        !rolaca_id
+                                      ) {
+                                        programas =
+                                          programas.filter(
+                                            (
+                                              p
+                                            ) =>
+                                              p.programa_id !==
+                                              2
+                                          );
+                                      } else if (
+                                        existe
+                                      ) {
+                                        programas =
+                                          programas.map(
+                                            (
+                                              p
+                                            ) =>
+                                              p.programa_id ===
+                                              2
+                                                ? {
+                                                    ...p,
+                                                    rolaca_id,
+                                                  }
+                                                : p
+                                          );
+                                      } else {
+                                        programas =
+                                          [
+                                            ...programas,
+                                            {
+                                              programa_id: 2,
+                                              rolaca_id,
+                                            },
+                                          ];
+                                      }
+
+                                      return {
+                                        ...user,
+                                        programas,
+                                      };
+                                    }
+                                  )
+                              );
+                            }}
+                          >
+                            <option value="">
+                              Sin asignar
+                            </option>
+
+                            {rolesAca.map(
+                              (r) => (
+                                <option
+                                  key={
+                                    r.rolaca_id
+                                  }
+                                  value={
+                                    r.rolaca_id
+                                  }
+                                >
+                                  {
+                                    r.tipo_academico
+                                  }
+                                </option>
+                              )
+                            )}
+                          </select>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+
+                      {/* GUARDAR */}
+                      <td className="text-center">
+                        <button
+                          className="btn btn-sm"
+                          style={{
+                            borderColor:
+                              "#22c55e",
+                            color:
+                              "#22c55e",
+                          }}
+                          disabled={
+                            savingU ===
+                            u.usuario_id
+                          }
+                          onClick={() =>
+                            handleGuardarUsuario(
+                              u
+                            )
+                          }
+                        >
+                          {savingU ===
+                          u.usuario_id ? (
+                            <i className="bi bi-hourglass-split" />
+                          ) : (
+                            <i className="bi bi-check-lg" />
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {usuarios.length ===
+                  0 && (
+                  <tr>
+                    <td colSpan="6">
+                      Sin usuarios.
                     </td>
                   </tr>
-                ))}
-                {usuarios.length === 0 && (
-                  <tr><td colSpan="5" style={{ color: "var(--muted)" }}>Sin usuarios.</td></tr>
                 )}
               </tbody>
             </table>

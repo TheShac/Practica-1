@@ -17,7 +17,6 @@ export function auth(req, res, next) {
 
 export function authorizeRoles(...allowed) {
   return (req, res, next) => {
-    console.log('ROL EN TOKEN:', req.user?.rol, '| PERMITIDOS:', allowed);
     if (!req.user?.rol) return res.status(403).json({ message: "No autorizado" });
     if (!allowed.includes(req.user.rol)) return res.status(403).json({ message: "No autorizado" });
     next();
