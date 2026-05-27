@@ -1,6 +1,6 @@
 import { pool } from '../../../config/db.js';
 
-export async function getReporteGeneral() {
+export async function getReporteGeneral(programa_id) {
   const [rows] = await pool.query(`
     SELECT
       u.usuario_id, u.primer_nombre, u.primer_apellido, u.ano_ingreso,
@@ -18,24 +18,32 @@ export async function getReporteGeneral() {
       COALESCE(rm.otros_proyectos,          0) AS otros_proyectos,
       COALESCE(rwg.total_wos,               0) AS total_wos_global
     FROM usuario u
-    INNER JOIN rol r           ON u.rol_id     = r.rol_id
-    INNER JOIN rol_academico ra ON u.rolaca_id = ra.rolaca_id
-    LEFT  JOIN reporte_academico rm   ON u.usuario_id      = rm.usuario_id
-    LEFT  JOIN reporte_wos_global rwg ON ra.tipo_academico = rwg.tipo_academico
-    WHERE r.rol_id = 3
+    INNER JOIN rol r              ON u.rol_id        = r.rol_id
+    INNER JOIN usuario_programa up ON up.usuario_id  = u.usuario_id
+    INNER JOIN rol_academico ra    ON ra.rolaca_id   = up.rolaca_id
+    LEFT  JOIN reporte_academico rm
+      ON rm.usuario_id  = u.usuario_id
+      AND rm.programa_id = up.programa_id
+    LEFT  JOIN reporte_wos_global rwg
+      ON rwg.tipo_academico = ra.tipo_academico
+      AND rwg.programa_id   = up.programa_id
+    WHERE r.rol_id        = 3
+      AND up.programa_id  = ?
     ORDER BY ra.rolaca_id, u.primer_apellido, u.primer_nombre
-  `);
+  `, [programa_id]);
   return rows;
 }
 
-export async function updateReporteGeneral(data) {
+export async function updateReporteGeneral(data, programa_id) {
   for (const item of data) {
     await pool.query(`
       INSERT INTO reporte_academico (
-        usuario_id, total_wos_scopus_5_anios, total_scielo_5_anios,
-        otros_articulos, libros_area, libros_otro, cap_area, cap_otro,
-        edicion_area, edicion_otro, proyectos_fondecyt, otros_proyectos
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        usuario_id, programa_id,
+        total_wos_scopus_5_anios, total_scielo_5_anios,
+        otros_articulos, libros_area, libros_otro,
+        cap_area, cap_otro, edicion_area, edicion_otro,
+        proyectos_fondecyt, otros_proyectos
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         total_wos_scopus_5_anios = VALUES(total_wos_scopus_5_anios),
         total_scielo_5_anios     = VALUES(total_scielo_5_anios),
@@ -49,20 +57,21 @@ export async function updateReporteGeneral(data) {
         proyectos_fondecyt       = VALUES(proyectos_fondecyt),
         otros_proyectos          = VALUES(otros_proyectos)
     `, [
-      item.usuario_id,          item.total_wos_scopus_5_anios,
-      item.total_scielo_5_anios, item.otros_articulos,
-      item.libros_area,          item.libros_otro,
-      item.cap_area,             item.cap_otro,
-      item.edicion_area,         item.edicion_otro,
-      item.proyectos_fondecyt,   item.otros_proyectos,
+      item.usuario_id,             programa_id,
+      item.total_wos_scopus_5_anios, item.total_scielo_5_anios,
+      item.otros_articulos,          item.libros_area,
+      item.libros_otro,              item.cap_area,
+      item.cap_otro,                 item.edicion_area,
+      item.edicion_otro,             item.proyectos_fondecyt,
+      item.otros_proyectos,
     ]);
   }
 }
 
-export async function updateWosGlobal(tipo, total) {
+export async function updateWosGlobal(tipo, total, programa_id) {
   await pool.query(`
-    INSERT INTO reporte_wos_global (tipo_academico, total_wos)
-    VALUES (?, ?)
+    INSERT INTO reporte_wos_global (programa_id, tipo_academico, total_wos)
+    VALUES (?, ?, ?)
     ON DUPLICATE KEY UPDATE total_wos = VALUES(total_wos)
-  `, [tipo, total]);
+  `, [programa_id, tipo, total]);
 }

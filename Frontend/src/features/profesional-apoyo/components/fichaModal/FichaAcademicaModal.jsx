@@ -1,8 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
 import { getFichaAcademica } from "@/features/profesional-apoyo/services/ficha.service.js";
 
+function ProgramaBadges({ programas = [] }) {
+  if (!programas.length) return <p>No definido</p>;
+  return (
+    <div className="d-flex flex-wrap gap-1">
+      {programas.map((p) => (
+        <span
+          key={p.programa}
+          className={`badge-status ${p.programa === "DOCTORADO" ? "badge-aceptado" : "badge-aceptado"}`}
+        >
+          {p.programa} — {p.tipo_academico}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export default function FichaAcademicaModal({ show, academico, onClose }) {
-  const [ficha, setFicha] = useState(null);
+  const [ficha, setFicha]     = useState(null);
   const [loading, setLoading] = useState(false);
 
   const nombreCompleto = useMemo(() => {
@@ -42,26 +58,26 @@ export default function FichaAcademicaModal({ show, academico, onClose }) {
       })
     : [];
 
-  const tesis          = ficha?.tesis          || [];
-  const publicaciones  = ficha?.publicaciones  || [];
-  const libros         = ficha?.libros         || [];
-  const capitulos      = ficha?.capitulos      || [];
+  const tesis           = ficha?.tesis           || [];
+  const publicaciones   = ficha?.publicaciones   || [];
+  const libros          = ficha?.libros          || [];
+  const capitulos       = ficha?.capitulos       || [];
   const investigaciones = ficha?.investigaciones || [];
-  const patentes       = ficha?.patentes       || [];
+  const patentes        = ficha?.patentes        || [];
 
-  const magisterGuia   = tesis.filter(t => t.nivel_programa === "MAGISTER"  && t.rol_guia === "GUIA");
-  const magisterCoGuia = tesis.filter(t => t.nivel_programa === "MAGISTER"  && t.rol_guia === "CO_GUIA");
-  const doctoradoGuia  = tesis.filter(t => t.nivel_programa === "DOCTORADO" && t.rol_guia === "GUIA");
+  const magisterGuia    = tesis.filter(t => t.nivel_programa === "MAGISTER"  && t.rol_guia === "GUIA");
+  const magisterCoGuia  = tesis.filter(t => t.nivel_programa === "MAGISTER"  && t.rol_guia === "CO_GUIA");
+  const doctoradoGuia   = tesis.filter(t => t.nivel_programa === "DOCTORADO" && t.rol_guia === "GUIA");
   const doctoradoCoGuia = tesis.filter(t => t.nivel_programa === "DOCTORADO" && t.rol_guia === "CO_GUIA");
 
   const INDEXADAS_PRINCIPALES = ["WoS", "SCOPUS", "SCIELO"];
   const INDEXADAS_OTRAS       = ["LATINDEX", "ERIH"];
   const TODAS_INDEXADAS       = [...INDEXADAS_PRINCIPALES, ...INDEXADAS_OTRAS];
 
-  const wos            = publicaciones.filter(p => p.categoria === "WoS");
-  const scopus         = publicaciones.filter(p => p.categoria === "SCOPUS");
-  const scielo         = publicaciones.filter(p => p.categoria === "SCIELO");
-  const otrasIndexadas = publicaciones.filter(p => INDEXADAS_OTRAS.includes(p.categoria));
+  const wos             = publicaciones.filter(p => p.categoria === "WoS");
+  const scopus          = publicaciones.filter(p => p.categoria === "SCOPUS");
+  const scielo          = publicaciones.filter(p => p.categoria === "SCIELO");
+  const otrasIndexadas  = publicaciones.filter(p => INDEXADAS_OTRAS.includes(p.categoria));
   const otrasNoIndexadas = publicaciones.filter(p => !TODAS_INDEXADAS.includes(p.categoria));
 
   return (
@@ -75,9 +91,15 @@ export default function FichaAcademicaModal({ show, academico, onClose }) {
 
         <div className="fa-info-box">
           <Info label="Nombre Académico/a" value={nombreCompleto} />
-          <Info label="RUT" value={academico.rut} />
-          <Info label="Año de Ingreso" value={academico.ano_ingreso} />
-          <Info label="Tipo de Vinculo" value={academico.contrato} />
+          <Info label="RUT"                value={academico.rut} />
+          <Info label="Año de Ingreso"     value={academico.ano_ingreso} />
+
+          {/* Muestra todos los programas del académico */}
+          <div>
+            <label>Tipo de Vínculo</label>
+            <ProgramaBadges programas={academico.programas || []} />
+          </div>
+
           <div>
             <label>Correos asociados</label>
             {correosArray.length === 0 ? (
@@ -86,7 +108,9 @@ export default function FichaAcademicaModal({ show, academico, onClose }) {
               correosArray.map((mail, i) => <p key={i}>{mail}</p>)
             )}
           </div>
+
           <Info label="Línea(s) de investigación" value={academico.lineas_investigacion} />
+
           <div>
             <label>Títulos</label>
             {titulacionesArray.length === 0 ? (
@@ -101,7 +125,7 @@ export default function FichaAcademicaModal({ show, academico, onClose }) {
               ))
             )}
           </div>
-          <br />
+
           <div>
             <label>Grado Académico</label>
             {academico.nombre_grado ? (
@@ -134,18 +158,10 @@ export default function FichaAcademicaModal({ show, academico, onClose }) {
               <SubBlock subtitle="Publicaciones indexadas WoS"    items={wos}    field="titulo_articulo" />
               <SubBlock subtitle="Publicaciones indexadas SCOPUS" items={scopus} field="titulo_articulo" />
               <SubBlock subtitle="Publicaciones indexadas SCIELO" items={scielo} field="titulo_articulo" />
-              <SubBlock
-                subtitle="Otras publicaciones indexadas (identificar tipo de indexación: LATINDEX u otra)"
-                items={otrasIndexadas}
-                field="titulo_articulo"
-              />
-              <SubBlock subtitle="Publicaciones no indexadas — LIBRO"              items={libros}    field="nombre_libro" />
-              <SubBlock subtitle="Publicaciones no indexadas — CAPÍTULOS DE LIBRO" items={capitulos} field="nombre_capitulo" />
-              <SubBlock
-                subtitle="Otras publicaciones no indexadas (identificar tipo, revistas con referato u otro)"
-                items={otrasNoIndexadas}
-                field="titulo_articulo"
-              />
+              <SubBlock subtitle="Otras publicaciones indexadas (LATINDEX u otra)" items={otrasIndexadas}   field="titulo_articulo" />
+              <SubBlock subtitle="Publicaciones no indexadas — LIBRO"              items={libros}           field="nombre_libro" />
+              <SubBlock subtitle="Publicaciones no indexadas — CAPÍTULOS DE LIBRO" items={capitulos}        field="nombre_capitulo" />
+              <SubBlock subtitle="Otras publicaciones no indexadas"                items={otrasNoIndexadas} field="titulo_articulo" />
               <SubBlock subtitle="Patentes" items={patentes} field="nombre_patente" />
             </Section>
 
@@ -190,9 +206,7 @@ function Section({ title, children }) {
 function SubBlock({ items = [], field = "titulo_tesis", subtitle }) {
   return (
     <div style={{ marginBottom: "25px" }}>
-      {subtitle && (
-        <h6 style={{ marginBottom: "10px", fontWeight: "600" }}>{subtitle}</h6>
-      )}
+      {subtitle && <h6 style={{ marginBottom: "10px", fontWeight: "600" }}>{subtitle}</h6>}
       {items.length === 0 ? (
         <div className="fa-empty">Sin registros.</div>
       ) : (

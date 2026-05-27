@@ -1,7 +1,7 @@
 import { fetcher } from "@/core/api/fetcher";
-
-export const getReporteGeneral         = ()                    => fetcher.get("/profesional-apoyo/reporte-general");
-export const updateReporteGeneral      = (reporte, wosGlobal)  => fetcher.put("/profesional-apoyo/reporte-general", { reporte, wosGlobal });
-export const getReportePromedios       = ()                    => fetcher.get("/profesional-apoyo/promedios");
-export const updateReportePromedios    = (data)                => fetcher.put("/profesional-apoyo/promedios", data);
-export const downloadReporteGeneralExcel = ()                  => fetcher.get("/profesional-apoyo/export-excel");
+ 
+export const getReporteGeneral           = (programa)                       => fetcher.get(`/profesional-apoyo/reporte-general?programa=${programa}`);
+export const updateReporteGeneral        = (programa, reporte, wosGlobal)   => fetcher.put(`/profesional-apoyo/reporte-general?programa=${programa}`, { reporte, wosGlobal });
+export const getReportePromedios         = (programa)                       => fetcher.get(`/profesional-apoyo/promedios?programa=${programa}`);
+export const updateReportePromedios      = (programa, data)                 => fetcher.put(`/profesional-apoyo/promedios?programa=${programa}`, data);
+export const downloadReporteGeneralExcel = (programa)                       => fetcher.get(`/profesional-apoyo/export-excel?programa=${programa}`);

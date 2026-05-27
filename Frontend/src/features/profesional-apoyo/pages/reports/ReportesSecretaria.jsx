@@ -1,8 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { getReporteGeneral, updateReporteGeneral, downloadReporteGeneralExcel, getReportePromedios, updateReportePromedios } from "@/features/profesional-apoyo/services/reporte.service.js";
-import ReporteSeccionGrupo from "./components/ReporteSeccionGrupo";
-import ReporteTablaPromedios from "./components/ReporteTablaPromedios";
-import BtnNuevo from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getReporteGeneral, updateReporteGeneral,
+  downloadReporteGeneralExcel,
+  getReportePromedios, updateReportePromedios,
+} from "@/features/profesional-apoyo/services/reporte.service.js";
+import ReporteSeccionGrupo    from "./components/ReporteSeccionGrupo";
+import ReporteTablaPromedios  from "./components/ReporteTablaPromedios";
+import BtnNuevo               from "@/shared/components/ui/buttons/BtnCreate.jsx";
 
 const FIELDS_DEFAULT = {
   total_wos_scopus_5_anios: 0, total_scielo_5_anios: 0, otros_articulos: 0,
@@ -11,47 +15,50 @@ const FIELDS_DEFAULT = {
 };
 
 const PROMEDIOS_DEFAULT = {
-  prom_wos_claustro:      0,
-  prom_wos_cuerpo:        0,
-  prom_wos_acad_claustro: 0,
-  prom_wos_acad_cuerpo:   0,
-  prom_libros_claustro:   0,
-  prom_libros_cuerpo:     0,
-  prom_fondecyt_claustro: 0,
-  prom_fondecyt_cuerpo:   0,
+  prom_wos_claustro: 0,      prom_wos_cuerpo: 0,
+  prom_wos_acad_claustro: 0, prom_wos_acad_cuerpo: 0,
+  prom_libros_claustro: 0,   prom_libros_cuerpo: 0,
+  prom_fondecyt_claustro: 0, prom_fondecyt_cuerpo: 0,
 };
 
+const PROGRAMAS = [
+  { id: 1, label: "Magíster" },
+  { id: 2, label: "Doctorado" },
+];
+
 const calcularTotales = (lista) => ({
-  total_wos_scopus:      lista.reduce((a, b) => a + b.total_wos_scopus_5_anios, 0),
-  total_scielo:          lista.reduce((a, b) => a + b.total_scielo_5_anios, 0),
-  otros_articulos:       lista.reduce((a, b) => a + b.otros_articulos, 0),
-  libros_area:           lista.reduce((a, b) => a + b.libros_area, 0),
-  libros_otro:           lista.reduce((a, b) => a + b.libros_otro, 0),
-  cap_area:              lista.reduce((a, b) => a + b.cap_area, 0),
-  cap_otro:              lista.reduce((a, b) => a + b.cap_otro, 0),
-  edicion_area:          lista.reduce((a, b) => a + b.edicion_area, 0),
-  edicion_otro:          lista.reduce((a, b) => a + b.edicion_otro, 0),
-  proyectos_fondecyt:    lista.reduce((a, b) => a + b.proyectos_fondecyt, 0),
-  otros_proyectos:       lista.reduce((a, b) => a + b.otros_proyectos, 0),
+  total_wos_scopus:   lista.reduce((a, b) => a + b.total_wos_scopus_5_anios, 0),
+  total_scielo:       lista.reduce((a, b) => a + b.total_scielo_5_anios, 0),
+  otros_articulos:    lista.reduce((a, b) => a + b.otros_articulos, 0),
+  libros_area:        lista.reduce((a, b) => a + b.libros_area, 0),
+  libros_otro:        lista.reduce((a, b) => a + b.libros_otro, 0),
+  cap_area:           lista.reduce((a, b) => a + b.cap_area, 0),
+  cap_otro:           lista.reduce((a, b) => a + b.cap_otro, 0),
+  edicion_area:       lista.reduce((a, b) => a + b.edicion_area, 0),
+  edicion_otro:       lista.reduce((a, b) => a + b.edicion_otro, 0),
+  proyectos_fondecyt: lista.reduce((a, b) => a + b.proyectos_fondecyt, 0),
+  otros_proyectos:    lista.reduce((a, b) => a + b.otros_proyectos, 0),
 });
 
 export default function ReportesSecretaria() {
-  const [data, setData]               = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState("");
-  const [wosClaustro, setWosClaustro] = useState(0);
+  const [programa, setPrograma]         = useState(1);
+  const [data, setData]                 = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState("");
+  const [wosClaustro, setWosClaustro]   = useState(0);
   const [wosColaborador, setWosColaborador] = useState(0);
-  const [promedios, setPromedios]               = useState(PROMEDIOS_DEFAULT);
+  const [promedios, setPromedios]       = useState(PROMEDIOS_DEFAULT);
 
   useEffect(() => {
     async function fetchData() {
+      setLoading(true);
+      setError("");
       try {
         const [result, prom] = await Promise.all([
-          getReporteGeneral(),
-          getReportePromedios(),
+          getReporteGeneral(programa),
+          getReportePromedios(programa),
         ]);
         setData(result.map(item => ({ ...FIELDS_DEFAULT, ...item })));
-
         setWosClaustro(result.find(r => r.tipo_academico === "Claustro")?.total_wos_global || 0);
         setWosColaborador(result.find(r => r.tipo_academico === "Colaborador")?.total_wos_global || 0);
         setPromedios({ ...PROMEDIOS_DEFAULT, ...prom });
@@ -62,10 +69,10 @@ export default function ReportesSecretaria() {
       }
     }
     fetchData();
-  }, []);
+  }, [programa]);
 
-  const claustro     = useMemo(() => data.filter(a => a.tipo_academico === "Claustro"), [data]);
-  const colaboradores = useMemo(() => data.filter(a => a.tipo_academico === "Colaborador"), [data]);
+  const claustro      = useMemo(() => data.filter(a => a.tipo_academico === "Claustro"),     [data]);
+  const colaboradores = useMemo(() => data.filter(a => a.tipo_academico === "Colaborador"),  [data]);
 
   const totalClaustro      = calcularTotales(claustro);
   const totalColaboradores = calcularTotales(colaboradores);
@@ -73,14 +80,16 @@ export default function ReportesSecretaria() {
   const handleChange = (id, field, value) => {
     const newValue = value === "" ? "" : Number(value);
     if (newValue < 0) return;
-    setData(prev => prev.map(item => item.usuario_id === id ? { ...item, [field]: newValue } : item));
+    setData(prev => prev.map(item =>
+      item.usuario_id === id ? { ...item, [field]: newValue } : item
+    ));
   };
 
   const handleGuardar = async () => {
     try {
       await Promise.all([
-        updateReporteGeneral(data, { Claustro: wosClaustro, Colaborador: wosColaborador }),
-        updateReportePromedios(promedios),
+        updateReporteGeneral(programa, data, { Claustro: wosClaustro, Colaborador: wosColaborador }),
+        updateReportePromedios(programa, promedios),
       ]);
       alert("Reporte guardado correctamente");
     } catch (err) {
@@ -90,11 +99,12 @@ export default function ReportesSecretaria() {
 
   const handleDescargarExcel = async () => {
     try {
-      const blob = await downloadReporteGeneralExcel();
+      const blob = await downloadReporteGeneralExcel(programa);
       const url  = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
+      const label = programa === 1 ? "magister" : "doctorado";
       link.href     = url;
-      link.download = `reporte_general_${new Date().getFullYear()}.xlsx`;
+      link.download = `reporte_general_${label}_${new Date().getFullYear()}.xlsx`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -112,6 +122,19 @@ export default function ReportesSecretaria() {
     <div>
       <h3 className="mb-3 perfil-title">Reporte General Académico</h3>
       <div className="panel-card">
+
+        {/* Selector de programa */}
+        <div className="d-flex align-items-center gap-2 mb-4">
+          {PROGRAMAS.map(p => (
+            <button
+              key={p.id}
+              className={`btn btn-sm ${programa === p.id ? "btn-primary" : "btn-outline-secondary"}`}
+              onClick={() => setPrograma(p.id)}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
 
         <div className="d-flex justify-content-between align-items-center mb-3">
           <button className="btn btn-outline-success btn-sm" onClick={handleDescargarExcel}>

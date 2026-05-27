@@ -1,10 +1,10 @@
 import ExcelJS from 'exceljs';
 import { getFichaByUsuario, getFichaByUsuarioMagister } from './ficha.model.js';
-import { getAcademicoFullProfile } from '../../users/user/user.model.js';
+import { getAcademicoFullProfile, getProgramasDeUsuario } from '../../users/user/user.model.js';
 
 // ── Helpers de estilo (privados al módulo) ─────────────────────────────────
 
-const GRAY_FILL = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
+const GRAY_FILL  = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD9D9D9' } };
 const THIN_BORDER = {
   top: { style: 'thin' }, left:   { style: 'thin' },
   bottom: { style: 'thin' }, right: { style: 'thin' },
@@ -55,9 +55,19 @@ function writeDataRow(sheet, rowNum, values) {
   sheet.getRow(rowNum).height = 15;
 }
 
+// ── Helpers de contrato ────────────────────────────────────────────────────
+
+// Obtiene el tipo_academico del académico para un programa específico
+// programa: 'MAGISTER' | 'DOCTORADO'
+async function getContratoParaPrograma(usuarioId, programa) {
+  const programas = await getProgramasDeUsuario(usuarioId);
+  const match = programas.find(p => p.programa?.toUpperCase() === programa.toUpperCase());
+  return match?.tipo_academico || null;
+}
+
 // ── Secciones de contenido ─────────────────────────────────────────────────
 
-function buildBaseSheet(sheet, perfil, anos = 5) {
+function buildBaseSheet(sheet, perfil, contrato, anos = 5) {
   const { usuario, grado_academico, titulaciones } = perfil;
 
   sheet.columns = [
@@ -78,7 +88,7 @@ function buildBaseSheet(sheet, perfil, anos = 5) {
   const infoRows = [
     ['Nombre del académico o académica',
       `${usuario.primer_nombre} ${usuario.segundo_nombre || ''} ${usuario.primer_apellido} ${usuario.segundo_apellido || ''}`.trim()],
-    ['Tipo de vínculo (claustro o colaborador/a)', usuario.contrato || ''],
+    ['Tipo de vínculo (claustro o colaborador/a)', contrato || 'No definido'],
     ['Título, institución, año de titulación y país',
       titulaciones?.length
         ? titulaciones.map(t => `${t.titulo} - ${t.institucion_titulacion || ''} (${t.ano_titulacion || ''}) - ${t.pais_titulacion || ''}`).join(' | ')
@@ -138,10 +148,10 @@ function addPublicacionesSection(sheet, data, row, anos = 5) {
   writeSectionTitle(sheet, row, `4. Listado de publicaciones en los últimos ${anos} años. En caso de publicaciones con más de un autor, indicar el autor/a principal [3]`); row++;
 
   const categorias = [
-    { titulo: '4.1 Publicaciones indexadas WoS',                                                              filtro: 'WoS' },
-    { titulo: '4.2 Publicaciones indexadas SCOPUS',                                                           filtro: 'SCOPUS' },
-    { titulo: '4.3 Publicaciones indexadas SCIELO',                                                           filtro: 'SCIELO' },
-    { titulo: '4.4. Otras publicaciones indexadas (identificar tipo de indexación: LATINDEX u otra)',          filtro: ['LATINDEX', 'ERIH'] },
+    { titulo: '4.1 Publicaciones indexadas WoS',                                                             filtro: 'WoS' },
+    { titulo: '4.2 Publicaciones indexadas SCOPUS',                                                          filtro: 'SCOPUS' },
+    { titulo: '4.3 Publicaciones indexadas SCIELO',                                                          filtro: 'SCIELO' },
+    { titulo: '4.4. Otras publicaciones indexadas (identificar tipo de indexación: LATINDEX u otra)',         filtro: ['LATINDEX', 'ERIH'] },
   ];
 
   for (const cat of categorias) {
@@ -233,9 +243,10 @@ export async function getFichaAcademicaService(usuarioId) {
 }
 
 export async function buildFichaExcel(usuarioId) {
-  const [data, perfil] = await Promise.all([
+  const [data, perfil, contrato] = await Promise.all([
     getFichaByUsuario(usuarioId),
     getAcademicoFullProfile(usuarioId),
+    getContratoParaPrograma(usuarioId, 'DOCTORADO'),
   ]);
   if (!perfil) {
     const err = new Error('Académico no encontrado');
@@ -244,7 +255,7 @@ export async function buildFichaExcel(usuarioId) {
   }
   const wb    = new ExcelJS.Workbook();
   const sheet = wb.addWorksheet('Ficha Académica');
-  let row = buildBaseSheet(sheet, perfil, 5);
+  let row = buildBaseSheet(sheet, perfil, contrato, 5);
   row = addTesisSection(sheet, data, row);
   row = addPublicacionesSection(sheet, data, row);
   addNotas(sheet, row);
@@ -252,9 +263,10 @@ export async function buildFichaExcel(usuarioId) {
 }
 
 export async function buildFichaMagisterExcel(usuarioId) {
-  const [data, perfil] = await Promise.all([
+  const [data, perfil, contrato] = await Promise.all([
     getFichaByUsuarioMagister(usuarioId),
     getAcademicoFullProfile(usuarioId),
+    getContratoParaPrograma(usuarioId, 'MAGISTER'),
   ]);
   if (!perfil) {
     const err = new Error('Académico no encontrado');
@@ -263,7 +275,7 @@ export async function buildFichaMagisterExcel(usuarioId) {
   }
   const wb    = new ExcelJS.Workbook();
   const sheet = wb.addWorksheet('Ficha Académica');
-  let row = buildBaseSheet(sheet, perfil, 10);
+  let row = buildBaseSheet(sheet, perfil, contrato, 10);
   row = addTesisSection(sheet, data, row, 10);
   row = addPublicacionesSection(sheet, data, row, 10);
   row = addIntervencionesSection(sheet, data, row);

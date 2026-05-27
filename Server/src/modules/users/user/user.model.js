@@ -6,24 +6,31 @@ export async function findUserById(usuario_id) {
   const [rows] = await pool.query(
     `SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
             u.primer_apellido, u.segundo_apellido,
-            u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre, u.rolaca_id
+            u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre
      FROM usuario u
      JOIN rol r ON r.rol_id = u.rol_id
      WHERE u.usuario_id = ?`,
     [usuario_id]
   );
-  return rows[0] || null;
+  if (!rows[0]) return null;
+
+  const programas = await getProgramasDeUsuario(usuario_id);
+  return { ...rows[0], programas };
 }
 
 export async function listUsers() {
   const [rows] = await pool.query(
     `SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
             u.primer_apellido, u.segundo_apellido,
-            u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre, u.rolaca_id
+            u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre
      FROM usuario u
      JOIN rol r ON r.rol_id = u.rol_id
      ORDER BY u.usuario_id DESC`
   );
+  for (const user of rows) {
+    user.programas = await getProgramasDeUsuario(user.usuario_id);
+  }
+
   return rows;
 }
 
@@ -32,14 +39,14 @@ export async function createUser(data) {
     rut, primer_nombre, segundo_nombre,
     primer_apellido, segundo_apellido,
     contrasena_hash, lineas_investigacion,
-    rol_id, rolaca_id,
+    rol_id,
   } = data;
 
   const [result] = await pool.query(
     `INSERT INTO usuario
        (rut, primer_nombre, segundo_nombre, primer_apellido, segundo_apellido,
-        contrasena, lineas_investigacion, rol_id, rolaca_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        contrasena, lineas_investigacion, rol_id)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       rut,
       primer_nombre,
@@ -47,9 +54,8 @@ export async function createUser(data) {
       primer_apellido,
       segundo_apellido  || null,
       contrasena_hash,
-      lineas_investigacion,
+      lineas_investigacion || null,
       rol_id,
-      rolaca_id         || null,
     ]
   );
   return result.insertId;
@@ -59,18 +65,24 @@ export async function updateUser(usuario_id, data) {
   const fields = [];
   const values = [];
 
-  for (const key in data) {
+  const { programas, ...rest } = data;
+
+  for (const key in rest) {
     fields.push(`${key} = ?`);
-    values.push(data[key]);
+    values.push(rest[key]);
   }
 
-  if (fields.length === 0) throw new Error('No hay campos para actualizar');
+  if (fields.length > 0) {
+    values.push(usuario_id);
+    await pool.query(
+      `UPDATE usuario SET ${fields.join(', ')} WHERE usuario_id = ?`,
+      values
+    );
+  }
 
-  values.push(usuario_id);
-  await pool.query(
-    `UPDATE usuario SET ${fields.join(', ')} WHERE usuario_id = ?`,
-    values
-  );
+  if (programas !== undefined) {
+    await syncProgramasDeUsuario(usuario_id, programas);
+  }
 }
 
 export async function updateUserPassword(usuario_id, contrasena_hash) {
@@ -90,6 +102,51 @@ export async function getRoleIdByName(roleName) {
     [roleName]
   );
   return rows[0]?.rol_id || null;
+}
+
+// ── Programas de usuario ───────────────────────────────────────────────────
+ 
+export async function getProgramasDeUsuario(usuario_id) {
+  const [rows] = await pool.query(
+    `SELECT up.id, up.programa_id, p.nombre AS programa,
+            up.rolaca_id, ra.tipo_academico
+     FROM usuario_programa up
+     JOIN programa p  ON p.programa_id   = up.programa_id
+     JOIN rol_academico ra ON ra.rolaca_id = up.rolaca_id
+     WHERE up.usuario_id = ?`,
+    [usuario_id]
+  );
+  return rows;
+}
+ 
+export async function syncProgramasDeUsuario(usuario_id, programas) {
+  // programas = [{ programa_id, rolaca_id }, ...]
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+ 
+    // Borrar los actuales y reinsertar
+    await connection.query(
+      `DELETE FROM usuario_programa WHERE usuario_id = ?`,
+      [usuario_id]
+    );
+ 
+    for (const p of programas) {
+      if (!p.programa_id || !p.rolaca_id) continue;
+      await connection.query(
+        `INSERT INTO usuario_programa (usuario_id, programa_id, rolaca_id)
+         VALUES (?, ?, ?)`,
+        [usuario_id, p.programa_id, p.rolaca_id]
+      );
+    }
+ 
+    await connection.commit();
+  } catch (err) {
+    await connection.rollback();
+    throw err;
+  } finally {
+    connection.release();
+  }
 }
 
 // ── Rol ────────────────────────────────────────────────────────────────────
@@ -155,7 +212,6 @@ export async function listAcademicos() {
        u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
        u.primer_apellido, u.segundo_apellido, u.ano_ingreso,
        u.lineas_investigacion,
-       ra.tipo_academico AS contrato,
        (SELECT GROUP_CONCAT(m.mail SEPARATOR '||')
         FROM mail m WHERE m.usuario_id = u.usuario_id) AS correos,
        (SELECT ga.nombre_grado FROM grado_academico ga
@@ -171,10 +227,13 @@ export async function listAcademicos() {
         FROM titulacion t WHERE t.usuario_id = u.usuario_id) AS titulaciones
      FROM usuario u
      JOIN rol r ON r.rol_id = u.rol_id
-     LEFT JOIN rol_academico ra ON ra.rolaca_id = u.rolaca_id
      WHERE r.nombre = 'Academico'
      ORDER BY u.primer_apellido ASC`
   );
+  for (const row of rows) {
+    row.programas = await getProgramasDeUsuario(row.usuario_id);
+  }
+
   return rows;
 }
 
@@ -183,10 +242,9 @@ export async function getAcademicoFullProfile(usuario_id) {
     `SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
             u.primer_apellido, u.segundo_apellido, u.ano_ingreso,
             u.lineas_investigacion, u.telefono,
-            r.nombre AS rol_nombre, ra.tipo_academico AS contrato
+            r.nombre AS rol_nombre
      FROM usuario u
      JOIN rol r ON r.rol_id = u.rol_id
-     LEFT JOIN rol_academico ra ON ra.rolaca_id = u.rolaca_id
      WHERE u.usuario_id = ? AND r.nombre = 'Academico'`,
     [usuario_id]
   );
@@ -203,9 +261,10 @@ export async function getAcademicoFullProfile(usuario_id) {
      FROM grado_academico WHERE usuario_id = ?`,
     [usuario_id]
   );
+  const programas = await getProgramasDeUsuario(usuario_id);
 
   return {
-    usuario:         userRows[0],
+    usuario:         { ...userRows[0], programas },
     correos,
     titulaciones,
     grado_academico: gradoRows[0] || null,

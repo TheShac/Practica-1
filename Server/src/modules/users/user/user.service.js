@@ -5,7 +5,7 @@ import {
   listAcademicos, getAcademicoFullProfile, updateAcademicoProfile,
   listRoles, listRolesAcademico,
   createRol, updateRol, deleteRol,
-  createRolAcademico, updateRolAcademico, deleteRolAcademico,
+  createRolAcademico, updateRolAcademico, deleteRolAcademico, syncProgramasDeUsuario,
 } from './user.model.js';
 
 // ── Usuario ────────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ export async function getUserService(id) {
 }
 
 export async function createUserService(body) {
-  const { rut, primer_nombre, primer_apellido, password, rol, rol_id } = body;
+  const { rut, primer_nombre, primer_apellido, password, rol, rol_id, programas = [] } = body;
 
   if (!rut || !primer_nombre || !primer_apellido || !password) {
     const err = new Error('Faltan campos obligatorios');
@@ -36,6 +36,10 @@ export async function createUserService(body) {
   const finalRolId     = rol_id || (await getRoleIdByName(rol));
   const contrasena_hash = await bcrypt.hash(password, 10);
   const id             = await createUser({ ...body, contrasena_hash, rol_id: finalRolId });
+
+  if (programas.length > 0) {
+    await syncProgramasDeUsuario(id, programas);
+  }
 
   return findUserById(id);
 }

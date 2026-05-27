@@ -25,7 +25,7 @@ router.put(   '/roles-academico/:id', ...adm, updateRolAcademicoHandler);
 router.delete('/roles-academico/:id', ...adm, deleteRolAcademicoHandler);
 
 router.get('/academicos',
-  auth, authorizeRoles('Secretaria'),
+  auth, authorizeRoles('Secretaria', 'Admin'),
   getAcademicos
 );
 router.get('/academicos/:id/perfil',

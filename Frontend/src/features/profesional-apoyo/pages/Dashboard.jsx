@@ -1,10 +1,33 @@
 import { useEffect, useState } from "react";
 import { getUltimasActualizaciones } from "@/features/profesional-apoyo/services/home.service.js";
 
+function ContratoBadges({ tipo_contrato }) {
+  if (!tipo_contrato) {
+    return <span style={{ color: "var(--muted)" }}>Sin programa</span>;
+  }
+
+  const badges = tipo_contrato.split(", ").map((item) => {
+    const [programa, tipo] = item.split(" - ");
+    const isDoctorado = programa?.toUpperCase().includes("DOCTORADO");
+
+    return (
+      <span
+        key={item}
+        className={`badge-status ${isDoctorado ? "badge-aceptado" : "badge-aceptado"}`}
+        style={{ display: "inline-block", marginRight: 4 }}
+      >
+        {item}
+      </span>
+    );
+  });
+
+  return <div className="d-flex flex-wrap gap-1">{badges}</div>;
+}
+
 export default function SecretariaDashboard() {
   const [actualizaciones, setActualizaciones] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [loading, setLoading]                 = useState(true);
+  const [error, setError]                     = useState("");
 
   useEffect(() => {
     async function fetchData() {
@@ -23,11 +46,8 @@ export default function SecretariaDashboard() {
   const formatFecha = (fecha) => {
     if (!fecha) return "-";
     return new Date(fecha).toLocaleDateString("es-CL", {
-      day:   "2-digit",
-      month: "2-digit",
-      year:  "numeric",
-      hour:  "2-digit",
-      minute: "2-digit",
+      day: "2-digit", month: "2-digit", year: "numeric",
+      hour: "2-digit", minute: "2-digit",
     });
   };
 
@@ -56,31 +76,35 @@ export default function SecretariaDashboard() {
                 <thead>
                   <tr>
                     <th>Académico</th>
-                    <th>Tipo de Contrato</th>
+                    <th>Programa / Tipo</th>
                     <th>Módulo</th>
+                    <th>Acción</th>
                     <th>Fecha</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {actualizaciones.map((a, idx) => (
-                    <tr key={idx}>
-                      <td>{a.nombre_academico}</td>
-                      <td>
-                        <span className="badge-status badge-aceptado">
-                          {a.tipo_contrato || "Sin contrato"}
-                        </span>
-                      </td>
-                      <td>{a.modulo}</td>
-                      <td>{formatFecha(a.fecha)}</td>
-                    </tr>
-                  ))}
-
-                  {actualizaciones.length === 0 && (
+                  {actualizaciones.length === 0 ? (
                     <tr>
                       <td colSpan="5" style={{ color: "var(--muted)" }}>
                         Sin registros recientes.
                       </td>
                     </tr>
+                  ) : (
+                    actualizaciones.map((a, idx) => (
+                      <tr key={idx}>
+                        <td>{a.nombre_academico}</td>
+                        <td>
+                          <ContratoBadges tipo_contrato={a.tipo_contrato} />
+                        </td>
+                        <td>{a.modulo}</td>
+                        <td>
+                          <span className={`badge-status ${a.accion === "Creado" ? "badge-aceptado" : "badge-revision"}`}>
+                            {a.accion}
+                          </span>
+                        </td>
+                        <td>{formatFecha(a.fecha)}</td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
