@@ -197,13 +197,6 @@ export default function Login() {
               >
                 Gmail Institucional
               </button>
-
-              <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
-                Cuenta Secretaria: 22.222.222-2 / Secretaria123* <br/>
-                Cuenta Academico: 33.333.333-3 / Academico123* <br/>
-                Cuenta Academico: 44.444.444-4 / Academico123*
-              </div>
-              
             </form>
           </div>
 
