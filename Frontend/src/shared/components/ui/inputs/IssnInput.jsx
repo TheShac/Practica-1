@@ -1,7 +1,7 @@
 const IssnInput = ({ value, onChange, label = "ISSN" }) => {
 
   const handleChange = (e) => {
-    const raw = e.target.value.replace(/\D/g, "");
+    const raw = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
     const limited = raw.slice(0, 8);
 
     const formatted = limited.length > 4
