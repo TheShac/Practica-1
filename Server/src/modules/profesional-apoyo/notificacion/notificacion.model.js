@@ -55,8 +55,16 @@ export async function getNotificacionesEnviadas(remitente_id) {
   return rows;
 }
 
-export async function deleteNotificacion(notificacion_id) {
-  await pool.query(`DELETE FROM notificacion WHERE notificacion_id = ?`, [notificacion_id]);
+export async function deleteNotificacion(notificacion_id, remitente_id) {
+  const [result] = await pool.query(
+    `DELETE FROM notificacion WHERE notificacion_id = ? AND remitente_id = ?`,
+    [notificacion_id, remitente_id]
+  );
+  if (result.affectedRows === 0) {
+    const err = new Error('Notificación no encontrada o no autorizado');
+    err.status = 404;
+    throw err;
+  }
 }
 
 export async function getNotificacionesParaAcademico(usuario_id) {

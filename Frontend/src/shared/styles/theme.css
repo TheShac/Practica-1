@@ -427,3 +427,73 @@ input-dark,
   from { opacity: 0; transform: scale(.96); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* ── Responsividad móvil — Perfil Académico ────────────────────────────── */
+
+/* Tablet: 2 columnas */
+@media (max-width: 991px) {
+  .perfil-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px 20px;
+  }
+
+  .fa-info-box {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+}
+
+/* Móvil: 1 columna, ajustes de espaciado y header apilado */
+@media (max-width: 575px) {
+  .perfil-wrapper {
+    padding: 14px;
+  }
+
+  .perfil-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .perfil-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .perfil-actions {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .perfil-actions .btn-primary {
+    flex: 1;
+    text-align: center;
+  }
+
+  .perfil-card {
+    padding: 14px;
+  }
+
+  .fa-info-box {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .fa-modal {
+    padding: 18px 14px;
+    border-radius: 14px;
+  }
+
+  .fa-modal-title {
+    font-size: 1rem;
+  }
+
+  .perfil-correo-row {
+    flex-wrap: wrap;
+  }
+
+  .perfil-correo-row .btn-danger-soft {
+    width: 100%;
+  }
+}

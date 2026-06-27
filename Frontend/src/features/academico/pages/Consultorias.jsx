@@ -1,25 +1,26 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import FormModal from "@/shared/components/modals/formModal/FormModal";
-import RespaldoInput from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
-import YearInput from "@/shared/components/ui/inputs/YearInput.jsx";
-import TituloInput from "@/shared/components/ui/inputs/TituloInput";
+import FormModal             from "@/shared/components/modals/formModal/FormModal";
+import RespaldoInput         from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
+import YearInput             from "@/shared/components/ui/inputs/YearInput.jsx";
+import TituloInput           from "@/shared/components/ui/inputs/TituloInput";
 import PeriodoEjecucionInput from "@/shared/components/ui/inputs/PeriodoEjecucionInput";
-import ActionButtons from "@/shared/components/ui/buttons/ActionButtons";
-import BtnNuevo from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import ActionButtons         from "@/shared/components/ui/buttons/ActionButtons";
+import BtnNuevo              from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import ConfirmModal          from "@/shared/components/modals/ConfirmModal.jsx";
+import Toast                 from "@/shared/components/ui/feedback/Toast.jsx";
+import { useConfirm }    from "@/shared/hooks/useConfirm.js";
+import { usePagination } from "@/shared/hooks/usePagination.js";
+import Pagination        from "@/shared/components/ui/Pagination.jsx";
+import { sanitizeInput, sanitizeObject } from "@/shared/utils/sanitize.js";
+
 import {
-  getMisConsultorias,
-  createConsultoria,
-  updateConsultoria,
-  deleteConsultoria,
+  getMisConsultorias, createConsultoria,
+  updateConsultoria, deleteConsultoria,
 } from "@/features/academico/services/produccion-cientifica/consultoria.service.js";
 
 const emptyForm = {
-  titulo: "",
-  institucion_contratante: "",
-  ano_adjudicacion: "",
-  periodo_ejecucion: "",
-  objetivo: "",
-  link_verificacion: "",
+  titulo: "", institucion_contratante: "", ano_adjudicacion: "",
+  periodo_ejecucion: "", objetivo: "", link_verificacion: "",
 };
 
 const REQUIRED_FIELDS = [
@@ -32,13 +33,10 @@ const REQUIRED_FIELDS = [
 
 const validate = (form) => {
   const errs = {};
-
   REQUIRED_FIELDS.forEach(({ key, label }) => {
-    if (!form[key] || String(form[key]).trim() === "") {
+    if (!form[key] || String(form[key]).trim() === "")
       errs[key] = `${label} es obligatorio.`;
-    }
   });
-
   return errs;
 };
 
@@ -46,23 +44,22 @@ export default function Consultorias() {
   const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
-
   const [showModal, setShowModal] = useState(false);
   const [mode, setMode]           = useState("create");
   const [editingId, setEditingId] = useState(null);
   const [form, setForm]           = useState(emptyForm);
   const [touched, setTouched]     = useState({});
+  const [toast, setToast]         = useState({ show: false, message: "", type: "success" });
 
-  const errors      = useMemo(() => validate(form), [form]);
+  const { confirmState, confirm, closeConfirm } = useConfirm();
+  const { pageRows, page, setPage, total, totalPages, perPage } = usePagination(rows);
+
+  const errors        = useMemo(() => validate(form), [form]);
   const isFormInvalid = Object.keys(errors).length > 0;
-
-  const modalTitle = useMemo(
-    () => mode === "create" ? "Nueva Consultoría" : "Editar Consultoría",
-    [mode],
-  );
+  const modalTitle    = mode === "create" ? "Nueva Consultoría" : "Editar Consultoría";
 
   const setField = useCallback((key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: sanitizeInput(value) }));
     setTouched((prev) => ({ ...prev, [key]: true }));
   }, []);
 
@@ -79,8 +76,7 @@ export default function Consultorias() {
         setLoading(true);
         await load();
       } catch (err) {
-        console.error(err);
-        alert(err.message || "Error cargando consultorías");
+        setToast({ show: true, message: err.message || "Error cargando consultorías", type: "error" });
       } finally {
         setLoading(false);
       }
@@ -88,16 +84,13 @@ export default function Consultorias() {
   }, []);
 
   const openCreate = () => {
-    setMode("create");
-    setEditingId(null);
-    setForm(emptyForm);
-    setTouched({});
+    setMode("create"); setEditingId(null);
+    setForm(emptyForm); setTouched({});
     setShowModal(true);
   };
 
   const openEdit = (row) => {
-    setMode("edit");
-    setEditingId(row.consultoria_id);
+    setMode("edit"); setEditingId(row.consultoria_id);
     setForm({
       titulo:                  row.titulo || "",
       institucion_contratante: row.institucion_contratante || "",
@@ -106,26 +99,22 @@ export default function Consultorias() {
       objetivo:                row.objetivo || "",
       link_verificacion:       row.link_verificacion || "",
     });
-    setTouched({});
-    setShowModal(true);
+    setTouched({}); setShowModal(true);
   };
 
-  const close = () => {
-    setShowModal(false);
-    setTouched({});
-  };
+  const close = () => { setShowModal(false); setTouched({}); };
 
   const submit = async () => {
     if (isFormInvalid) {
       setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
       return;
     }
-
     setSaving(true);
     try {
+      const clean = sanitizeObject(form);
       const payload = {
-        ...form,
-        ano_adjudicacion: form.ano_adjudicacion ? Number(form.ano_adjudicacion) : null,
+        ...clean,
+        ano_adjudicacion: clean.ano_adjudicacion ? Number(clean.ano_adjudicacion) : null,
       };
 
       if (mode === "create") {
@@ -136,23 +125,29 @@ export default function Consultorias() {
 
       await load();
       setShowModal(false);
+      setToast({ show: true, message: mode === "create" ? "Consultoría creada correctamente." : "Consultoría actualizada correctamente.", type: "success" });
     } catch (err) {
-      console.error(err);
-      alert(err.message || "Error guardando consultoría");
+      setToast({ show: true, message: err.message || "Error guardando consultoría", type: "error" });
     } finally {
       setSaving(false);
     }
   };
 
-  const remove = async (id) => {
-    if (!confirm("¿Eliminar esta consultoría?")) return;
-    try {
-      await deleteConsultoria(id);
-      setRows((prev) => prev.filter((r) => r.consultoria_id !== id));
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "Error eliminando consultoría");
-    }
+  const remove = (row) => {
+    confirm({
+      title:       "¿Eliminar consultoría?",
+      message:     `Se eliminará "${row.titulo}". Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      onConfirm:   async () => {
+        try {
+          await deleteConsultoria(row.consultoria_id);
+          setRows((prev) => prev.filter((r) => r.consultoria_id !== row.consultoria_id));
+          setToast({ show: true, message: "Consultoría eliminada correctamente.", type: "success" });
+        } catch (err) {
+          setToast({ show: true, message: err.message || "Error eliminando consultoría", type: "error" });
+        }
+      },
+    });
   };
 
   return (
@@ -168,6 +163,7 @@ export default function Consultorias() {
         {loading ? (
           <div style={{ color: "var(--muted)" }}>Cargando...</div>
         ) : (
+          <>
           <div className="table-wrap">
             <div className="table-responsive">
               <table className="table table-dark table-dark-custom align-middle">
@@ -183,48 +179,40 @@ export default function Consultorias() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
+                  {pageRows.map((r) => (
                     <tr key={r.consultoria_id}>
                       <td>{r.titulo}</td>
                       <td>{r.institucion_contratante || "—"}</td>
                       <td>{r.ano_adjudicacion || "—"}</td>
                       <td>{r.periodo_ejecucion || "—"}</td>
                       <td
-                        style={{
-                          maxWidth: 250,
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          whiteSpace: "nowrap",
-                        }}
+                        style={{ maxWidth: 250, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
                         title={r.objetivo}
                       >
                         {r.objetivo || "—"}
                       </td>
                       <td>
-                        <a href={r.link_verificacion || "#"} target="_blank" rel="noreferrer">
-                          Ver
-                        </a>
+                        {r.link_verificacion
+                          ? <a href={r.link_verificacion} target="_blank" rel="noreferrer">Ver</a>
+                          : "—"
+                        }
                       </td>
                       <td className="text-center">
-                        <ActionButtons
-                          onEdit={() => openEdit(r)}
-                          onDelete={() => remove(r.consultoria_id)}
-                        />
+                        <ActionButtons onEdit={() => openEdit(r)} onDelete={() => remove(r)} />
                       </td>
                     </tr>
                   ))}
-
-                  {rows.length === 0 && (
+                  {total === 0 && (
                     <tr>
-                      <td colSpan="7" style={{ color: "var(--muted)" }}>
-                        Sin registros.
-                      </td>
+                      <td colSpan="7" style={{ color: "var(--muted)" }}>Sin registros.</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
           </div>
+          <Pagination page={page} totalPages={totalPages} total={total} perPage={perPage} onPageChange={setPage} />
+          </>
         )}
       </div>
 
@@ -237,7 +225,6 @@ export default function Consultorias() {
         submitText={saving ? "Guardando..." : mode === "create" ? "Crear" : "Guardar cambios"}
       >
         <div className="row g-3">
-
           <div className="col-12">
             <TituloInput
               value={form.titulo}
@@ -245,24 +232,18 @@ export default function Consultorias() {
               placeholder="Título de la consultoría"
               className={errorMsg("titulo") ? "is-invalid" : ""}
             />
-            {errorMsg("titulo") && (
-              <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>
-            )}
+            {errorMsg("titulo") && <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Institución contratante*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Institución contratante*</label>
             <input
               className={`form-control input-dark${errorMsg("institucion_contratante") ? " is-invalid" : ""}`}
               value={form.institucion_contratante}
               onChange={(e) => setField("institucion_contratante", e.target.value)}
               placeholder="Nombre de la institución"
             />
-            {errorMsg("institucion_contratante") && (
-              <div className="invalid-feedback">{errorMsg("institucion_contratante")}</div>
-            )}
+            {errorMsg("institucion_contratante") && <div className="invalid-feedback">{errorMsg("institucion_contratante")}</div>}
           </div>
 
           <div className="col-12 col-md-3">
@@ -281,9 +262,7 @@ export default function Consultorias() {
               onChange={(e) => setField("periodo_ejecucion", e.target.value)}
               className={errorMsg("periodo_ejecucion") ? "is-invalid" : ""}
             />
-            {errorMsg("periodo_ejecucion") && (
-              <div className="invalid-feedback d-block">{errorMsg("periodo_ejecucion")}</div>
-            )}
+            {errorMsg("periodo_ejecucion") && <div className="invalid-feedback d-block">{errorMsg("periodo_ejecucion")}</div>}
           </div>
 
           <div className="col-12">
@@ -295,20 +274,26 @@ export default function Consultorias() {
               onChange={(e) => setField("objetivo", e.target.value)}
               placeholder="Descripción del objetivo de la consultoría"
             />
-            {errorMsg("objetivo") && (
-              <div className="invalid-feedback">{errorMsg("objetivo")}</div>
-            )}
+            {errorMsg("objetivo") && <div className="invalid-feedback">{errorMsg("objetivo")}</div>}
           </div>
 
           <div className="col-12">
             <RespaldoInput
               value={form.link_verificacion}
-              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
+              onChange={(e) => setField("link_verificacion", e.target.value)}
             />
           </div>
-
         </div>
       </FormModal>
+
+      <ConfirmModal {...confirmState} onClose={closeConfirm} />
+
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((t) => ({ ...t, show: false }))}
+      />
     </div>
   );
 }

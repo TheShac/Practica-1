@@ -97,7 +97,7 @@ export default function FichaAcademicaModal({ show, academico, onClose }) {
           {/* Muestra todos los programas del académico */}
           <div>
             <label>Tipo de Vínculo</label>
-            <ProgramaBadges programas={academico.programas || []} />
+            <ProgramaBadges programas={ficha?.usuario?.programas || academico.programas || []} />
           </div>
 
           <div>

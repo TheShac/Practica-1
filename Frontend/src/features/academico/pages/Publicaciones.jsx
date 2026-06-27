@@ -1,93 +1,87 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import FormModal from "@/shared/components/modals/formModal/FormModal.jsx";
-import EstadoSelect from "@/shared/components/forms/statusSelect/EstadoSelect.jsx";
-import RespaldoInput from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
-import IssnInput from "@/shared/components/ui/inputs/IssnInput.jsx";
-import YearInput from "@/shared/components/ui/inputs/YearInput.jsx";
-import AutoresInput from "@/shared/components/forms/authorInput/AutoresInput.jsx";
+import FormModal          from "@/shared/components/modals/formModal/FormModal.jsx";
+import EstadoSelect       from "@/shared/components/forms/statusSelect/EstadoSelect.jsx";
+import RespaldoInput      from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
+import IssnInput          from "@/shared/components/ui/inputs/IssnInput.jsx";
+import YearInput          from "@/shared/components/ui/inputs/YearInput.jsx";
+import AutoresInput       from "@/shared/components/forms/authorInput/AutoresInput.jsx";
 import AutorPrincipalInput from "@/shared/components/forms/authorInput/AutorPrincipalInput.jsx";
-import TituloInput from "@/shared/components/ui/inputs/TituloInput.jsx";
-import BtnNuevo from "@/shared/components/ui/buttons/BtnCreate.jsx";
-import ActionButtons from "@/shared/components/ui/buttons/ActionButtons.jsx";
+import TituloInput        from "@/shared/components/ui/inputs/TituloInput.jsx";
+import BtnNuevo           from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import ActionButtons      from "@/shared/components/ui/buttons/ActionButtons.jsx";
+import ConfirmModal       from "@/shared/components/modals/ConfirmModal.jsx";
+import Toast              from "@/shared/components/ui/feedback/Toast.jsx";
+import { useConfirm }    from "@/shared/hooks/useConfirm.js";
+import { usePagination } from "@/shared/hooks/usePagination.js";
+import Pagination        from "@/shared/components/ui/Pagination.jsx";
+import { sanitizeInput, sanitizeObject } from "@/shared/utils/sanitize.js";
 
 import {
-  getCategorias,
-  getMisPublicaciones,
-  createPublicacion,
-  updatePublicacion,
-  deletePublicacion,
+  getCategorias, getMisPublicaciones,
+  createPublicacion, updatePublicacion, deletePublicacion,
 } from "@/features/academico/services/produccion-cientifica/publicaciones.service.js";
 
 const emptyForm = {
-  autores: "",
-  autorPrincipal: "",
-  anio: "",
-  categoria_id: "",
-  titulo: "",
-  estado: "Publicado",
-  revista: "",
-  issn: "",
-  respaldo: "",
+  autores: "", autorPrincipal: "", anio: "", categoria_id: "",
+  titulo: "", estado: "Publicado", revista: "", issn: "", respaldo: "",
 };
 
 const REQUIRED_FIELDS = [
-  { key: "autores",       label: "Autor(es)" },
+  { key: "autores",        label: "Autor(es)" },
   { key: "autorPrincipal", label: "Autor principal" },
-  { key: "anio",          label: "Año" },
-  { key: "categoria_id",  label: "Indexados" },
-  { key: "titulo",        label: "Título" },
-  { key: "revista",       label: "Revista" },
-  { key: "estado",        label: "Estado" },
+  { key: "anio",           label: "Año" },
+  { key: "categoria_id",   label: "Indexados" },
+  { key: "titulo",         label: "Título" },
+  { key: "revista",        label: "Revista" },
+  { key: "estado",         label: "Estado" },
 ];
 
 const validate = (form) => {
   const errs = {};
-
   REQUIRED_FIELDS.forEach(({ key, label }) => {
-    if (!form[key] || String(form[key]).trim() === "") {
+    if (!form[key] || String(form[key]).trim() === "")
       errs[key] = `${label} es obligatorio.`;
-    }
   });
-
   return errs;
 };
 
 const mapPublicacion = (p) => ({
-  id:            p.publicacion_id,
-  categoria_id:  p.categoria_id,
-  categoria:     p.categoria_nombre,
-  autores:       p.autores || "",
+  id:             p.publicacion_id,
+  categoria_id:   p.categoria_id,
+  categoria:      p.categoria_nombre,
+  autores:        p.autores || "",
   autorPrincipal: p.autor_principal || "",
-  anio:          p.ano ? String(p.ano) : "",
-  titulo:        p.titulo_articulo || "",
-  revista:       p.nombre_revista || "",
-  estado:        p.estado || "Publicado",
-  issn:          p.ISSN || "",
-  respaldo:      p.link_verificacion || "",
+  anio:           p.ano ? String(p.ano) : "",
+  titulo:         p.titulo_articulo || "",
+  revista:        p.nombre_revista || "",
+  estado:         p.estado || "Publicado",
+  issn:           p.ISSN || "",
+  respaldo:       p.link_verificacion || "",
 });
 
 export default function Publicaciones() {
-  const [rows, setRows]           = useState([]);
+  const [rows, setRows]         = useState([]);
   const [categorias, setCategorias] = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [saving, setSaving]       = useState(false);
-
+  const [loading, setLoading]   = useState(true);
+  const [saving, setSaving]     = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [mode, setMode]           = useState("create");
+  const [mode, setMode]         = useState("create");
   const [editingId, setEditingId] = useState(null);
-  const [form, setForm]           = useState(emptyForm);
-  const [touched, setTouched]     = useState({});
+  const [form, setForm]         = useState(emptyForm);
+  const [touched, setTouched]   = useState({});
+  const [toast, setToast]       = useState({ show: false, message: "", type: "success" });
+
+  const { confirmState, confirm, closeConfirm } = useConfirm();
+  const { pageRows, page, setPage, total, totalPages, perPage } = usePagination(rows);
 
   const errors        = useMemo(() => validate(form), [form]);
   const isFormInvalid = Object.keys(errors).length > 0;
+  const modalTitle    = mode === "create" ? "Nueva Publicación" : "Editar Publicación";
 
-  const modalTitle = useMemo(
-    () => mode === "create" ? "Nueva Publicación" : "Editar Publicación",
-    [mode],
-  );
-
+  // sanitizeInput en onChange → elimina tags HTML mientras escribe
+  // pero deja puntuación normal para no molestar al usuario
   const setField = useCallback((key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: sanitizeInput(value) }));
     setTouched((prev) => ({ ...prev, [key]: true }));
   }, []);
 
@@ -106,8 +100,7 @@ export default function Publicaciones() {
         setCategorias(cats);
         setRows(pubs.map(mapPublicacion));
       } catch (err) {
-        console.error(err);
-        alert(err.message || "Error cargando publicaciones");
+        setToast({ show: true, message: err.message || "Error cargando publicaciones", type: "error" });
       } finally {
         setLoading(false);
       }
@@ -117,9 +110,7 @@ export default function Publicaciones() {
   const openCreate = () => {
     setMode("create");
     setEditingId(null);
-    const defaultCatId = categorias?.[0]?.categoria_id
-      ? String(categorias[0].categoria_id)
-      : "";
+    const defaultCatId = categorias?.[0]?.categoria_id ? String(categorias[0].categoria_id) : "";
     setForm({ ...emptyForm, categoria_id: defaultCatId });
     setTouched({});
     setShowModal(true);
@@ -129,43 +120,42 @@ export default function Publicaciones() {
     setMode("edit");
     setEditingId(row.id);
     setForm({
-      autores:       row.autores,
+      autores:        row.autores,
       autorPrincipal: row.autorPrincipal,
-      anio:          row.anio,
-      categoria_id:  row.categoria_id ? String(row.categoria_id) : "",
-      titulo:        row.titulo,
-      estado:        row.estado || "Publicado",
-      revista:       row.revista,
-      issn:          row.issn,
-      respaldo:      row.respaldo,
+      anio:           row.anio,
+      categoria_id:   row.categoria_id ? String(row.categoria_id) : "",
+      titulo:         row.titulo,
+      estado:         row.estado || "Publicado",
+      revista:        row.revista,
+      issn:           row.issn,
+      respaldo:       row.respaldo,
     });
     setTouched({});
     setShowModal(true);
   };
 
-  const close = () => {
-    setShowModal(false);
-    setTouched({});
-  };
+  const close = () => { setShowModal(false); setTouched({}); };
 
   const submit = async () => {
     if (isFormInvalid) {
       setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
       return;
     }
-
     setSaving(true);
     try {
+      // sanitizeObject en submit → limpieza estricta antes de enviar al backend
+      const clean = sanitizeObject(form);
+
       const payload = {
-        autores:          form.autores,
-        autor_principal:  form.autorPrincipal,
-        ano:              Number(form.anio),
-        categoria_id:     Number(form.categoria_id),
-        titulo_articulo:  form.titulo,
-        nombre_revista:   form.revista,
-        estado:           form.estado,
-        ISSN:             form.issn,
-        link_verificacion: form.respaldo,
+        autores:           clean.autores,
+        autor_principal:   clean.autorPrincipal,
+        ano:               Number(clean.anio),
+        categoria_id:      Number(clean.categoria_id),
+        titulo_articulo:   clean.titulo,
+        nombre_revista:    clean.revista,
+        estado:            clean.estado,
+        ISSN:              clean.issn,
+        link_verificacion: clean.respaldo,
       };
 
       if (mode === "create") {
@@ -176,35 +166,38 @@ export default function Publicaciones() {
 
       await loadRows();
       setShowModal(false);
+      setToast({ show: true, message: mode === "create" ? "Publicación creada correctamente." : "Publicación actualizada correctamente.", type: "success" });
     } catch (err) {
-      console.error(err);
-      alert(err.message || "Error guardando publicación");
+      setToast({ show: true, message: err.message || "Error guardando publicación", type: "error" });
     } finally {
       setSaving(false);
     }
   };
 
-  const remove = async (id) => {
-    if (!confirm("¿Eliminar esta publicación?")) return;
-
-    try {
-      await deletePublicacion(id);
-      setRows((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "Error eliminando publicación");
-    }
+  const remove = (row) => {
+    confirm({
+      title:       "¿Eliminar publicación?",
+      message:     `Se eliminará "${row.titulo}". Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      onConfirm:   async () => {
+        try {
+          await deletePublicacion(row.id);
+          setRows((prev) => prev.filter((r) => r.id !== row.id));
+          setToast({ show: true, message: "Publicación eliminada correctamente.", type: "success" });
+        } catch (err) {
+          setToast({ show: true, message: err.message || "Error eliminando publicación", type: "error" });
+        }
+      },
+    });
   };
-  
+
   const badgeClass = (estado) =>
-    "badge-status " +
-    (estado === "Publicado"
-      ? "badge-publicado"
-      : estado === "En revisión"
-      ? "badge-revision"
-      : estado === "Aceptado"
-      ? "badge-aceptado"
-      : "badge-rechazado");
+    "badge-status " + (
+      estado === "Publicado"   ? "badge-publicado" :
+      estado === "En revisión" ? "badge-revision"  :
+      estado === "Aceptado"    ? "badge-aceptado"  :
+      "badge-rechazado"
+    );
 
   return (
     <div>
@@ -219,9 +212,10 @@ export default function Publicaciones() {
         {loading ? (
           <div style={{ color: "var(--muted)" }}>Cargando...</div>
         ) : (
+          <>
           <div className="table-wrap">
             <div className="table-responsive">
-              <table className="table table-dark table-dark-custom align-middle">
+              <table className="table table-dark table-dark-custom align-middle" style={{ minWidth: "800px" }}>
                 <thead>
                   <tr>
                     <th>Autor(es)</th>
@@ -237,7 +231,7 @@ export default function Publicaciones() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
+                  {pageRows.map((r) => (
                     <tr key={r.id}>
                       <td>{r.autores}</td>
                       <td>{r.autorPrincipal}</td>
@@ -245,35 +239,30 @@ export default function Publicaciones() {
                       <td>{r.categoria}</td>
                       <td>{r.titulo}</td>
                       <td>{r.revista || "—"}</td>
-                      <td>
-                        <span className={badgeClass(r.estado)}>{r.estado}</span>
-                      </td>
+                      <td><span className={badgeClass(r.estado)}>{r.estado}</span></td>
                       <td>{r.issn || "—"}</td>
                       <td>
-                        <a href={r.respaldo || "#"} target="_blank" rel="noreferrer">
-                          Ver
-                        </a>
+                        {r.respaldo
+                          ? <a href={r.respaldo} target="_blank" rel="noreferrer">Ver</a>
+                          : "—"
+                        }
                       </td>
                       <td className="text-end">
-                        <ActionButtons
-                          onEdit={() => openEdit(r)}
-                          onDelete={() => remove(r.id)}
-                        />
+                        <ActionButtons onEdit={() => openEdit(r)} onDelete={() => remove(r)} />
                       </td>
                     </tr>
                   ))}
-
-                  {rows.length === 0 && (
+                  {total === 0 && (
                     <tr>
-                      <td colSpan="9" style={{ color: "var(--muted)" }}>
-                        Sin registros.
-                      </td>
+                      <td colSpan="9" style={{ color: "var(--muted)" }}>Sin registros.</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
           </div>
+          <Pagination page={page} totalPages={totalPages} total={total} perPage={perPage} onPageChange={setPage} />
+          </>
         )}
       </div>
 
@@ -292,9 +281,7 @@ export default function Publicaciones() {
               onChange={(e) => setField("autores", e.target.value)}
               className={errorMsg("autores") ? "is-invalid" : ""}
             />
-            {errorMsg("autores") && (
-              <div className="invalid-feedback d-block">{errorMsg("autores")}</div>
-            )}
+            {errorMsg("autores") && <div className="invalid-feedback d-block">{errorMsg("autores")}</div>}
           </div>
 
           <div className="col-12 col-md-6">
@@ -303,24 +290,15 @@ export default function Publicaciones() {
               onChange={(e) => setField("autorPrincipal", e.target.value)}
               className={errorMsg("autorPrincipal") ? "is-invalid" : ""}
             />
-            {errorMsg("autorPrincipal") && (
-              <div className="invalid-feedback d-block">{errorMsg("autorPrincipal")}</div>
-            )}
+            {errorMsg("autorPrincipal") && <div className="invalid-feedback d-block">{errorMsg("autorPrincipal")}</div>}
           </div>
 
           <div className="col-12 col-md-3">
-            <YearInput
-              value={form.anio}
-              onChange={(val) => setField("anio", val)}
-              error={errorMsg("anio")}
-              required
-            />
+            <YearInput value={form.anio} onChange={(val) => setField("anio", val)} error={errorMsg("anio")} required />
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Indexados*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Indexados*</label>
             <select
               className={`form-select input-dark${errorMsg("categoria_id") ? " is-invalid" : ""}`}
               value={form.categoria_id}
@@ -328,29 +306,21 @@ export default function Publicaciones() {
             >
               <option value="" disabled>Seleccione...</option>
               {categorias.map((c) => (
-                <option key={c.categoria_id} value={String(c.categoria_id)}>
-                  {c.nombre}
-                </option>
+                <option key={c.categoria_id} value={String(c.categoria_id)}>{c.nombre}</option>
               ))}
             </select>
-            {errorMsg("categoria_id") && (
-              <div className="invalid-feedback">{errorMsg("categoria_id")}</div>
-            )}
+            {errorMsg("categoria_id") && <div className="invalid-feedback">{errorMsg("categoria_id")}</div>}
           </div>
 
           <div className="col-12 col-md-5">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Revista*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Revista*</label>
             <input
               className={`form-control input-dark${errorMsg("revista") ? " is-invalid" : ""}`}
               value={form.revista}
               onChange={(e) => setField("revista", e.target.value)}
               placeholder="Nombre de la revista"
             />
-            {errorMsg("revista") && (
-              <div className="invalid-feedback">{errorMsg("revista")}</div>
-            )}
+            {errorMsg("revista") && <div className="invalid-feedback">{errorMsg("revista")}</div>}
           </div>
 
           <div className="col-12 col-md-8">
@@ -360,9 +330,7 @@ export default function Publicaciones() {
               placeholder="Título del artículo"
               className={errorMsg("titulo") ? "is-invalid" : ""}
             />
-            {errorMsg("titulo") && (
-              <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>
-            )}
+            {errorMsg("titulo") && <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>}
           </div>
 
           <div className="col-12 col-md-4">
@@ -371,26 +339,33 @@ export default function Publicaciones() {
               onChange={(e) => setField("estado", e.target.value)}
               className={errorMsg("estado") ? "is-invalid" : ""}
             />
-            {errorMsg("estado") && (
-              <div className="invalid-feedback d-block">{errorMsg("estado")}</div>
-            )}
+            {errorMsg("estado") && <div className="invalid-feedback d-block">{errorMsg("estado")}</div>}
           </div>
 
           <div className="col-12 col-md-6">
             <IssnInput
               value={form.issn}
-              onChange={(e) => setForm((prev) => ({ ...prev, issn: e.target.value }))}
+              onChange={(e) => setField("issn", e.target.value)}
             />
           </div>
 
           <div className="col-12 col-md-6">
             <RespaldoInput
               value={form.respaldo}
-              onChange={(e) => setForm((prev) => ({ ...prev, respaldo: e.target.value }))}
+              onChange={(e) => setField("respaldo", e.target.value)}
             />
           </div>
         </div>
       </FormModal>
+
+      <ConfirmModal {...confirmState} onClose={closeConfirm} />
+
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((t) => ({ ...t, show: false }))}
+      />
     </div>
   );
 }

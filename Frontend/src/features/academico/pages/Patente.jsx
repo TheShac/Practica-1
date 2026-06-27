@@ -1,43 +1,39 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import FormModal from "@/shared/components/modals/formModal/FormModal.jsx";
-import EstadoSelect from "@/shared/components/forms/statusSelect/EstadoSelect.jsx";
-import RespaldoInput from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
-import ActionButtons from "@/shared/components/ui/buttons/ActionButtons.jsx";
-import BtnNuevo from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import FormModal      from "@/shared/components/modals/formModal/FormModal.jsx";
+import EstadoSelect   from "@/shared/components/forms/statusSelect/EstadoSelect.jsx";
+import RespaldoInput  from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
+import ActionButtons  from "@/shared/components/ui/buttons/ActionButtons.jsx";
+import BtnNuevo       from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import ConfirmModal   from "@/shared/components/modals/ConfirmModal.jsx";
+import Toast          from "@/shared/components/ui/feedback/Toast.jsx";
+import { useConfirm }    from "@/shared/hooks/useConfirm.js";
+import { usePagination } from "@/shared/hooks/usePagination.js";
+import Pagination        from "@/shared/components/ui/Pagination.jsx";
+import { sanitizeInput, sanitizeObject } from "@/shared/utils/sanitize.js";
+
 import {
-  fetchPatentes,
-  createPatente,
-  updatePatente,
-  deletePatente,
+  fetchPatentes, createPatente, updatePatente, deletePatente,
 } from "@/features/academico/services/produccion-cientifica/patente.service.js";
 
 const emptyForm = {
-  inventores: "",
-  nombre_patente: "",
-  fecha_solicitud: "",
-  fecha_publicacion: "",
-  num_registro: "",
-  estado: "",
-  link_verificacion: "",
+  inventores: "", nombre_patente: "", fecha_solicitud: "",
+  fecha_publicacion: "", num_registro: "", estado: "", link_verificacion: "",
 };
 
 const REQUIRED_FIELDS = [
-  { key: "inventores",       label: "Inventor(es)" },
-  { key: "nombre_patente",   label: "Nombre patente" },
-  { key: "fecha_solicitud",  label: "Fecha de solicitud" },
-  { key: "num_registro",     label: "N° de registro" },
-  { key: "estado",           label: "Estado" },
+  { key: "inventores",      label: "Inventor(es)" },
+  { key: "nombre_patente",  label: "Nombre patente" },
+  { key: "fecha_solicitud", label: "Fecha de solicitud" },
+  { key: "num_registro",    label: "N° de registro" },
+  { key: "estado",          label: "Estado" },
 ];
 
 const validate = (form) => {
   const errs = {};
-
   REQUIRED_FIELDS.forEach(({ key, label }) => {
-    if (!form[key] || String(form[key]).trim() === "") {
+    if (!form[key] || String(form[key]).trim() === "")
       errs[key] = `${label} es obligatorio.`;
-    }
   });
-
   return errs;
 };
 
@@ -50,23 +46,24 @@ export default function Patente() {
   const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
-
   const [showModal, setShowModal] = useState(false);
   const [mode, setMode]           = useState("create");
   const [editingId, setEditingId] = useState(null);
   const [form, setForm]           = useState(emptyForm);
   const [touched, setTouched]     = useState({});
+  const [toast, setToast]         = useState({ show: false, message: "", type: "success" });
+
+  const { confirmState, confirm, closeConfirm } = useConfirm();
+  const { pageRows, page, setPage, total, totalPages, perPage } = usePagination(rows);
 
   const errors        = useMemo(() => validate(form), [form]);
   const isFormInvalid = Object.keys(errors).length > 0;
+  const modalTitle    = mode === "create" ? "Nueva Patente" : "Editar Patente";
 
-  const modalTitle = useMemo(
-    () => mode === "create" ? "Nueva Patente" : "Editar Patente",
-    [mode],
-  );
-
+  // Fechas son type="date" — no necesitan sanitizeInput, solo los textos libres
   const setField = useCallback((key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    const isDate = key === "fecha_solicitud" || key === "fecha_publicacion";
+    setForm((prev) => ({ ...prev, [key]: isDate ? value : sanitizeInput(value) }));
     setTouched((prev) => ({ ...prev, [key]: true }));
   }, []);
 
@@ -74,19 +71,16 @@ export default function Patente() {
 
   const load = async () => {
     const data = await fetchPatentes();
-
-    setRows(
-      data.map((p) => ({
-        id: p.patente_id,
-        inventores: p.inventores || "",
-        nombre_patente: p.nombre_patente || "",
-        fecha_solicitud: formatDate(p.fecha_solicitud),
-        fecha_publicacion: formatDate(p.fecha_publicacion),
-        num_registro: p.num_registro || "",
-        estado: p.estado || "",
-        link_verificacion: p.link_verificacion || "",
-      }))
-    );
+    setRows(data.map((p) => ({
+      id:                p.patente_id,
+      inventores:        p.inventores || "",
+      nombre_patente:    p.nombre_patente || "",
+      fecha_solicitud:   formatDate(p.fecha_solicitud),
+      fecha_publicacion: formatDate(p.fecha_publicacion),
+      num_registro:      p.num_registro || "",
+      estado:            p.estado || "",
+      link_verificacion: p.link_verificacion || "",
+    })));
   };
 
   useEffect(() => {
@@ -95,8 +89,7 @@ export default function Patente() {
         setLoading(true);
         await load();
       } catch (err) {
-        console.error(err);
-        alert(err.message || "Error cargando patentes");
+        setToast({ show: true, message: err.message || "Error cargando patentes", type: "error" });
       } finally {
         setLoading(false);
       }
@@ -104,71 +97,68 @@ export default function Patente() {
   }, []);
 
   const openCreate = () => {
-    setMode("create");
-    setEditingId(null);
-    setForm(emptyForm);
-    setTouched({});
+    setMode("create"); setEditingId(null);
+    setForm(emptyForm); setTouched({});
     setShowModal(true);
   };
 
   const openEdit = (row) => {
-    setMode("edit");
-    setEditingId(row.id);
-    setForm(row);
-    setTouched({});
+    setMode("edit"); setEditingId(row.id);
+    setForm(row); setTouched({});
     setShowModal(true);
   };
 
-  const close = () => {
-    setShowModal(false);
-    setTouched({});
-  };
+  const close = () => { setShowModal(false); setTouched({}); };
 
   const submit = async () => {
     if (isFormInvalid) {
       setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
       return;
     }
-
     setSaving(true);
     try {
+      // sanitizeObject respeta fechas y null — solo limpia strings
+      const clean = sanitizeObject(form);
+
       if (mode === "create") {
-        await createPatente(form);
+        await createPatente(clean);
       } else {
-        await updatePatente(editingId, form);
+        await updatePatente(editingId, clean);
       }
 
       await load();
       setShowModal(false);
+      setToast({ show: true, message: mode === "create" ? "Patente creada correctamente." : "Patente actualizada correctamente.", type: "success" });
     } catch (err) {
-      console.error(err);
-      alert(err.message || "Error guardando patente");
+      setToast({ show: true, message: err.message || "Error guardando patente", type: "error" });
     } finally {
       setSaving(false);
     }
   };
 
-  const remove = async (id) => {
-    if (!confirm("¿Eliminar esta patente?")) return;
-
-    try {
-      await deletePatente(id);
-      setRows((prev) => prev.filter((r) => r.id !== id));
-    } catch (err) {
-      console.error(err);
-      alert(err.message || "Error eliminando patente");
-    }
+  const remove = (row) => {
+    confirm({
+      title:       "¿Eliminar patente?",
+      message:     `Se eliminará "${row.nombre_patente}". Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      onConfirm:   async () => {
+        try {
+          await deletePatente(row.id);
+          setRows((prev) => prev.filter((r) => r.id !== row.id));
+          setToast({ show: true, message: "Patente eliminada correctamente.", type: "success" });
+        } catch (err) {
+          setToast({ show: true, message: err.message || "Error eliminando patente", type: "error" });
+        }
+      },
+    });
   };
 
   const badgeClass = (estado) =>
-    "badge-status " +
-    (estado === "Publicado"
-      ? "badge-publicado"
-      : estado === "En revisión"
-      ? "badge-revision"
-      : estado === "Aceptado"
-      ? "badge-aceptado"
-      : "");
+    "badge-status " + (
+      estado === "Publicado"   ? "badge-publicado" :
+      estado === "En revisión" ? "badge-revision"  :
+      estado === "Aceptado"    ? "badge-aceptado"  : ""
+    );
 
   return (
     <div>
@@ -183,6 +173,7 @@ export default function Patente() {
         {loading ? (
           <div style={{ color: "var(--muted)" }}>Cargando...</div>
         ) : (
+          <>
           <div className="table-wrap">
             <div className="table-responsive">
               <table className="table table-dark table-dark-custom align-middle">
@@ -199,41 +190,36 @@ export default function Patente() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
+                  {pageRows.map((r) => (
                     <tr key={r.id}>
-                        <td>{r.inventores}</td>
-                        <td>{r.nombre_patente}</td>
-                        <td>{r.fecha_solicitud || "—"}</td>
-                        <td>{r.fecha_publicacion || "—"}</td>
-                        <td>{r.num_registro || "—"}</td>
-                        <td>
-                          <span className={badgeClass(r.estado)}>{r.estado}</span>
-                        </td>
-                        <td>
-                        <a href={r.link_verificacion || "#"} target="_blank" rel="noreferrer">
-                          Ver
-                        </a>
+                      <td>{r.inventores}</td>
+                      <td>{r.nombre_patente}</td>
+                      <td>{r.fecha_solicitud || "—"}</td>
+                      <td>{r.fecha_publicacion || "—"}</td>
+                      <td>{r.num_registro || "—"}</td>
+                      <td><span className={badgeClass(r.estado)}>{r.estado}</span></td>
+                      <td>
+                        {r.link_verificacion
+                          ? <a href={r.link_verificacion} target="_blank" rel="noreferrer">Ver</a>
+                          : "—"
+                        }
                       </td>
                       <td className="text-end">
-                        <ActionButtons
-                          onEdit={() => openEdit(r)}
-                          onDelete={() => remove(r.id)}
-                        />
+                        <ActionButtons onEdit={() => openEdit(r)} onDelete={() => remove(r)} />
                       </td>
                     </tr>
                   ))}
-
-                  {rows.length === 0 && (
+                  {total === 0 && (
                     <tr>
-                      <td colSpan="8" style={{ color: "var(--muted)" }}>
-                        Sin registros.
-                      </td>
+                      <td colSpan="8" style={{ color: "var(--muted)" }}>Sin registros.</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
           </div>
+          <Pagination page={page} totalPages={totalPages} total={total} perPage={perPage} onPageChange={setPage} />
+          </>
         )}
       </div>
 
@@ -247,54 +233,40 @@ export default function Patente() {
       >
         <div className="row g-3">
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Inventor(es)*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Inventor(es)*</label>
             <input
               className={`form-control input-dark${errorMsg("inventores") ? " is-invalid" : ""}`}
               value={form.inventores}
               onChange={(e) => setField("inventores", e.target.value)}
               placeholder="Ej: García J., Martínez L."
             />
-            {errorMsg("inventores") && (
-              <div className="invalid-feedback">{errorMsg("inventores")}</div>
-            )}
+            {errorMsg("inventores") && <div className="invalid-feedback">{errorMsg("inventores")}</div>}
           </div>
 
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Nombre Patente*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Nombre Patente*</label>
             <input
               className={`form-control input-dark${errorMsg("nombre_patente") ? " is-invalid" : ""}`}
               value={form.nombre_patente}
               onChange={(e) => setField("nombre_patente", e.target.value)}
               placeholder="Nombre de la patente"
             />
-            {errorMsg("nombre_patente") && (
-              <div className="invalid-feedback">{errorMsg("nombre_patente")}</div>
-            )}
+            {errorMsg("nombre_patente") && <div className="invalid-feedback">{errorMsg("nombre_patente")}</div>}
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Fecha de Solicitud*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Fecha de Solicitud*</label>
             <input
               type="date"
               className={`form-control input-dark${errorMsg("fecha_solicitud") ? " is-invalid" : ""}`}
               value={form.fecha_solicitud}
               onChange={(e) => setField("fecha_solicitud", e.target.value)}
             />
-            {errorMsg("fecha_solicitud") && (
-              <div className="invalid-feedback">{errorMsg("fecha_solicitud")}</div>
-            )}
+            {errorMsg("fecha_solicitud") && <div className="invalid-feedback">{errorMsg("fecha_solicitud")}</div>}
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Fecha de Publicación
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Fecha de Publicación</label>
             <input
               type="date"
               className="form-control input-dark"
@@ -304,18 +276,14 @@ export default function Patente() {
           </div>
 
           <div className="col-12 col-md-4">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              N° de registro*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>N° de registro*</label>
             <input
               className={`form-control input-dark${errorMsg("num_registro") ? " is-invalid" : ""}`}
               value={form.num_registro}
               onChange={(e) => setField("num_registro", e.target.value)}
               placeholder="Ej: 202400123"
             />
-            {errorMsg("num_registro") && (
-              <div className="invalid-feedback">{errorMsg("num_registro")}</div>
-            )}
+            {errorMsg("num_registro") && <div className="invalid-feedback">{errorMsg("num_registro")}</div>}
           </div>
 
           <div className="col-12 col-md-4">
@@ -324,19 +292,26 @@ export default function Patente() {
               onChange={(e) => setField("estado", e.target.value)}
               className={errorMsg("estado") ? "is-invalid" : ""}
             />
-            {errorMsg("estado") && (
-              <div className="invalid-feedback d-block">{errorMsg("estado")}</div>
-            )}
+            {errorMsg("estado") && <div className="invalid-feedback d-block">{errorMsg("estado")}</div>}
           </div>
 
           <div className="col-12">
             <RespaldoInput
               value={form.link_verificacion}
-              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
+              onChange={(e) => setField("link_verificacion", e.target.value)}
             />
           </div>
         </div>
       </FormModal>
+
+      <ConfirmModal {...confirmState} onClose={closeConfirm} />
+
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((t) => ({ ...t, show: false }))}
+      />
     </div>
   );
 }

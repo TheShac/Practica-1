@@ -1,6 +1,6 @@
 import {
   enviarNotificacionService, listarEnviadasService, eliminarNotificacionService,
-  misNotificacionesService, marcarNotificacionLeidaService, contarNoLeidasService,
+  misNotificacionesService, marcarNotificacionLeidaService, contarNoLeidasService, conectarSSEService,
 } from './notificacion.service.js';
 
 const handle = (fn) => async (req, res) => {
@@ -28,7 +28,7 @@ export const listarEnviadas = handle((req) =>
 );
 
 export const eliminarNotificacion = handle((req) =>
-  eliminarNotificacionService(req.params.id)
+  eliminarNotificacionService(req.params.id, req.user.usuario_id)
 );
 
 // ── Académico ──────────────────────────────────────────────────────────────
@@ -48,3 +48,13 @@ export const marcarNotificacionLeida = handle((req) =>
 export const contarNoLeidas = handle((req) =>
   contarNoLeidasService(req.user.usuario_id)
 );
+
+// ── SSE — no pasa por handle porque no llama res.json() ───────────────────
+export function streamNotificaciones(req, res) {
+  try {
+    conectarSSEService(req.user.usuario_id, res);
+  } catch (err) {
+    console.error(err);
+    res.status(500).end();
+  }
+}

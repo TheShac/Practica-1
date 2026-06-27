@@ -3,35 +3,79 @@ import { pool } from '../../../config/db.js';
 // ── Usuario ────────────────────────────────────────────────────────────────
 
 export async function findUserById(usuario_id) {
-  const [rows] = await pool.query(
-    `SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
-            u.primer_apellido, u.segundo_apellido,
-            u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre
-     FROM usuario u
-     JOIN rol r ON r.rol_id = u.rol_id
-     WHERE u.usuario_id = ?`,
-    [usuario_id]
-  );
-  if (!rows[0]) return null;
+  const [userRows, programas] = await Promise.all([
+    // Query 1
+    pool.query(
+      `SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
+              u.primer_apellido, u.segundo_apellido,
+              u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre
+       FROM usuario u
+       JOIN rol r ON r.rol_id = u.rol_id
+       WHERE u.usuario_id = ?`,
+      [usuario_id]
+    ),
+    // Query 2
+    getProgramasDeUsuario(usuario_id)
+  ]);
 
-  const programas = await getProgramasDeUsuario(usuario_id);
-  return { ...rows[0], programas };
+  if (!userRows[0][0]) return null;
+  
+  return { ...userRows[0][0], programas };
 }
 
 export async function listUsers() {
   const [rows] = await pool.query(
-    `SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
-            u.primer_apellido, u.segundo_apellido,
-            u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre
+    `SELECT 
+       u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
+       u.primer_apellido, u.segundo_apellido,
+       u.lineas_investigacion, u.rol_id, r.nombre AS rol_nombre,
+       JSON_ARRAYAGG(
+         JSON_OBJECT(
+           'id', up.id,
+           'programa_id', p.programa_id,
+           'programa', p.nombre,
+           'rolaca_id', ra.rolaca_id,
+           'tipo_academico', ra.tipo_academico
+         )
+       ) AS programas
      FROM usuario u
      JOIN rol r ON r.rol_id = u.rol_id
+     LEFT JOIN usuario_programa up ON up.usuario_id = u.usuario_id
+     LEFT JOIN programa p ON p.programa_id = up.programa_id
+     LEFT JOIN rol_academico ra ON ra.rolaca_id = up.rolaca_id
+     GROUP BY u.usuario_id
      ORDER BY u.usuario_id DESC`
   );
-  for (const user of rows) {
-    user.programas = await getProgramasDeUsuario(user.usuario_id);
-  }
 
-  return rows;
+  return rows.map(row => {
+    let programas = [];
+    
+    // ✅ Manejar tanto string como objeto/array
+    if (row.programas) {
+      try {
+        const parsed = typeof row.programas === 'string' 
+          ? JSON.parse(row.programas) 
+          : row.programas;
+        
+        programas = Array.isArray(parsed) 
+          ? parsed
+              .filter(p => p && p.id !== null && p.programa !== null)
+              .map(p => ({
+                id: p.id,
+                programa_id: p.programa_id,
+                programa: p.programa,
+                rolaca_id: p.rolaca_id,
+                tipo_academico: p.tipo_academico
+              }))
+          : [];
+      } catch (e) {
+        console.error('Error procesando programas en listUsers:', e);
+        programas = [];
+      }
+    }
+    
+    return { ...row, programas };
+  });
 }
 
 export async function createUser(data) {
@@ -61,13 +105,21 @@ export async function createUser(data) {
   return result.insertId;
 }
 
+const ALLOWED_USER_UPDATE_FIELDS = new Set([
+  'rut', 'primer_nombre', 'segundo_nombre',
+  'primer_apellido', 'segundo_apellido',
+  'lineas_investigacion', 'telefono', 'ano_ingreso',
+  'rol_id',
+]);
+
 export async function updateUser(usuario_id, data) {
   const fields = [];
   const values = [];
 
   const { programas, ...rest } = data;
 
-  for (const key in rest) {
+  for (const key of Object.keys(rest)) {
+    if (!ALLOWED_USER_UPDATE_FIELDS.has(key)) continue;
     fields.push(`${key} = ?`);
     values.push(rest[key]);
   }
@@ -224,50 +276,100 @@ export async function listAcademicos() {
           CONCAT(t.titulo,'##',t.institucion_titulacion,'##',
                  t.ano_titulacion,'##',t.pais_titulacion)
           SEPARATOR '||')
-        FROM titulacion t WHERE t.usuario_id = u.usuario_id) AS titulaciones
+        FROM titulacion t WHERE t.usuario_id = u.usuario_id) AS titulaciones,
+       JSON_ARRAYAGG(
+         JSON_OBJECT(
+           'id', up.id,
+           'programa_id', p.programa_id,
+           'programa', p.nombre,
+           'rolaca_id', ra.rolaca_id,
+           'tipo_academico', ra.tipo_academico
+         )
+       ) AS programas
      FROM usuario u
      JOIN rol r ON r.rol_id = u.rol_id
+     LEFT JOIN usuario_programa up ON up.usuario_id = u.usuario_id
+     LEFT JOIN programa p ON p.programa_id = up.programa_id
+     LEFT JOIN rol_academico ra ON ra.rolaca_id = up.rolaca_id
      WHERE r.nombre = 'Academico'
+     GROUP BY u.usuario_id
      ORDER BY u.primer_apellido ASC`
   );
-  for (const row of rows) {
-    row.programas = await getProgramasDeUsuario(row.usuario_id);
-  }
 
-  return rows;
+  return rows.map(row => {
+    let programas = [];
+    
+    // ✅ Manejar tanto string como objeto/array
+    if (row.programas) {
+      try {
+        // Si es string, parsear; si es array, usar directamente
+        const parsed = typeof row.programas === 'string' 
+          ? JSON.parse(row.programas) 
+          : row.programas;
+        
+        programas = Array.isArray(parsed) 
+          ? parsed
+              .filter(p => p && p.id !== null && p.programa !== null)
+              .map(p => ({
+                id: p.id,
+                programa_id: p.programa_id,
+                programa: p.programa,
+                rolaca_id: p.rolaca_id,
+                tipo_academico: p.tipo_academico
+              }))
+          : [];
+      } catch (e) {
+        console.error('Error procesando programas:', e);
+        programas = [];
+      }
+    }
+    
+    return { ...row, programas };
+  });
 }
 
 export async function getAcademicoFullProfile(usuario_id) {
-  const [userRows] = await pool.query(
-    `SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
-            u.primer_apellido, u.segundo_apellido, u.ano_ingreso,
-            u.lineas_investigacion, u.telefono,
-            r.nombre AS rol_nombre
-     FROM usuario u
-     JOIN rol r ON r.rol_id = u.rol_id
-     WHERE u.usuario_id = ? AND r.nombre = 'Academico'`,
-    [usuario_id]
-  );
-  if (userRows.length === 0) return null;
+  const [userRows, correos, titulaciones, gradoRows, programasRows] = await Promise.all([
+    // Query 1: Usuario
+    pool.query(
+      `SELECT u.usuario_id, u.rut, u.primer_nombre, u.segundo_nombre,
+              u.primer_apellido, u.segundo_apellido, u.ano_ingreso,
+              u.lineas_investigacion, u.telefono, u.rol_id,
+              r.nombre AS rol_nombre
+       FROM usuario u
+       JOIN rol r ON r.rol_id = u.rol_id
+       WHERE u.usuario_id = ? AND r.nombre = 'Academico'`,
+      [usuario_id]
+    ),
+    
+    // Query 2: Correos
+    pool.query(`SELECT mail FROM mail WHERE usuario_id = ?`, [usuario_id]),
+    
+    // Query 3: Titulaciones
+    pool.query(
+      `SELECT titulo, institucion_titulacion, pais_titulacion, ano_titulacion
+       FROM titulacion WHERE usuario_id = ? ORDER BY ano_titulacion DESC`,
+      [usuario_id]
+    ),
+    
+    // Query 4: Grado académico
+    pool.query(
+      `SELECT nombre_grado, institucion_grado, pais_grado, ano_grado
+       FROM grado_academico WHERE usuario_id = ?`,
+      [usuario_id]
+    ),
+    
+    // Query 5: Programas
+    getProgramasDeUsuario(usuario_id)
+  ]);
 
-  const [correos]     = await pool.query(`SELECT mail FROM mail WHERE usuario_id = ?`, [usuario_id]);
-  const [titulaciones] = await pool.query(
-    `SELECT titulo, institucion_titulacion, pais_titulacion, ano_titulacion
-     FROM titulacion WHERE usuario_id = ? ORDER BY ano_titulacion DESC`,
-    [usuario_id]
-  );
-  const [gradoRows] = await pool.query(
-    `SELECT nombre_grado, institucion_grado, pais_grado, ano_grado
-     FROM grado_academico WHERE usuario_id = ?`,
-    [usuario_id]
-  );
-  const programas = await getProgramasDeUsuario(usuario_id);
+  if (userRows[0].length === 0) return null;
 
   return {
-    usuario:         { ...userRows[0], programas },
-    correos,
-    titulaciones,
-    grado_academico: gradoRows[0] || null,
+    usuario: { ...userRows[0][0], programas: programasRows },
+    correos: correos[0],
+    titulaciones: titulaciones[0],
+    grado_academico: gradoRows[0][0] || null,
   };
 }
 

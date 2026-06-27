@@ -1,44 +1,42 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import FormModal from "@/shared/components/modals/formModal/FormModal";
-import YearInput from "@/shared/components/ui/inputs/YearInput";
-import TituloInput from "@/shared/components/ui/inputs/TituloInput";
+import FormModal             from "@/shared/components/modals/formModal/FormModal";
+import YearInput             from "@/shared/components/ui/inputs/YearInput";
+import TituloInput           from "@/shared/components/ui/inputs/TituloInput";
 import PeriodoEjecucionInput from "@/shared/components/ui/inputs/PeriodoEjecucionInput";
-import RespaldoInput from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
-import ActionButtons from "@/shared/components/ui/buttons/ActionButtons";
-import BtnNuevo from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import RespaldoInput         from "@/shared/components/forms/backupLink/RespaldoInput.jsx";
+import ActionButtons         from "@/shared/components/ui/buttons/ActionButtons";
+import BtnNuevo              from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import ConfirmModal          from "@/shared/components/modals/ConfirmModal.jsx";
+import Toast                 from "@/shared/components/ui/feedback/Toast.jsx";
+import { useConfirm }    from "@/shared/hooks/useConfirm.js";
+import { usePagination } from "@/shared/hooks/usePagination.js";
+import Pagination        from "@/shared/components/ui/Pagination.jsx";
+import { sanitizeInput, sanitizeObject } from "@/shared/utils/sanitize.js";
+
 import {
-  fetchInvestigaciones,
-  createInvestigacion,
-  updateInvestigacion,
-  deleteInvestigacion,
+  fetchInvestigaciones, createInvestigacion,
+  updateInvestigacion, deleteInvestigacion,
 } from "@/features/academico/services/produccion-cientifica/investigacion.service.js";
 
 const emptyForm = {
-  titulo: "",
-  fuente_financiamiento: "",
-  ano_adjudicacion: "",
-  periodo_ejecucion: "",
-  rol_proyecto: "",
-  link_verificacion: "",
+  titulo: "", fuente_financiamiento: "", ano_adjudicacion: "",
+  periodo_ejecucion: "", rol_proyecto: "", link_verificacion: "",
 };
 
 const REQUIRED_FIELDS = [
-  { key: "titulo",                 label: "Título" },
-  { key: "fuente_financiamiento",  label: "Fuente de financiamiento" },
-  { key: "ano_adjudicacion",       label: "Año de adjudicación" },
-  { key: "periodo_ejecucion",      label: "Período de ejecución" },
-  { key: "rol_proyecto",           label: "Rol en el proyecto" },
+  { key: "titulo",                label: "Título" },
+  { key: "fuente_financiamiento", label: "Fuente de financiamiento" },
+  { key: "ano_adjudicacion",      label: "Año de adjudicación" },
+  { key: "periodo_ejecucion",     label: "Período de ejecución" },
+  { key: "rol_proyecto",          label: "Rol en el proyecto" },
 ];
 
 const validate = (form) => {
   const errs = {};
-
   REQUIRED_FIELDS.forEach(({ key, label }) => {
-    if (!form[key] || String(form[key]).trim() === "") {
+    if (!form[key] || String(form[key]).trim() === "")
       errs[key] = `${label} es obligatorio.`;
-    }
   });
-
   return errs;
 };
 
@@ -46,23 +44,22 @@ export default function Investigacion() {
   const [rows, setRows]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving]   = useState(false);
-
   const [showModal, setShowModal] = useState(false);
   const [mode, setMode]           = useState("create");
   const [editingId, setEditingId] = useState(null);
   const [form, setForm]           = useState(emptyForm);
   const [touched, setTouched]     = useState({});
+  const [toast, setToast]         = useState({ show: false, message: "", type: "success" });
 
-  const errors      = useMemo(() => validate(form), [form]);
+  const { confirmState, confirm, closeConfirm } = useConfirm();
+  const { pageRows, page, setPage, total, totalPages, perPage } = usePagination(rows);
+
+  const errors        = useMemo(() => validate(form), [form]);
   const isFormInvalid = Object.keys(errors).length > 0;
-
-  const modalTitle = useMemo(
-    () => mode === "create" ? "Nueva Investigación" : "Editar Investigación",
-    [mode],
-  );
+  const modalTitle    = mode === "create" ? "Nueva Investigación" : "Editar Investigación";
 
   const setField = useCallback((key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: sanitizeInput(value) }));
     setTouched((prev) => ({ ...prev, [key]: true }));
   }, []);
 
@@ -70,19 +67,15 @@ export default function Investigacion() {
 
   const load = async () => {
     const data = await fetchInvestigaciones();
-    setRows(
-      data.map((r) => ({
-        id: r.investigacion_id,
-        titulo: r.titulo || "",
-        fuente_financiamiento: r.fuente_financiamiento || "",
-        ano_adjudicacion: r.ano_adjudicacion
-          ? String(r.ano_adjudicacion)
-          : "",
-        periodo_ejecucion: r.periodo_ejecucion || "",
-        rol_proyecto: r.rol_proyecto || "",
-        link_verificacion: r.link_verificacion || "",
-      }))
-    );
+    setRows(data.map((r) => ({
+      id:                    r.investigacion_id,
+      titulo:                r.titulo || "",
+      fuente_financiamiento: r.fuente_financiamiento || "",
+      ano_adjudicacion:      r.ano_adjudicacion ? String(r.ano_adjudicacion) : "",
+      periodo_ejecucion:     r.periodo_ejecucion || "",
+      rol_proyecto:          r.rol_proyecto || "",
+      link_verificacion:     r.link_verificacion || "",
+    })));
   };
 
   useEffect(() => {
@@ -91,50 +84,38 @@ export default function Investigacion() {
         setLoading(true);
         await load();
       } catch (err) {
-        alert(err.message);
+        setToast({ show: true, message: err.message || "Error cargando investigaciones", type: "error" });
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-
   const openCreate = () => {
-    setMode("create");
-    setEditingId(null);
-    setForm(emptyForm);
-    setTouched({});
+    setMode("create"); setEditingId(null);
+    setForm(emptyForm); setTouched({});
     setShowModal(true);
   };
 
   const openEdit = (row) => {
-    setMode("edit");
-    setEditingId(row.id);
-    setForm(row);
-    setTouched({});
+    setMode("edit"); setEditingId(row.id);
+    setForm(row); setTouched({});
     setShowModal(true);
   };
 
-  const close = () => {
-    setShowModal(false);
-    setTouched({});
-  };
+  const close = () => { setShowModal(false); setTouched({}); };
 
   const submit = async () => {
     if (isFormInvalid) {
       setTouched(Object.fromEntries(REQUIRED_FIELDS.map(({ key }) => [key, true])));
       return;
     }
-
     setSaving(true);
     try {
-      const { id, ...dataSinId } = form;
-
+      const { id, ...rest } = sanitizeObject(form);
       const payload = {
-        ...dataSinId,
-        ano_adjudicacion: dataSinId.ano_adjudicacion
-          ? Number(dataSinId.ano_adjudicacion)
-          : null,
+        ...rest,
+        ano_adjudicacion: rest.ano_adjudicacion ? Number(rest.ano_adjudicacion) : null,
       };
 
       if (mode === "create") {
@@ -145,17 +126,29 @@ export default function Investigacion() {
 
       await load();
       setShowModal(false);
+      setToast({ show: true, message: mode === "create" ? "Investigación creada correctamente." : "Investigación actualizada correctamente.", type: "success" });
     } catch (err) {
-      alert(err.message);
+      setToast({ show: true, message: err.message || "Error guardando investigación", type: "error" });
     } finally {
       setSaving(false);
     }
   };
 
-  const remove = async (id) => {
-    if (!confirm("¿Eliminar esta investigación?")) return;
-    await deleteInvestigacion(id);
-    setRows((prev) => prev.filter((r) => r.id !== id));
+  const remove = (row) => {
+    confirm({
+      title:       "¿Eliminar investigación?",
+      message:     `Se eliminará "${row.titulo}". Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      onConfirm:   async () => {
+        try {
+          await deleteInvestigacion(row.id);
+          setRows((prev) => prev.filter((r) => r.id !== row.id));
+          setToast({ show: true, message: "Investigación eliminada correctamente.", type: "success" });
+        } catch (err) {
+          setToast({ show: true, message: err.message || "Error eliminando investigación", type: "error" });
+        }
+      },
+    });
   };
 
   return (
@@ -171,6 +164,7 @@ export default function Investigacion() {
         {loading ? (
           <div style={{ color: "var(--muted)" }}>Cargando...</div>
         ) : (
+          <>
           <div className="table-wrap">
             <div className="table-responsive">
               <table className="table table-dark table-dark-custom align-middle">
@@ -186,7 +180,7 @@ export default function Investigacion() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((r) => (
+                  {pageRows.map((r) => (
                     <tr key={r.id}>
                       <td>{r.titulo}</td>
                       <td>{r.fuente_financiamiento || "—"}</td>
@@ -194,30 +188,27 @@ export default function Investigacion() {
                       <td>{r.periodo_ejecucion || "—"}</td>
                       <td>{r.rol_proyecto || "—"}</td>
                       <td>
-                        <a href={r.link_verificacion || "#"} target="_blank" rel="noreferrer">
-                          Ver
-                        </a>
+                        {r.link_verificacion
+                          ? <a href={r.link_verificacion} target="_blank" rel="noreferrer">Ver</a>
+                          : "—"
+                        }
                       </td>
                       <td className="text-end">
-                        <ActionButtons
-                          onEdit={() => openEdit(r)}
-                          onDelete={() => remove(r.id)}
-                        />
+                        <ActionButtons onEdit={() => openEdit(r)} onDelete={() => remove(r)} />
                       </td>
                     </tr>
                   ))}
-
-                  {rows.length === 0 && (
+                  {total === 0 && (
                     <tr>
-                      <td colSpan="7" style={{ color: "var(--muted)" }}>
-                        Sin registros.
-                      </td>
+                      <td colSpan="7" style={{ color: "var(--muted)" }}>Sin registros.</td>
                     </tr>
                   )}
                 </tbody>
               </table>
             </div>
           </div>
+          <Pagination page={page} totalPages={totalPages} total={total} perPage={perPage} onPageChange={setPage} />
+          </>
         )}
       </div>
 
@@ -237,15 +228,11 @@ export default function Investigacion() {
               placeholder="Título de la investigación"
               className={errorMsg("titulo") ? "is-invalid" : ""}
             />
-            {errorMsg("titulo") && (
-              <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>
-            )}
+            {errorMsg("titulo") && <div className="invalid-feedback d-block">{errorMsg("titulo")}</div>}
           </div>
 
           <div className="col-12 col-md-6">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Fuente de financiamiento*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Fuente de financiamiento*</label>
             <input
               className={`form-control input-dark${errorMsg("fuente_financiamiento") ? " is-invalid" : ""}`}
               list="fuentes-financiamiento"
@@ -263,9 +250,7 @@ export default function Investigacion() {
               <option value="FONIS" />
               <option value="FONIDE" />
             </datalist>
-            {errorMsg("fuente_financiamiento") && (
-              <div className="invalid-feedback d-block">{errorMsg("fuente_financiamiento")}</div>
-            )}
+            {errorMsg("fuente_financiamiento") && <div className="invalid-feedback d-block">{errorMsg("fuente_financiamiento")}</div>}
           </div>
 
           <div className="col-12 col-md-3">
@@ -284,15 +269,11 @@ export default function Investigacion() {
               onChange={(e) => setField("periodo_ejecucion", e.target.value)}
               className={errorMsg("periodo_ejecucion") ? "is-invalid" : ""}
             />
-            {errorMsg("periodo_ejecucion") && (
-              <div className="invalid-feedback d-block">{errorMsg("periodo_ejecucion")}</div>
-            )}
+            {errorMsg("periodo_ejecucion") && <div className="invalid-feedback d-block">{errorMsg("periodo_ejecucion")}</div>}
           </div>
 
           <div className="col-12">
-            <label className="form-label" style={{ color: "var(--muted)" }}>
-              Rol en el proyecto*
-            </label>
+            <label className="form-label" style={{ color: "var(--muted)" }}>Rol en el proyecto*</label>
             <input
               className={`form-control input-dark${errorMsg("rol_proyecto") ? " is-invalid" : ""}`}
               list="roles-proyecto"
@@ -305,19 +286,26 @@ export default function Investigacion() {
               <option value="Director" />
               <option value="Co-Investigador" />
             </datalist>
-            {errorMsg("rol_proyecto") && (
-              <div className="invalid-feedback d-block">{errorMsg("rol_proyecto")}</div>
-            )}
+            {errorMsg("rol_proyecto") && <div className="invalid-feedback d-block">{errorMsg("rol_proyecto")}</div>}
           </div>
 
           <div className="col-12">
             <RespaldoInput
               value={form.link_verificacion}
-              onChange={(e) => setForm((prev) => ({ ...prev, link_verificacion: e.target.value }))}
+              onChange={(e) => setField("link_verificacion", e.target.value)}
             />
           </div>
         </div>
       </FormModal>
+
+      <ConfirmModal {...confirmState} onClose={closeConfirm} />
+
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((t) => ({ ...t, show: false }))}
+      />
     </div>
   );
 }

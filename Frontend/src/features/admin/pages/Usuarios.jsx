@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
-import FormModal from "@/shared/components/modals/formModal/FormModal.jsx";
-import BtnNuevo  from "@/shared/components/ui/buttons/BtnCreate.jsx";
-import Toast     from "@/shared/components/ui/feedback/Toast.jsx";
+import BtnNuevo     from "@/shared/components/ui/buttons/BtnCreate.jsx";
+import Toast        from "@/shared/components/ui/feedback/Toast.jsx";
+import ConfirmModal from "@/shared/components/modals/ConfirmModal.jsx";
+import { useConfirm }    from "@/shared/hooks/useConfirm.js";
+import { usePagination } from "@/shared/hooks/usePagination.js";
+import Pagination        from "@/shared/components/ui/Pagination.jsx";
 
 import { getUsuarios, getUsuarioPerfil, createUsuario, updateUsuario, updateUsuarioPerfil, updatePassword, deleteUsuario } from "@/features/admin/services/usuario.service.js";
 import { getRoles, getRolesAcademico } from "@/features/admin/services/roles.service.js";
@@ -124,7 +127,6 @@ export default function AdminUsuarios() {
   const [rolesAca, setRolesAca] = useState([]);
   const [loading, setLoading]   = useState(true);
   const [saving, setSaving]     = useState(false);
-  const [error, setError]       = useState("");
 
   const [showCreate, setShowCreate] = useState(false);
   const [showEdit, setShowEdit]     = useState(false);
@@ -140,10 +142,14 @@ export default function AdminUsuarios() {
   const showToast = (message, type = "success") => setToast({ show: true, message, type });
   const hideToast = () => setToast((t) => ({ ...t, show: false }));
 
+  const { confirmState, confirm, closeConfirm } = useConfirm();
+  const { pageRows, page, setPage, total, totalPages, perPage } = usePagination(usuarios);
+
   useEffect(() => {
     async function load() {
       try {
         const [u, r, ra] = await Promise.all([getUsuarios(), getRoles(), getRolesAcademico()]);
+<<<<<<< Updated upstream
         setUsuarios(u);
         setRoles(r);
         setRolesAca(ra);
@@ -152,6 +158,11 @@ export default function AdminUsuarios() {
       } finally {
         setLoading(false);
       }
+=======
+        setUsuarios(u); setRoles(r); setRolesAca(ra);
+      } catch (err) { showToast(err.message || "Error cargando usuarios", "error"); }
+      finally { setLoading(false); }
+>>>>>>> Stashed changes
     }
     load();
   }, []);
@@ -286,6 +297,7 @@ export default function AdminUsuarios() {
     finally { setSaving(false); }
   };
 
+<<<<<<< Updated upstream
   const handleDelete = async (id) => {
     if (!confirm("¿Eliminar este usuario? Esta acción no se puede deshacer.")) return;
     try {
@@ -293,6 +305,22 @@ export default function AdminUsuarios() {
       setUsuarios((prev) => prev.filter((u) => u.usuario_id !== id));
       showToast("Usuario eliminado correctamente.");
     } catch (err) { showToast(err.message, "error"); }
+=======
+  // ── DELETE ───────────────────────────────────────────────
+  const handleDelete = (u) => {
+    confirm({
+      title:       "¿Eliminar usuario?",
+      message:     `Se eliminará a ${u.primer_nombre} ${u.primer_apellido}. Esta acción no se puede deshacer.`,
+      confirmText: "Eliminar",
+      onConfirm:   async () => {
+        try {
+          await deleteUsuario(u.usuario_id);
+          setUsuarios((prev) => prev.filter((x) => x.usuario_id !== u.usuario_id));
+          showToast("Usuario eliminado correctamente.");
+        } catch (err) { showToast(err.message, "error"); }
+      },
+    });
+>>>>>>> Stashed changes
   };
 
   const addCorreo        = () => setFormEdit((p) => ({ ...p, correos: [...p.correos, { mail: "" }] }));
@@ -314,14 +342,13 @@ export default function AdminUsuarios() {
           <BtnNuevo label="Nuevo Usuario" onClick={openCreate} disabled={loading} />
         </div>
 
-        {error && <div className="text-danger mb-2">{error}</div>}
-
         {loading ? (
           <div style={{ color: "var(--muted)" }}>Cargando...</div>
         ) : (
+          <>
           <div className="table-wrap">
             <div className="table-responsive">
-              <table className="table table-dark table-dark-custom align-middle fa-table">
+              <table className="table table-dark table-dark-custom align-middle fa-table" style={{ minWidth: "600px" }}>
                 <thead>
                   <tr>
                     <th>RUT</th>
@@ -332,7 +359,7 @@ export default function AdminUsuarios() {
                   </tr>
                 </thead>
                 <tbody>
-                  {usuarios.map((u) => (
+                  {pageRows.map((u) => (
                     <tr key={u.usuario_id}>
                       <td>{u.rut}</td>
                       <td>{u.primer_nombre} {u.primer_apellido}</td>
@@ -345,19 +372,21 @@ export default function AdminUsuarios() {
                         <button className="btn btn-sm me-2" style={{ borderColor: "#0ea5e9", color: "#0ea5e9" }} onClick={() => openPass(u)}>
                           <i className="bi bi-key" />
                         </button>
-                        <button className="btn btn-sm" style={{ borderColor: "#ef4444", color: "#ef4444" }} onClick={() => handleDelete(u.usuario_id)}>
+                        <button className="btn btn-sm" style={{ borderColor: "#ef4444", color: "#ef4444" }} onClick={() => handleDelete(u)}>
                           <i className="bi bi-trash" />
                         </button>
                       </td>
                     </tr>
                   ))}
-                  {usuarios.length === 0 && (
+                  {total === 0 && (
                     <tr><td colSpan="5" style={{ color: "var(--muted)" }}>Sin usuarios.</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           </div>
+          <Pagination page={page} totalPages={totalPages} total={total} perPage={perPage} onPageChange={setPage} />
+          </>
         )}
       </div>
 
@@ -466,6 +495,7 @@ export default function AdminUsuarios() {
             <textarea className="form-control input-dark" rows={2} value={formEdit.lineas_investigacion} onChange={(e) => setFormEdit({ ...formEdit, lineas_investigacion: e.target.value })} />
           </div>
 
+<<<<<<< Updated upstream
           {isAcademicoEdit && (
             <>
               <div className="col-12">
@@ -549,6 +579,18 @@ export default function AdminUsuarios() {
           </div>
         </div>
       </FormModal>
+=======
+      <ModalCambiarPassword
+        show={showPass}
+        onClose={() => setShowPass(false)}
+        onSubmit={handlePassword}
+        saving={saving}
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+      />
+
+      <ConfirmModal {...confirmState} onClose={closeConfirm} />
+>>>>>>> Stashed changes
     </div>
   );
 }

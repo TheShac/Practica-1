@@ -1,8 +1,8 @@
 import { Router }               from 'express';
-import { auth, authorizeRoles } from '../../../middlewares/auth.js';
+import { auth, authSSE, authorizeRoles } from '../../../middlewares/auth.js';
 import {
   enviarNotificacion, listarEnviadas, eliminarNotificacion,
-  misNotificaciones, marcarNotificacionLeida, contarNoLeidas,
+  misNotificaciones, marcarNotificacionLeida, contarNoLeidas, streamNotificaciones,
 } from './notificacion.controller.js';
 
 const router = Router();
@@ -15,6 +15,7 @@ const sec    = [auth, authorizeRoles('Secretaria')];
 router.get('/enviadas',   ...sec,  listarEnviadas);
 router.get('/mis',        auth,    misNotificaciones);
 router.get('/no-leidas',  auth,    contarNoLeidas);
+router.get('/stream',     authSSE, streamNotificaciones);
 
 // ── Rutas dinámicas ───────────────────────────────────────────────────────
 // POST   /api/notificaciones

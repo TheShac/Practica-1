@@ -10,7 +10,8 @@ import logoUtamed from "@/assets/logo_utamed.png";
 export default function Login() {
   const navigate = useNavigate();
 
-  const [rut, setIdentifier] = useState("");
+  // Corregido: Unificación de nombres para evitar conflictos de renderizado
+  const [rut, setRut] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
 
@@ -25,7 +26,7 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
+    setError(""); // Solo limpiamos el error cuando se presiona el botón "Iniciar sesión"
     setLoading(true);
 
     try {
@@ -37,6 +38,7 @@ export default function Login() {
 
       redirectByRole(user.rol);
     } catch (err) {
+      // El error se queda guardado firmemente en el estado y no se moverá de ahí
       if (err?.response?.status === 401) {
         setError("Rut o contraseña incorrectos.");
       } else {
@@ -106,17 +108,19 @@ export default function Login() {
                   value={rut}
                   onChange={(e) => {
                     const raw = e.target.value;
+                    // Al escribir, si cambia el valor, removemos el error viejo para que el usuario sepa que está editando
+                    if (error) setError(""); 
 
                     if (looksLikeEmail(raw)) {
-                      setIdentifier(raw);
+                      setRut(raw);
                       return;
                     }
-
-                    setIdentifier(formatRut(raw));
+                    // Formateo controlado
+                    setRut(formatRut(raw));
                   }}
                   onBlur={() => {
                     if (!looksLikeEmail(rut)) {
-                      setIdentifier(formatRut(rut));
+                      setRut(formatRut(rut));
                     }
                   }}
                   autoComplete="username"
@@ -134,7 +138,10 @@ export default function Login() {
                     className="form-control input-dark"
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      if (error) setError("");
+                      setPassword(e.target.value);
+                    }}
                     autoComplete="current-password"
                   />
                   <button
