@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getUltimasActualizaciones } from "@/features/profesional-apoyo/services/home.service.js";
+import { formatFecha } from "@/shared/utils/fecha.js";
 
 function ContratoBadges({ tipo_contrato }) {
   if (!tipo_contrato) {
@@ -42,14 +43,6 @@ export default function SecretariaDashboard() {
     }
     fetchData();
   }, []);
-
-  const formatFecha = (fecha) => {
-    if (!fecha) return "-";
-    return new Date(fecha).toLocaleDateString("es-CL", {
-      day: "2-digit", month: "2-digit", year: "numeric",
-      hour: "2-digit", minute: "2-digit",
-    });
-  };
 
   return (
     <div>

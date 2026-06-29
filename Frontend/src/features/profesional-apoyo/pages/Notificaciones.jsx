@@ -3,6 +3,7 @@ import FormModal from "@/shared/components/modals/formModal/FormModal";
 import Toast from "@/shared/components/ui/feedback/Toast";
 import { enviarNotificacion, getNotificacionesEnviadas, eliminarNotificacion } from "@/features/profesional-apoyo/services/notificacion.service.js";
 import { getAcademicos } from "@/features/profesional-apoyo/services/ficha.service.js";
+import { formatFecha } from "@/shared/utils/fecha.js";
 
 const emptyForm = {
   asunto: "",
@@ -10,14 +11,6 @@ const emptyForm = {
   es_global: true,
   destinatarios: [],
 };
-
-function formatFecha(fecha) {
-  if (!fecha) return "—";
-  return new Date(fecha).toLocaleDateString("es-CL", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
 
 function nombreCompleto(a) {
   return [a.primer_nombre, a.segundo_nombre, a.primer_apellido, a.segundo_apellido]

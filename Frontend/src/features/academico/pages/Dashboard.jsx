@@ -1,14 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { getMisNotificaciones, marcarLeida } from "@/features/academico/services/notificacion.service.js";
 import { useNotificacionContext } from "@/shared/context/NotificacionContext.jsx";
-
-function formatFecha(fecha) {
-  if (!fecha) return "—";
-  return new Date(fecha).toLocaleDateString("es-CL", {
-    day: "2-digit", month: "2-digit", year: "numeric",
-    hour: "2-digit", minute: "2-digit",
-  });
-}
+import { formatFecha } from "@/shared/utils/fecha.js";
 
 function NotificacionCard({ notif, onLeida }) {
   const [expanded, setExpanded] = useState(false);
