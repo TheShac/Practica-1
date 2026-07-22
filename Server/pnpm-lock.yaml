@@ -237,6 +237,9 @@ importers:
       mysql2:
         specifier: ^3.22.3
         version: 3.22.3(@types/node@14.18.63)
+      node-cron:
+        specifier: ^4.6.0
+        version: 4.6.0
       passport:
         specifier: ^0.7.0
         version: 0.7.0
@@ -795,6 +798,10 @@ packages:
   node-addon-api@8.7.0:
     resolution: {integrity: sha512-9MdFxmkKaOYVTV+XVRG8ArDwwQ77XIgIPyKASB1k3JPq3M8fGQQQE3YpMOrKm6g//Ktx8ivZr8xo1Qmtqub+GA==}
     engines: {node: ^18 || ^20 || >= 21}
+
+  node-cron@4.6.0:
+    resolution: {integrity: sha512-Si/bzYiKRHOB8/a99T2+SDGN582ONDMSTlJr5oCkT6GtnqPjZ2s10eoQRYkW9ZHwjVxONL+W8Fb+qR0AHMQsdg==}
+    engines: {node: '>=20'}
 
   node-gyp-build@4.8.4:
     resolution: {integrity: sha512-LA4ZjwlnUblHVgq0oBF3Jl/6h/Nvs5fzBLwdEF4nuxnFdsfajde4WfxtJr3CaiH+F6ewcIB/q4jQ4UzPyid+CQ==}
@@ -1668,6 +1675,8 @@ snapshots:
   negotiator@1.0.0: {}
 
   node-addon-api@8.7.0: {}
+
+  node-cron@4.6.0: {}
 
   node-gyp-build@4.8.4: {}
 
