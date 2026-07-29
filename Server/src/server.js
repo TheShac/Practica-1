@@ -1,6 +1,8 @@
 import app from './app.js';
 import dotenv from 'dotenv';
 
+import './modules/queue/email.worker.js';
+
 dotenv.config();
 
 const PORT = process.env.PORT;

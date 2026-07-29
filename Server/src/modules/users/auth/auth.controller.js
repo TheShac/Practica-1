@@ -1,6 +1,7 @@
-import { loginService, refreshTokenService } from './auth.service.js';
+import { loginService, refreshTokenService, loginGoogleService, getUsuarioActualService } from './auth.service.js';
 import { createSSETicket }   from '../../../core/sseTicketStore.js';
 import { revokeUserTokens }  from '../../../core/tokenRevocationStore.js';
+import passport from './google.strategy.js';
 
 const COOKIE_OPTS = {
   httpOnly: true,
@@ -29,10 +30,10 @@ export async function refresh(req, res) {
     const { accessToken } = refreshTokenService(refreshToken);
     return res.json({ token: accessToken });
   } catch (err) {
-    res.clearCookie('refresh_token', { 
+    res.clearCookie('refresh_token', {
       path: COOKIE_OPTS.path,
       secure: COOKIE_OPTS.secure,
-      sameSite: COOKIE_OPTS.sameSite 
+      sameSite: COOKIE_OPTS.sameSite
     });
     return res.status(err.status ?? 401).json({ message: err.message });
   }
@@ -57,4 +58,38 @@ export function logout(req, res) {
     sameSite: COOKIE_OPTS.sameSite
   });
   return res.json({ message: 'Sesión cerrada' });
+}
+
+export const googleAuth = passport.authenticate('google', {
+  scope: ['profile', 'email'],
+  session: true,
+});
+
+export const googleCallback = [
+  passport.authenticate('google', {
+    session: true,
+    failureRedirect: `${process.env.FRONTEND_URL}/?error=google`,
+  }),
+  async (req, res) => {
+    try {
+      const { accessToken, refreshToken } = await loginGoogleService(req.user);
+
+      res.cookie('refresh_token', refreshToken, COOKIE_OPTS);
+
+      const redirectUrl = `${process.env.FRONTEND_URL}/auth/google/success?token=${accessToken}`;
+      return res.redirect(redirectUrl);
+    } catch (err) {
+      const mensaje = encodeURIComponent(err.message || 'Error al iniciar sesión con Google');
+      return res.redirect(`${process.env.FRONTEND_URL}/?error=${mensaje}`);
+    }
+  },
+];
+
+export async function me(req, res) {
+  try {
+    const user = await getUsuarioActualService(req.user.usuario_id);
+    return res.json({ user });
+  } catch (err) {
+    return res.status(err.status ?? 500).json({ message: err.message });
+  }
 }

@@ -1,7 +1,7 @@
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
 
-import { loginRequest } from "@/core/auth/auth.service.js";
+import { loginRequest, googleLoginUrl } from "@/core/auth/auth.service.js";
 import { formatRut, looksLikeEmail } from "@/shared/utils/rut.js";
 
 import logoElearn from "@/assets/logo_elearn.jpeg";
@@ -9,14 +9,27 @@ import logoUtamed from "@/assets/logo_utamed.png";
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Corregido: Unificación de nombres para evitar conflictos de renderizado
   const [rut, setRut] = useState("");
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const googleError = searchParams.get("error");
+    if (googleError) {
+      setError(
+        googleError === "google"
+          ? "No se pudo iniciar sesión con Google."
+          : decodeURIComponent(googleError)
+      );
+      searchParams.delete("error");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, []);
 
   const redirectByRole = (rol) => {
     if (rol === "Admin") return navigate("/admin/dashboard");
@@ -26,7 +39,7 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError(""); // Solo limpiamos el error cuando se presiona el botón "Iniciar sesión"
+    setError("");
     setLoading(true);
 
     try {
@@ -47,6 +60,10 @@ export default function Login() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = googleLoginUrl();
   };
 
   return (
@@ -191,18 +208,17 @@ export default function Login() {
               <button
                 className="btn w-100 py-2"
                 type="button"
-                disabled
+                onClick={handleGoogleLogin}
                 style={{
                   background: "#b02b2b",
                   color: "#fff",
                   fontWeight: 700,
                   borderRadius: 10,
-                  opacity: 0.65,
-                  cursor: "not-allowed",
+                  cursor: "pointer",
                 }}
-                title="Más adelante"
               >
-                Gmail Institucional
+                <i className="bi bi-google me-2" />
+                Correo Institucional
               </button>
 
               <div className="mt-3" style={{ color: "var(--muted)", fontSize: 13 }}>
