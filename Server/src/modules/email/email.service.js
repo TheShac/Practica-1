@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { pool } from "#src/config/db.js";
 import { encolarEmail } from "#src/modules/queue/email.queue.js";
+import { renderVerificacion, renderRecuperarPassword, renderNotificacion, renderBienvenida, } from "#src/emails/renderEmails.jsx";
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -24,15 +25,15 @@ export async function registrarLog({ usuarioId, correo, tipo, estado, error = nu
 
 export async function enviarCorreoCrudo({ usuarioId, correo, tipo, subject, html }) {
   const from = await obtenerRemitente();
-
+ 
   try {
     const { data, error } = await resend.emails.send({ from, to: correo, subject, html });
-
+ 
     if (error) {
       await registrarLog({ usuarioId, correo, tipo, estado: "error", error: error.message });
       throw new Error(`No se pudo enviar el correo de ${tipo}.`);
     }
-
+ 
     await registrarLog({ usuarioId, correo, tipo, estado: "enviado", resendId: data?.id });
   } catch (err) {
     if (!err.message?.startsWith("No se pudo enviar")) {
@@ -43,33 +44,52 @@ export async function enviarCorreoCrudo({ usuarioId, correo, tipo, subject, html
 }
 
 export async function enviarCorreoVerificacion({ usuarioId, correo, codigo }) {
+  const html = await renderVerificacion({ codigo });
+ 
   await encolarEmail("verificacion", {
     usuarioId,
     correo,
     tipo: "verificacion",
     subject: "Verifica tu correo organizacional",
-    html: `
-      <p>Hola,</p>
-      <p>Tu código de verificación para el Sistema de Postgrado en Historia UTA es:</p>
-      <h2>${codigo}</h2>
-      <p>Este código expira pronto. Si tú no solicitaste esto, ignora este correo.</p>
-    `,
+    html,
   });
 }
 
 export async function enviarCorreoRecuperacion({ usuarioId, correo, token }) {
   const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
+  const html = await renderRecuperarPassword({ resetUrl });
+ 
   await encolarEmail("recuperacion", {
     usuarioId,
     correo,
     tipo: "recuperacion",
     subject: "Recupera tu contraseña",
-    html: `
-      <p>Hola,</p>
-      <p>Solicitaste recuperar tu contraseña en el Sistema de Postgrado en Historia UTA.</p>
-      <p><a href="${resetUrl}">Haz clic aquí para elegir una nueva contraseña</a></p>
-      <p>Si no fuiste tú, ignora este correo — tu contraseña actual seguirá funcionando.</p>
-    `,
+    html,
+  });
+}
+
+export async function enviarCorreoNotificacion({ usuarioId, correo, asunto, mensaje, notificacionId }) {
+  const html = await renderNotificacion({ asunto, mensaje });
+ 
+  await encolarEmail("notificacion", {
+    usuarioId,
+    correo,
+    tipo: "notificacion",
+    subject: asunto,
+    html,
+    notificacionId,
+  });
+}
+
+export async function enviarCorreoBienvenida({ usuarioId, correo, nombre }) {
+  const { html, text } = await renderBienvenida({ nombre });
+ 
+  await encolarEmail("bienvenida", {
+    usuarioId,
+    correo,
+    tipo: "bienvenida",
+    subject: "Bienvenido/a al Sistema de Postgrado en Historia UTA",
+    html,
+    text,
   });
 }

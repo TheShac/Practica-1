@@ -1,6 +1,7 @@
 import {
   enviarNotificacionService, listarEnviadasService, eliminarNotificacionService,
   misNotificacionesService, marcarNotificacionLeidaService, contarNoLeidasService, conectarSSEService,
+  detalleLecturaService,
 } from './notificacion.service.js';
 
 const handle = (fn) => async (req, res) => {
@@ -29,6 +30,10 @@ export const listarEnviadas = handle((req) =>
 
 export const eliminarNotificacion = handle((req) =>
   eliminarNotificacionService(req.params.id, req.user.usuario_id)
+);
+
+export const detalleLectura = handle((req) =>
+  detalleLecturaService(req.params.id)
 );
 
 // ── Académico ──────────────────────────────────────────────────────────────

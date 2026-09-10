@@ -1,6 +1,6 @@
 import ExcelJS from 'exceljs';
 import { getFichaByUsuario, getFichaByUsuarioMagister } from './ficha.model.js';
-import { getAcademicoFullProfile, getProgramasDeUsuario } from '../../users/user/user.model.js';
+import { getAcademicoFullProfile, getProgramasDeUsuario } from '#src/modules/users/user/user.model.js';
 
 // ── Helpers de estilo (privados al módulo) ─────────────────────────────────
 

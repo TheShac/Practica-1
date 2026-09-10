@@ -3,6 +3,7 @@ import { redisConnection } from "./redis.client.js";
 import { emailQueue } from "./email.queue.js";
 import { haySpaceParaEnviar } from "./quota.service.js";
 import { enviarCorreoCrudo } from "#src/modules/email/email.service.js";
+import { registrarResultadoEnvioCorreo } from "#src/modules/profesional-apoyo/notificacion/notificacion.model.js";
 
 function msHastaProximoDia() {
   const ahora = new Date();
@@ -23,6 +24,11 @@ export const emailWorker = new Worker(
     }
 
     await enviarCorreoCrudo(job.data);
+
+    if (job.data.notificacionId) {
+      await registrarResultadoEnvioCorreo(job.data.notificacionId, "enviado");
+    }
+
     return { enviado: true };
   },
   {
@@ -37,6 +43,10 @@ emailWorker.on("completed", (job, result) => {
   }
 });
 
-emailWorker.on("failed", (job, err) => {
+emailWorker.on("failed", async (job, err) => {
   console.error(`[email.worker] Job ${job?.id} (${job?.name}) falló definitivamente:`, err.message);
+
+  if (job?.data?.notificacionId) {
+    await registrarResultadoEnvioCorreo(job.data.notificacionId, "error");
+  }
 });

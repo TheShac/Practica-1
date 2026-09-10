@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import { loginRequest, googleLoginUrl } from "@/core/auth/auth.service.js";
@@ -18,15 +18,25 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [aviso, setAviso] = useState("");
+
   useEffect(() => {
     const googleError = searchParams.get("error");
+    const resetOk = searchParams.get("reset");
+
     if (googleError) {
       setError(
         googleError === "google"
           ? "No se pudo iniciar sesión con Google."
           : decodeURIComponent(googleError)
       );
+    }
+    if (resetOk === "ok") {
+      setAviso("Tu contraseña se actualizó correctamente. Ya puedes iniciar sesión.");
+    }
+    if (googleError || resetOk) {
       searchParams.delete("error");
+      searchParams.delete("reset");
       setSearchParams(searchParams, { replace: true });
     }
   }, []);
@@ -51,7 +61,6 @@ export default function Login() {
 
       redirectByRole(user.rol);
     } catch (err) {
-      // El error se queda guardado firmemente en el estado y no se moverá de ahí
       if (err?.response?.status === 401) {
         setError("Rut o contraseña incorrectos.");
       } else {
@@ -99,6 +108,21 @@ export default function Login() {
               </div>
             </div>
 
+            {aviso && (
+              <div
+                className="alert py-2"
+                style={{
+                  background: "rgba(218,161,54,.12)",
+                  border: "1px solid rgba(218,161,54,.35)",
+                  color: "#fff",
+                  borderRadius: 12,
+                }}
+              >
+                <i className="bi bi-check-circle me-2" />
+                {aviso}
+              </div>
+            )}
+
             {error && (
               <div
                 className="alert py-2"
@@ -125,14 +149,12 @@ export default function Login() {
                   value={rut}
                   onChange={(e) => {
                     const raw = e.target.value;
-                    // Al escribir, si cambia el valor, removemos el error viejo para que el usuario sepa que está editando
                     if (error) setError(""); 
 
                     if (looksLikeEmail(raw)) {
                       setRut(raw);
                       return;
                     }
-                    // Formateo controlado
                     setRut(formatRut(raw));
                   }}
                   onBlur={() => {
@@ -181,9 +203,9 @@ export default function Login() {
               </div>
 
               <div className="mb-3">
-                <a href="#" style={{ color: "#daa136", fontSize: 14 }}>
+                <Link to="/olvide-password" style={{ color: "#daa136", fontSize: 14 }}>
                   ¿Olvidó su clave?
-                </a>
+                </Link>
               </div>
 
               <button

@@ -1,4 +1,4 @@
-import { pool } from '../../../config/db.js';
+import { pool } from '#src/config/db.js';
 
 export async function getReporteGeneral(programa_id) {
   const [rows] = await pool.query(`

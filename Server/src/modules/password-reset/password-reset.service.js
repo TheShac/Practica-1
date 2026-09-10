@@ -1,10 +1,10 @@
 import bcrypt from "bcrypt";
 import { randomBytes, createHash } from "crypto";
-import { pool } from "#src/config/db.js";
 import { findUserByRut } from "#src/modules/users/auth/auth.model.js";
 import { EmailVerificationModel } from "#src/modules/users/email-verification/email-verification.model.js";
 import { PasswordResetModel } from "./password-reset.model.js";
 import { enviarCorreoRecuperacion } from "#src/modules/email/email.service.js";
+import { obtenerValorNumerico } from "#src/modules/configuration/configuracion.service.js";
 
 const TOKEN_BYTES = 32;
 
@@ -13,15 +13,6 @@ const MENSAJE_GENERICO =
 
 function sha256(valor) {
   return createHash("sha256").update(valor).digest("hex");
-}
-
-async function obtenerConfigNumero(clave, valorPorDefecto) {
-  const [rows] = await pool.execute(
-    "SELECT valor FROM configuracion_sistema WHERE clave = ?",
-    [clave]
-  );
-  if (!rows[0]) return valorPorDefecto;
-  return Number(rows[0].valor);
 }
 
 export const PasswordResetService = {
@@ -40,7 +31,7 @@ export const PasswordResetService = {
 
     const tokenCrudo = randomBytes(TOKEN_BYTES).toString("hex");
     const tokenHash = sha256(tokenCrudo);
-    const minutosExpiracion = await obtenerConfigNumero("expiracion_reset_min", 30);
+    const minutosExpiracion = await obtenerValorNumerico("expiracion_reset_min", 30);
     const expiraEn = new Date(Date.now() + minutosExpiracion * 60 * 1000);
 
     await PasswordResetModel.crear(user.usuario_id, tokenHash, expiraEn);

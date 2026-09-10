@@ -1,8 +1,9 @@
 import { Router }               from 'express';
-import { auth, authSSE, authorizeRoles } from '../../../middlewares/auth.js';
+import { auth, authSSE, authorizeRoles } from '#src/middlewares/auth.js';
 import {
   enviarNotificacion, listarEnviadas, eliminarNotificacion,
   misNotificaciones, marcarNotificacionLeida, contarNoLeidas, streamNotificaciones,
+  detalleLectura,
 } from './notificacion.controller.js';
 
 const router = Router();
@@ -21,8 +22,10 @@ router.get('/stream',     authSSE, streamNotificaciones);
 // POST   /api/notificaciones
 // DELETE /api/notificaciones/:id
 // PUT    /api/notificaciones/:id/leida
+// GET    /api/notificaciones/:id/lectura 
 router.post(   '/',          ...sec, enviarNotificacion);
 router.delete( '/:id',       ...sec, eliminarNotificacion);
 router.put(    '/:id/leida', auth,   marcarNotificacionLeida);
+router.get(    '/:id/lectura',...sec, detalleLectura);
 
 export default router;

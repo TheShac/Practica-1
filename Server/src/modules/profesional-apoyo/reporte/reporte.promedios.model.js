@@ -1,4 +1,4 @@
-import { pool } from '../../../config/db.js';
+import { pool } from '#src/config/db.js';
 
 const EMPTY = {
   prom_wos_claustro: 0,      prom_wos_cuerpo: 0,

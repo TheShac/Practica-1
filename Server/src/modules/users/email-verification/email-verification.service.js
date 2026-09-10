@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import { randomInt } from 'crypto';
-import { pool } from '#src/config/db.js';
 import { validarDominioPermitido } from '#src/utils/dominio.util.js';
 import { EmailVerificationModel, VerificacionCodigoModel } from './email-verification.model.js';
 import { enviarCorreoVerificacion } from '#src/modules/email/email.service.js';
+import { obtenerValorNumerico } from '#src/modules/configuration/configuracion.service.js';
 
 const CODE_LENGTH = 6;
 
@@ -11,13 +11,12 @@ function generarCodigo() {
   return String(randomInt(0, 1_000_000)).padStart(CODE_LENGTH, '0');
 }
 
-async function obtenerConfigNumero(clave, valorPorDefecto) {
-  const [rows] = await pool.execute(
-    'SELECT valor FROM configuracion_sistema WHERE clave = ?',
-    [clave]
-  );
-  if (!rows[0]) return valorPorDefecto;
-  return Number(rows[0].valor);
+async function enviarBienvenidaSiEsPrimeraVez(usuarioId, correo, verificadoEnAnterior) {
+  if (verificadoEnAnterior) return;
+  const usuario = await findUserById(usuarioId);
+  if (!usuario) return;
+  const nombre = `${usuario.primer_nombre} ${usuario.primer_apellido}`;
+  await enviarCorreoBienvenida({ usuarioId, correo, nombre });
 }
 
 export const EmailVerificationService = {
@@ -33,7 +32,7 @@ export const EmailVerificationService = {
     if (enUso && enUso.usuario_id !== usuarioId) {
       throw httpError(409, 'Este correo organizacional ya está en uso.');
     }
-    
+
     const registroActual = await EmailVerificationModel.getByUsuarioId(usuarioId);
     if (registroActual?.correo === correo && !registroActual.verificado) {
       const codigoVigente = await VerificacionCodigoModel.getVigente(usuarioId);
@@ -82,7 +81,7 @@ export const EmailVerificationService = {
       throw httpError(409, 'Este correo ya está verificado.');
     }
 
-    const limite = await obtenerConfigNumero('limite_reenvios', 3);
+    const limite = await obtenerValorNumerico('limite_reenvios', 3);
     const actual = await VerificacionCodigoModel.getVigente(usuarioId);
     const intentos = actual?.intentos_reenvio ?? 0;
 
@@ -121,7 +120,7 @@ export const EmailVerificationService = {
 async function generarYEnviarCodigo(usuarioId, correo, intentosReenvio = 0) {
   const codigo = generarCodigo();
   const codigoHash = await bcrypt.hash(codigo, 10);
-  const minutosExpiracion = await obtenerConfigNumero('expiracion_codigo_min', 15);
+  const minutosExpiracion = await obtenerValorNumerico('expiracion_codigo_min', 15);
   const expiraEn = new Date(Date.now() + minutosExpiracion * 60 * 1000);
 
   await VerificacionCodigoModel.crear(usuarioId, codigoHash, expiraEn, intentosReenvio);

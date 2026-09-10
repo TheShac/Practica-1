@@ -5,10 +5,12 @@ import morgan       from 'morgan';
 import dotenv       from 'dotenv';
 import helmet       from 'helmet';
 import session      from 'express-session';
-
+import { RedisStore } from 'connect-redis';
+ 
 import apiRouter from './routes/index.routes.js';
 import { globalLimiter } from './middlewares/rateLimiter.js';
 import passport from './modules/users/auth/google.strategy.js';
+import { redisConnection } from './modules/queue/redis.client.js';
 
 dotenv.config();
 
@@ -30,6 +32,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
+  store: new RedisStore({ client: redisConnection, prefix: 'sess:' }),
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,

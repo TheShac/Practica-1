@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { redeemSSETicket } from "../core/sseTicketStore.js";
+import { redeemSSETicket } from "#src/core/sseTicketStore.js";
 
 export function auth(req, res, next) {
   const token = req.headers.authorization?.split(" ")[1];

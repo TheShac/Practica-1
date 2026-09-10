@@ -1,14 +1,14 @@
 import { Router }                  from 'express';
 // import { auth, authorizeRoles }    from '../../middlewares/auth.js';
 
-import { academicoRouter as tesisAcademicoRouter }         from '../../modules/tesis/tesis.routes.js';
-import { academicoRouter as publicacionesAcademicoRouter } from '../../modules/publicaciones/publicacion.routes.js';
-import { academicoRouter as libroAcademicoRouter }         from '../../modules/libros/libro/libro.routes.js';
-import { academicoRouter as capLibroAcademicoRouter }      from '../../modules/libros/cap-libro/cap.libro.routes.js';
-import { academicoRouter as investigacionAcademicoRouter } from '../../modules/investigacion/investigacion.routes.js';
-import { academicoRouter as patenteAcademicoRouter }       from '../../modules/patente/patente.routes.js';
-import { academicoRouter as proyectoAcademicoRouter }      from '../../modules/proyectos-intervenciones/proyecto.intervencion.routes.js';
-import { academicoRouter as consultoriasRouter }           from '../../modules/consultorias/consultorias.routes.js';
+import { academicoRouter as tesisAcademicoRouter }         from '#src/modules/produccion-cientifica/tesis/tesis.routes.js';
+import { academicoRouter as publicacionesAcademicoRouter } from '#src/modules/produccion-cientifica/publicaciones/publicacion.routes.js';
+import { academicoRouter as libroAcademicoRouter }         from '#src/modules/produccion-cientifica/libros/libro/libro.routes.js';
+import { academicoRouter as capLibroAcademicoRouter }      from '#src/modules/produccion-cientifica/libros/cap-libro/cap.libro.routes.js';
+import { academicoRouter as investigacionAcademicoRouter } from '#src/modules/produccion-cientifica/investigacion/investigacion.routes.js';
+import { academicoRouter as patenteAcademicoRouter }       from '#src/modules/produccion-cientifica/patente/patente.routes.js';
+import { academicoRouter as proyectoAcademicoRouter }      from '#src/modules/produccion-cientifica/proyectos-intervenciones/proyecto.intervencion.routes.js';
+import { academicoRouter as consultoriasRouter }           from '#src/modules/produccion-cientifica/consultorias/consultorias.routes.js';
 
 const router = Router();
 

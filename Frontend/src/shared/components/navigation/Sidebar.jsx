@@ -48,6 +48,7 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
       { to: "/secretaria/ficha-academicas", icon: "bi-people", label: "Ficha Académicas" },
       { to: "/secretaria/reportes", icon: "bi-clipboard-data", label: "Reportes" },
       { to: "/secretaria/notificaciones", icon: "bi-bell", label: "Notificaciones" },
+      { to: "/verificar-correo", icon: "bi-envelope-check", label: "Correo Organizacional" },
     ];
 
     const admin = [
@@ -55,6 +56,8 @@ export default function Sidebar({ collapsed, mobileOpen, onClose }) {
       { type: "section", label: "ADMIN" },
       { to: "/admin/usuarios", icon: "bi-person-gear", label: "Usuarios" },
       { to: "/admin/roles", icon: "bi-shield-lock", label: "Roles" },
+      { to: "/admin/configuracion", icon: "bi-gear", label: "Configuración" },
+      { to: "/verificar-correo", icon: "bi-envelope-check", label: "Correo Organizacional" },
     ];
 
     if (rol === "Secretaria") return secretaria;

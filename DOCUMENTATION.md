@@ -1,4 +1,9 @@
-# Documentación Técnica — Sistema de Gestión Académica Postgrado de Historia UTA
+# Documentación Técnica General — Sistema de Gestión Académica Postgrado de Historia UTA
+
+Esta documentación cubre la **visión general, arquitectura, roles y seguridad** del sistema completo (frontend + backend). Para el detalle específico de cada parte, revisa:
+
+- [Server/README.md](Server/README.md) — módulos del backend, referencia completa de la API REST, sistema de colas de correo.
+- [Frontend/README.md](Frontend/README.md) — rutas, páginas, hooks y componentes del frontend.
 
 ## Tabla de contenidos
 
@@ -6,11 +11,8 @@
 2. [Arquitectura del sistema](#2-arquitectura-del-sistema)
 3. [Roles y permisos](#3-roles-y-permisos)
 4. [Autenticación y seguridad](#4-autenticación-y-seguridad)
-5. [Base de datos](#5-base-de-datos)
-6. [API REST — Referencia de endpoints](#6-api-rest--referencia-de-endpoints)
-7. [Frontend — Estructura y páginas](#7-frontend--estructura-y-páginas)
-8. [Hooks compartidos](#8-hooks-compartidos)
-9. [Componentes compartidos](#9-componentes-compartidos)
+5. [Sistema de correo y colas](#5-sistema-de-correo-y-colas)
+6. [Base de datos](#6-base-de-datos)
 
 ---
 
@@ -18,68 +20,70 @@
 
 El sistema es una aplicación web full-stack diseñada para gestionar y centralizar la producción científica y académica del programa de Postgrado en Historia de la Universidad de Tarapacá (UTA), el cual comprende los programas de **Magíster** y **Doctorado en Historia**.
 
-Su propósito principal es dar soporte al proceso de **acreditación** del programa. Los académicos registran su producción directamente en la plataforma; el **Profesional de Apoyo** (secretaría) administra los datos, supervisa los perfiles y descarga los reportes e informes necesarios para sustentar la acreditación ante los organismos evaluadores.
+Su propósito principal es dar soporte al proceso de **acreditación** del programa. Los académicos registran su producción directamente en la plataforma; el **Profesional de Apoyo** (secretaría) administra los datos, supervisa los perfiles y descarga los reportes e informes necesarios para sustentar la acreditación ante los organismos evaluadores. El **Administrador** gestiona usuarios, roles y la configuración general del sistema (dominios de correo permitidos, remitente, parámetros de expiración, etc.).
 
 ### Stack tecnológico
 
-| Capa                          | Tecnología                                          |
-| ----------------------------- | ---------------------------------------------------- |
-| Frontend                      | React 19, React Router v7, Vite, Bootstrap 5         |
-| Backend                       | Node.js, Express 5                                   |
-| Base de datos                 | MySQL 8                                              |
-| Autenticación                | JWT (access token) + Refresh token (HttpOnly cookie) |
-| Seguridad                     | bcrypt, Helmet, express-rate-limit, CORS             |
-| Notificaciones en tiempo real | Server-Sent Events (SSE)                             |
-| Exportación                  | ExcelJS                                              |
+| Capa                          | Tecnología                                                                        |
+| ----------------------------- | ---------------------------------------------------------------------------------- |
+| Frontend                      | React 19, React Router v7, Vite, Bootstrap 5, Recharts                             |
+| Backend                       | Node.js, Express 5 (ejecutado con`tsx`)                                          |
+| Base de datos                 | MySQL 8                                                                            |
+| Colas / caché                | Redis, BullMQ (cola`email`), Bull Board (monitoreo, solo dev)                    |
+| Autenticación                | JWT (access token) + Refresh token (cookie HttpOnly) + Google OAuth 2.0 (Passport) |
+| Correo                        | Resend (envío), React Email (plantillas JSX)                                      |
+| Seguridad                     | bcrypt, Helmet, express-rate-limit, CORS, express-session                          |
+| Notificaciones en tiempo real | Server-Sent Events (SSE)                                                           |
+| Exportación                  | ExcelJS                                                                            |
 
 ---
 
 ## 2. Arquitectura del sistema
 
 ```
-┌──────────────────────────────────────────────────┐
-│                   CLIENTE                        │
-│          React 19 + Vite (puerto 5173)           │
-│                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌───────────────┐   │
-│  │ Academico│  │ Prof.    │  │ Administrador │   │
-│  │ Layout   │  │ Apoyo    │  │ Layout        │   │
-│  │          │  │ Layout   │  │               │   │
-│  └──────────┘  └──────────┘  └───────────────┘   │
-│         │            │               │           │
-│         └────────────┴───────────────┘           │
-│                      │                           │
-│              fetcher.js (API client)             │
-│          Authorization: Bearer {JWT}             │
-└──────────────────────┬───────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                       CLIENTE                            │
+│              React 19 + Vite (puerto 5173)               │
+│                                                          │
+│  ┌──────────┐  ┌──────────┐  ┌───────────────┐           │
+│  │ Academico│  │ Prof.    │  │ Administrador │           │
+│  │ Layout   │  │ Apoyo    │  │ Layout        │           │
+│  │          │  │ Layout   │  │               │           │
+│  └──────────┘  └──────────┘  └───────────────┘           │
+│         │            │               │                   │
+│         └────────────┴───────────────┘                   │
+│                      │                                   │
+│              fetcher.js (API client)                     │
+│          Authorization: Bearer {JWT}                     │
+└──────────────────────┬───────────────────────────────────┘
                        │ HTTP / SSE
-┌──────────────────────▼───────────────────────────┐
-│                   SERVIDOR                       │
-│          Express 5 + Node.js (puerto 3000)       │
-│                                                  │
-│  ┌──────────┐  ┌──────────────┐  ┌────────────┐  │
-│  │  auth    │  │ rate limiter │  │   helmet   │  │
-│  │middleware│  │ middleware   │  │ middleware │  │
-│  └──────────┘  └──────────────┘  └────────────┘  │
-│                                                  │
-│  /api/auth   /api/users   /api/publicaciones     │
-│  /api/tesis  /api/libros  /api/investigacion     │
-│  /api/ficha  /api/notificaciones   ...           │
-└──────────────────────┬───────────────────────────┘
-                       │ mysql2 (pool)
-┌──────────────────────▼───────────────────────────┐
-│               BASE DE DATOS                      │
-│                  MySQL 8                         │
-│   postgrado_historia (utf8mb4_unicode_ci)        │
-└──────────────────────────────────────────────────┘
+┌──────────────────────▼───────────────────────────────────────────┐
+│                       SERVIDOR                                   │
+│              Express 5 + Node.js (puerto 3000)                   │
+│                                                                  │
+│  ┌──────────┐  ┌──────────────┐  ┌────────────┐  ┌─────────┐     │
+│  │  auth    │  │ rate limiter │  │   helmet   │  │ passport│     │
+│  │middleware│  │ middleware   │  │ middleware │  │ (Google)│     │
+│  └──────────┘  └──────────────┘  └────────────┘  └─────────┘     │
+│                                                                  │
+│  /api/auth   /api/users        /api/publicaciones                │
+│  /api/tesis  /api/libros       /api/investigacion                │
+│  /api/ficha  /api/notificaciones   /api/configuracion  ...       │
+└──────────┬───────────────────────────────────┬───────────────────┘
+           │ mysql2 (pool)                     │ BullMQ (cola "email")
+┌──────────▼───────────────────┐      ┌───────────▼──────────────────┐
+│      BASE DE DATOS           │      │     REDIS                    │
+│         MySQL 8              │      │  sesiones · cola de correo   │
+│ postgrado_historia           │      │  (BullMQ worker → Resend)    │
+└──────────────────────────────┘      └──────────────────────────────┘
 ```
 
-### Estructura de carpetas
+### Estructura de carpetas (resumen)
 
 ```
 Practica-1/
 ├── Frontend/
-│   └── src/
+│   └── src/            # Ver Frontend/README.md para el detalle completo
 │       ├── core/
 │       │   ├── api/          # fetcher.js — cliente HTTP con refresh automático
 │       │   ├── auth/         # ProtectedRoute, auth.service.js
@@ -97,7 +101,7 @@ Practica-1/
 │           ├── hooks/        # Hooks reutilizables
 │           └── utils/        # sanitize.js y utilidades varias
 ├── Server/
-│   └── src/
+│   └── src/             # Ver Server/README.md para el detalle completo
 │       ├── config/           # Conexión a MySQL (pool)
 │       ├── core/             # sseTicketStore.js, tokenRevocationStore.js
 │       ├── middlewares/      # auth.js, rateLimiter.js
@@ -106,7 +110,7 @@ Practica-1/
 │       │   └── profesional-apoyo/  # notificacion, ficha, reportes, dashboard
 │       └── utils/
 └── database/
-    └── database_postgradoH.sql   # Esquema completo de la base de datos
+    └── Dump20260728.sql   # Esquema vigente de la base de datos
 ```
 
 ---
@@ -121,7 +125,7 @@ El sistema define tres roles de sistema y dos tipos de rol académico.
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------- |
 | **Academico**  | Docente del programa. Registra y gestiona su propia producción científica.                                                  | `/academico/*`  |
 | **Secretaria** | Profesional de Apoyo. Administra datos de todos los académicos, envía notificaciones y exporta reportes para acreditación. | `/secretaria/*` |
-| **Admin**      | Administrador del sistema. Gestiona usuarios, roles y configuración general.                                                 | `/admin/*`      |
+| **Admin**      | Administrador del sistema. Gestiona usuarios, roles, configuración general y dominios de correo permitidos.                  | `/admin/*`      |
 
 ### Tipos de rol académico
 
@@ -134,23 +138,27 @@ Cada académico puede pertenecer a uno o ambos programas (Magíster / Doctorado)
 
 Esta distinción es relevante para los reportes de acreditación, donde los promedios de producción científica se calculan de forma separada para Claustro y Colaboradores.
 
-### Matriz de acceso a endpoints
+### Matriz de acceso funcional
 
-| Recurso                                        | Academico | Secretaria | Admin |
-| ---------------------------------------------- | --------- | ---------- | ----- |
-| CRUD producción propia                        | ✅        | —         | —    |
-| Ver/editar producción de cualquier académico | —        | ✅         | —    |
-| Enviar notificaciones                          | —        | ✅         | —    |
-| Exportar reportes / fichas                     | —        | ✅         | ✅    |
-| Gestión de usuarios                           | —        | —         | ✅    |
-| Gestión de roles                              | —        | —         | ✅    |
-| Dashboard de actualizaciones                   | —        | ✅         | —    |
+| Recurso                                         | Academico | Secretaria | Admin |
+| ----------------------------------------------- | --------- | ---------- | ----- |
+| CRUD producción propia                         | ✅        | —         | —    |
+| Ver/editar producción de cualquier académico  | —        | ✅         | —    |
+| Enviar notificaciones                           | —        | ✅         | —    |
+| Exportar reportes / fichas                      | —        | ✅         | ✅    |
+| Gestión de usuarios y roles                    | —        | —         | ✅    |
+| Configuración del sistema y dominios de correo | —        | —         | ✅    |
+| Verificar correo organizacional manualmente     | —        | —         | ✅    |
+| Dashboard de actualizaciones (secretaría)      | —        | ✅         | —    |
+| Dashboard de correos/notificaciones (admin)     | —        | —         | ✅    |
+
+Ver la referencia completa de endpoints y qué rol accede a cada uno en [Server/README.md](Server/README.md#referencia-de-endpoints).
 
 ---
 
 ## 4. Autenticación y seguridad
 
-### Flujo de autenticación
+### Flujo de autenticación (RUT + contraseña)
 
 ```
 [Login]
@@ -159,9 +167,7 @@ Esta distinción es relevante para los reportes de acreditación, donde los prom
 POST /api/auth/login { rut, password }
    │
    ├─ Backend verifica RUT → bcrypt.compare(password, hash)
-   │
    ├─ Genera access token (JWT, 15 min) → retorna en body
-   │
    └─ Genera refresh token (JWT, 7 días) → retorna en HttpOnly SameSite:Strict cookie
 
 [Petición autenticada]
@@ -170,7 +176,6 @@ POST /api/auth/login { rut, password }
 Authorization: Bearer {access_token}
    │
    ├─ middleware auth() → jwt.verify(token, JWT_SECRET)
-   │
    └─ req.user = { usuario_id, rol }
 
 [Token expirado — refresh automático]
@@ -179,22 +184,35 @@ Authorization: Bearer {access_token}
 fetcher.js recibe 401 en cualquier ruta (excepto /auth/login)
    │
    ├─ POST /api/auth/refresh (cookie enviada automáticamente)
-   │
    ├─ Backend valida refresh token + revocationStore
-   │
    ├─ Emite nuevo access token → almacenado en localStorage
-   │
    └─ Reintenta la petición original
 
 [Logout]
    │
    ▼
 POST /api/auth/logout
-   │
    ├─ Backend registra revocación del refresh token en tokenRevocationStore
-   │
    └─ Limpia cookie HttpOnly
 ```
+
+### Login con Google (OAuth 2.0)
+
+`GET /api/auth/google` inicia el flujo vía Passport (`passport-google-oauth20`), respaldado por una sesión efímera en Redis (`express-session` + `connect-redis`, 5 min de expiración). `GET /api/auth/google/callback` recibe el perfil de Google, resuelve o vincula el usuario y redirige al frontend (`/auth/google/success?token=...`) con el mismo par access/refresh token que el login tradicional.
+
+### Recuperación de contraseña
+
+1. `POST /api/password-reset/solicitar { rut }` — genera un token de un solo uso (hash SHA-256 almacenado, expira según `expiracion_reset_min`, configurable) y envía un correo de recuperación **solo si** el usuario tiene su correo organizacional verificado. La respuesta es siempre el mismo mensaje genérico, para no filtrar si el RUT existe.
+2. `POST /api/password-reset/confirmar { token, nuevaPassword }` — valida el token, actualiza la contraseña (bcrypt) y lo invalida.
+
+### Verificación de correo organizacional
+
+1. El académico registra su correo institucional (`POST /api/email-verification/registrar`) — se valida contra la lista de dominios permitidos (`dominio_permitido`, administrable desde `/admin/configuracion`).
+2. Se genera un código de 6 dígitos (hash bcrypt), con expiración configurable (`expiracion_codigo_min`) y límite de reenvíos (`limite_reenvios`).
+3. El usuario confirma el código (`POST /api/email-verification/confirmar`); si es la primera verificación, se envía un correo de bienvenida.
+4. El Admin puede verificar manualmente a un usuario (`POST /api/email-verification/:usuarioId/verificar-manual`) si el correo falla.
+
+El correo organizacional verificado es un requisito para poder recibir notificaciones por correo y para poder solicitar recuperación de contraseña.
 
 ### Notificaciones SSE (Server-Sent Events)
 
@@ -213,26 +231,44 @@ Para evitar exponer el JWT en URLs (y por tanto en logs del servidor):
 
 ### Medidas de seguridad implementadas
 
-| Medida                     | Implementación                                                                    |
-| -------------------------- | ---------------------------------------------------------------------------------- |
-| Hashing de contraseñas    | bcrypt, cost factor 10                                                             |
-| Tokens JWT                 | Firmados con`JWT_SECRET`, access 15 min, refresh 7 días                         |
-| Revocación de tokens      | In-memory Map`tokenRevocationStore` (invalida todos los refresh al hacer logout) |
-| Tickets SSE de un solo uso | In-memory Map`sseTicketStore`, TTL 30 s, uso único                              |
-| CORS restringido           | Solo acepta peticiones desde`FRONTEND_URL`                                       |
-| Rate limiting              | `express-rate-limit` en rutas sensibles                                          |
-| Cabeceras de seguridad     | Helmet.js                                                                          |
-| SQL Injection              | `mysql2` con prepared statements en todas las queries                            |
-| Inyección de columnas     | Allowlist`ALLOWED_USER_UPDATE_FIELDS` en `updateUser()`                        |
-| IDOR (notificaciones)      | DELETE valida`remitente_id = req.user.usuario_id`                                |
-| Open redirect              | `fetcher.js` valida que la URL de redirect empiece por `/` y no por `//`     |
-| Sanitización de inputs    | `sanitize.js` aplica `DOMPurify`-style stripping en campos de texto libres     |
+| Medida                        | Implementación                                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| Hashing de contraseñas       | bcrypt (cost factor 10)                                                                     |
+| Tokens JWT                    | Firmados con`JWT_SECRET`, access 15 min, refresh 7 días                                  |
+| Revocación de tokens         | In-memory Map`tokenRevocationStore` (invalida todos los refresh al hacer logout)          |
+| Tickets SSE de un solo uso    | In-memory Map`sseTicketStore`, TTL 30 s, uso único                                       |
+| Sesión OAuth                 | `express-session` respaldada por Redis, cookie de 5 min, solo para el handshake de Google |
+| CORS restringido              | Solo acepta peticiones desde`FRONTEND_URL`                                                |
+| Rate limiting                 | `express-rate-limit`: global (300 req/15 min) y login/reset/verificación (10 req/5 min)  |
+| Cabeceras de seguridad        | Helmet.js                                                                                   |
+| SQL Injection                 | `mysql2` con prepared statements en todas las queries                                     |
+| Inyección de columnas        | Allowlist en la actualización de usuarios                                                  |
+| IDOR (notificaciones)         | DELETE valida`remitente_id = req.user.usuario_id`                                         |
+| Open redirect                 | `fetcher.js` valida que la URL de redirect empiece por `/` y no por `//`              |
+| Sanitización de inputs       | `sanitize.js` en el frontend, para campos de texto libres                                 |
+| Dominios de correo permitidos | El correo organizacional solo se acepta si su dominio está en`dominio_permitido`         |
+| Tokens de un solo uso         | Los tokens de recuperación de contraseña se hashean (SHA-256) y se invalidan tras su uso  |
 
 ---
 
-## 5. Base de datos
+## 5. Sistema de correo y colas
 
-El esquema completo se encuentra en [`database/database_postgradoH.sql`](database/database_postgradoH.sql).
+Todos los correos salientes (verificación, recuperación de contraseña, notificaciones, bienvenida) se **encolan** en BullMQ (cola `email`, sobre Redis) en vez de enviarse de forma síncrona:
+
+- `email.queue.js` agrega el job con reintentos (3 intentos, backoff exponencial desde 5 s).
+- `email.worker.js` consume la cola (concurrencia 5), respeta una **cuota diaria/mensual** (`quota.service.js`: 100/día, 3000/mes) y reencola el correo para el día siguiente si se alcanza el límite.
+- El envío real ocurre vía **Resend** (`email.service.js`); el remitente (`correo`/`nombre`) es configurable desde `configuracion_sistema`.
+- Cada intento de envío se registra en `email_logs` (estado `enviado` / `error`).
+- En desarrollo, `http://localhost:3000/admin/queues` expone **Bull Board** para inspeccionar los jobs de la cola.
+- Las plantillas de correo (`Server/src/emails/*.jsx`) usan React Email; pueden previsualizarse con `pnpm email:dev` (ver [Server/README.md](Server/README.md)).
+
+El Admin puede consultar el estado agregado de este sistema (enviados hoy/mes, fallidos, pendientes, historial) desde `/admin/dashboard` → `GET /api/dashboard/correos`.
+
+---
+
+## 6. Base de datos
+
+El esquema vigente se encuentra en [`database/Dump20260728.sql`](database/Dump20260728.sql).
 
 ### Diagrama de tablas principales
 
@@ -257,360 +293,25 @@ usuario ──┬── publicaciones ── categoria
                               reporte_promedios
                               reporte_wos_global
 
+usuario ──┬── correo_organizacional ── verificacion_correo
+          └── password_reset_token
+
+dominio_permitido          configuracion_sistema          email_logs
+
 notificacion ─────── notificacion_destinatario ── usuario
      │
      └─────────── notificacion_global_leido ───── usuario
 ```
 
-### Descripción de tablas
-
-#### Usuarios y roles
-
-| Tabla                | Columnas relevantes                                                                                                                                         | Descripción                                    |
-| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `rol`              | `rol_id`, `nombre`                                                                                                                                      | Roles del sistema: Admin, Academico, Secretaria |
-| `usuario`          | `usuario_id`, `rut`, `primer_nombre`, `primer_apellido`, `contrasena` (hash), `lineas_investigacion`, `ano_ingreso`, `telefono`, `rol_id` | Cuenta de usuario                               |
-| `programa`         | `programa_id`, `nombre` (ENUM: MAGISTER, DOCTORADO)                                                                                                     | Programas del postgrado                         |
-| `rol_academico`    | `rolaca_id`, `tipo_academico` (Claustro, Colaborador)                                                                                                   | Tipos de participación académica              |
-| `usuario_programa` | `usuario_id`, `programa_id`, `rolaca_id`                                                                                                              | Relación usuario ↔ programa ↔ tipo           |
-| `grado_academico`  | `grado_id`, `usuario_id`, `nombre_grado`, `institucion_grado`, `pais_grado`, `ano_grado`                                                        | Grado académico del docente                    |
-| `titulacion`       | `titulo_id`, `usuario_id`, `titulo`, `institucion_titulacion`, `pais_titulacion`, `ano_titulacion`                                              | Títulos adicionales                            |
-| `mail`             | `mail_id`, `mail` (UNIQUE), `usuario_id`                                                                                                              | Correos electrónicos                           |
-
-#### Producción científica
-
-Todas las tablas de producción tienen `CASCADE DELETE` en `usuario_id` y columnas `created_at` / `updated_at`.
-
-| Tabla                      | Columnas clave                                                                                                                                                                                        | Descripción                                            |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `publicaciones`          | `publicacion_id`, `usuario_id`, `categoria_id`, `titulo_articulo`, `nombre_revista`, `ISSN`, `ano`, `autores`, `autor_principal`, `estado`, `link_verificacion`                 | Artículos en revistas indexadas                        |
-| `categoria`              | `categoria_id`, `nombre`                                                                                                                                                                          | Categorías de publicación (WOS, Scielo, Scopus, etc.) |
-| `libro`                  | `libro_id`, `usuario_id`, `nombre_libro`, `editorial`, `lugar`, `ano`, `autores`, `autor_principal`, `estado`, `link_verificacion`                                                | Libros publicados                                       |
-| `cap_libro`              | `cap_id`, `usuario_id`, `nombre_capitulo`, `nombre_libro`, `editorial`, `lugar`, `ano`, `autores`, `autor_principal`, `estado`, `link_verificacion`                             | Capítulos de libro                                     |
-| `tesis`                  | `tesis_id`, `usuario_id`, `titulo_tesis`, `nombre_programa`, `institucion`, `nivel_programa` (MAGISTER/DOCTORADO), `rol_guia` (GUIA/CO_GUIA), `ano`, `autor`, `link_verificacion` | Tesis dirigidas o co-dirigidas                          |
-| `investigacion`          | `investigacion_id`, `usuario_id`, `titulo`, `fuente_financiamiento`, `ano_adjudicacion`, `periodo_ejecucion`, `rol_proyecto`, `link_verificacion`                                     | Proyectos de investigación                             |
-| `patente`                | `patente_id`, `usuario_id`, `inventores`, `nombre_patente`, `num_registro`, `fecha_solicitud`, `fecha_publicacion`, `estado`, `link_verificacion`                                   | Patentes                                                |
-| `proyectos_intervencion` | `proyecto_id`, `usuario_id`, `titulo`, `fuente_financiamiento`, `ano_adjudicacion`, `periodo_ejecucion`, `rol_proyecto`, `link_verificacion`                                          | Proyectos de intervención                              |
-| `consultorias`           | `consultoria_id`, `usuario_id`, `titulo`, `institucion_contratante`, `ano_adjudicacion`, `periodo_ejecucion`, `objetivo`, `link_verificacion`                                         | Consultorías                                           |
-
-#### Reportes
-
-| Tabla                  | Columnas clave                                                                                                                                                             | Descripción                                |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| `reporte_academico`  | `usuario_id`, `programa_id`, `total_wos_scopus_5_anios`, `total_scielo_5_anios`, `otros_articulos`, `libros_area`, `proyectos_fondecyt`, `otros_proyectos` | Métricas por académico y por programa     |
-| `reporte_promedios`  | `programa_id`, `prom_wos_claustro`, `prom_wos_cuerpo`, `prom_libros_claustro`, `prom_fondecyt_claustro`                                                          | Promedios agregados por programa            |
-| `reporte_wos_global` | `programa_id`, `tipo_academico`, `total_wos`                                                                                                                         | Total WOS/Scopus global por tipo y programa |
-
-#### Notificaciones
-
-| Tabla                         | Columnas clave                                                                                     | Descripción                                     |
-| ----------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
-| `notificacion`              | `notificacion_id`, `remitente_id`, `asunto`, `mensaje`, `es_global` (0/1), `creado_en` | Notificación creada por Profesional de Apoyo    |
-| `notificacion_destinatario` | `notificacion_id`, `usuario_id`, `leido`, `leido_en`                                       | Destinatarios específicos + estado de lectura   |
-| `notificacion_global_leido` | `notificacion_id`, `usuario_id`, `leido_en`                                                  | Registro de lectura para notificaciones globales |
-
----
-
-## 6. API REST — Referencia de endpoints
-
-**Base URL:** `http://localhost:3000/api`
-
-Las siguientes abreviaturas se usan en la columna **Auth**:
-
-- `🔓` — Público, sin autenticación
-- `🔑` — Requiere JWT válido (cualquier rol)
-- `👤 [Rol]` — Requiere JWT + rol específico
-
----
-
-### Autenticación `/api/auth`
-
-| Método  | Ruta                 | Auth        | Descripción                                                                                                    |
-| -------- | -------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
-| `POST` | `/auth/login`      | 🔓          | Inicia sesión con RUT y contraseña. Retorna access token (body) y refresh token (cookie HttpOnly).            |
-| `POST` | `/auth/refresh`    | 🔓 (cookie) | Emite un nuevo access token usando el refresh token de la cookie.                                               |
-| `POST` | `/auth/logout`     | 🔑          | Revoca el refresh token del usuario y borra la cookie de sesión.                                               |
-| `POST` | `/auth/sse-ticket` | 🔑          | Genera un ticket de un solo uso (UUID, TTL 30 s) para autenticar la conexión SSE sin exponer el JWT en la URL. |
-
----
-
-### Usuarios `/api/users`
-
-| Método    | Ruta                             | Auth                               | Descripción                                                                            |
-| ---------- | -------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------------- |
-| `GET`    | `/users`                       | 👤 Admin                           | Lista todos los usuarios del sistema.                                                   |
-| `POST`   | `/users`                       | 👤 Admin                           | Crea un nuevo usuario con rol y programas asignados.                                    |
-| `GET`    | `/users/:id`                   | 👤 Admin                           | Obtiene los datos de un usuario por ID.                                                 |
-| `PUT`    | `/users/:id`                   | 👤 Admin                           | Actualiza datos básicos del usuario (RUT, nombres, rol, programas).                    |
-| `PUT`    | `/users/:id/password`          | 👤 Admin                           | Cambia la contraseña de un usuario.                                                    |
-| `DELETE` | `/users/:id`                   | 👤 Admin                           | Elimina un usuario y toda su producción asociada (CASCADE).                            |
-| `GET`    | `/users/roles`                 | 👤 Admin                           | Lista los roles del sistema.                                                            |
-| `POST`   | `/users/roles`                 | 👤 Admin                           | Crea un nuevo rol.                                                                      |
-| `PUT`    | `/users/roles/:id`             | 👤 Admin                           | Actualiza un rol.                                                                       |
-| `DELETE` | `/users/roles/:id`             | 👤 Admin                           | Elimina un rol.                                                                         |
-| `GET`    | `/users/roles-academico`       | 👤 Admin                           | Lista los tipos de rol académico (Claustro, Colaborador).                              |
-| `POST`   | `/users/roles-academico`       | 👤 Admin                           | Crea un tipo de rol académico.                                                         |
-| `PUT`    | `/users/roles-academico/:id`   | 👤 Admin                           | Actualiza un tipo de rol académico.                                                    |
-| `DELETE` | `/users/roles-academico/:id`   | 👤 Admin                           | Elimina un tipo de rol académico.                                                      |
-| `GET`    | `/users/academicos`            | 👤 Secretaria                      | Lista todos los académicos con sus programas y roles.                                  |
-| `GET`    | `/users/academicos/:id/perfil` | 👤 Admin\| Secretaria \| Academico | Retorna el perfil completo: datos personales, correos, grado académico y titulaciones. |
-| `PUT`    | `/users/academicos/:id/perfil` | 👤 Admin\| Academico               | Actualiza el perfil completo (transaccional: correos, grado, titulaciones).             |
-
----
-
-### Publicaciones `/api/publicaciones`
-
-| Método    | Ruta                                        | Auth          | Descripción                                       |
-| ---------- | ------------------------------------------- | ------------- | -------------------------------------------------- |
-| `GET`    | `/publicaciones/mias`                     | 🔑            | Lista las publicaciones del usuario autenticado.   |
-| `POST`   | `/publicaciones`                          | 🔑            | Crea una publicación para el usuario autenticado. |
-| `PUT`    | `/publicaciones/:id`                      | 🔑            | Actualiza una publicación propia.                 |
-| `DELETE` | `/publicaciones/:id`                      | 🔑            | Elimina una publicación propia.                   |
-| `GET`    | `/publicaciones/academico/:usuarioId`     | 👤 Secretaria | Lista publicaciones de un académico específico.  |
-| `POST`   | `/publicaciones/academico/:usuarioId`     | 👤 Secretaria | Crea una publicación para un académico.          |
-| `PUT`    | `/publicaciones/academico/:usuarioId/:id` | 👤 Secretaria | Actualiza publicación de un académico.           |
-| `DELETE` | `/publicaciones/academico/:usuarioId/:id` | 👤 Secretaria | Elimina publicación de un académico.             |
-
-> El mismo patrón (`/mias` + `/academico/:usuarioId`) se repite para todos los recursos de producción científica.
-
----
-
-### Tesis `/api/tesis`
-
-| Método    | Ruta                                   | Auth          | Descripción                                                   |
-| ---------- | -------------------------------------- | ------------- | -------------------------------------------------------------- |
-| `GET`    | `/tesis/:nivel`                      | 🔑            | Lista tesis propias.`:nivel` = `MAGISTER` o `DOCTORADO`. |
-| `POST`   | `/tesis`                             | 🔑            | Crea una tesis para el usuario autenticado.                    |
-| `PUT`    | `/tesis/:id`                         | 🔑            | Actualiza una tesis propia.                                    |
-| `DELETE` | `/tesis/:id`                         | 🔑            | Elimina una tesis propia.                                      |
-| `GET`    | `/tesis/academico/:usuarioId/:nivel` | 👤 Secretaria | Lista tesis de un académico por nivel.                        |
-| `POST`   | `/tesis/academico/:usuarioId`        | 👤 Secretaria | Crea una tesis para un académico.                             |
-| `PUT`    | `/tesis/academico/:usuarioId/:id`    | 👤 Secretaria | Actualiza tesis de un académico.                              |
-| `DELETE` | `/tesis/academico/:usuarioId/:id`    | 👤 Secretaria | Elimina tesis de un académico.                                |
-
----
-
-### Libros `/api/libros` · Capítulos `/api/cap-libro` · Investigación `/api/investigacion` · Patentes `/api/patente` · Proyectos de intervención `/api/proyectos-intervencion` · Consultorías `/api/consultorias`
-
-Todos siguen el mismo patrón de endpoints que Publicaciones:
-
-| Método    | Ruta                                    | Auth          | Descripción                        |
-| ---------- | --------------------------------------- | ------------- | ----------------------------------- |
-| `GET`    | `/{recurso}/mios` (o raíz)           | 🔑            | Lista registros propios             |
-| `POST`   | `/{recurso}`                          | 🔑            | Crea registro propio                |
-| `PUT`    | `/{recurso}/:id`                      | 🔑            | Actualiza registro propio           |
-| `DELETE` | `/{recurso}/:id`                      | 🔑            | Elimina registro propio             |
-| `GET`    | `/{recurso}/academico/:usuarioId`     | 👤 Secretaria | Lista registros de un académico    |
-| `POST`   | `/{recurso}/academico/:usuarioId`     | 👤 Secretaria | Crea registro para un académico    |
-| `PUT`    | `/{recurso}/academico/:usuarioId/:id` | 👤 Secretaria | Actualiza registro de un académico |
-| `DELETE` | `/{recurso}/academico/:usuarioId/:id` | 👤 Secretaria | Elimina registro de un académico   |
-
----
-
-### Categorías `/api/categorias`
-
-| Método | Ruta            | Auth | Descripción                                                                   |
-| ------- | --------------- | ---- | ------------------------------------------------------------------------------ |
-| `GET` | `/categorias` | 🔓   | Lista las categorías de publicación disponibles (WOS, Scielo, Scopus, etc.). |
-
----
-
-### Ficha Académica `/api/ficha`
-
-| Método | Ruta                                  | Auth                  | Descripción                                                                      |
-| ------- | ------------------------------------- | --------------------- | --------------------------------------------------------------------------------- |
-| `GET` | `/ficha/:usuarioId`                 | 👤 Secretaria\| Admin | Retorna el perfil académico completo: datos personales, producción y métricas. |
-| `GET` | `/ficha/:usuarioId/export`          | 👤 Secretaria\| Admin | Descarga la ficha académica completa en formato Excel (.xlsx).                   |
-| `GET` | `/ficha/:usuarioId/export-magister` | 👤 Secretaria\| Admin | Descarga la ficha filtrada por nivel Magíster en formato Excel (.xlsx).          |
-
----
-
-### Reportes `/api/profesional-apoyo`
-
-| Método | Ruta                                   | Auth                  | Descripción                                                                       |
-| ------- | -------------------------------------- | --------------------- | ---------------------------------------------------------------------------------- |
-| `GET` | `/profesional-apoyo/reporte-general` | 🔑                    | Retorna el reporte general agregado por programa (Magíster / Doctorado).          |
-| `PUT` | `/profesional-apoyo/reporte-general` | 🔑                    | Actualiza las métricas del reporte de un académico.                              |
-| `GET` | `/profesional-apoyo/promedios`       | 👤 Secretaria\| Admin | Obtiene los promedios de producción por programa y tipo (Claustro / Colaborador). |
-| `PUT` | `/profesional-apoyo/promedios`       | 👤 Secretaria\| Admin | Actualiza los promedios de producción.                                            |
-| `GET` | `/profesional-apoyo/export-excel`    | 👤 Secretaria\| Admin | Descarga el reporte general consolidado en formato Excel (.xlsx).                  |
-
----
-
-### Notificaciones `/api/notificaciones`
-
-| Método    | Ruta                          | Auth            | Descripción                                                                                            |
-| ---------- | ----------------------------- | --------------- | ------------------------------------------------------------------------------------------------------- |
-| `POST`   | `/notificaciones`           | 👤 Secretaria   | Envía una notificación. Puede ser global (`es_global: true`) o dirigida a académicos específicos. |
-| `GET`    | `/notificaciones/enviadas`  | 👤 Secretaria   | Lista las notificaciones enviadas por el Profesional de Apoyo autenticado.                              |
-| `DELETE` | `/notificaciones/:id`       | 👤 Secretaria   | Elimina una notificación propia (valida autoría para prevenir IDOR).                                  |
-| `GET`    | `/notificaciones/mis`       | 🔑              | Lista todas las notificaciones recibidas por el usuario autenticado.                                    |
-| `PUT`    | `/notificaciones/:id/leida` | 🔑              | Marca una notificación como leída.                                                                    |
-| `GET`    | `/notificaciones/no-leidas` | 🔑              | Retorna el conteo de notificaciones no leídas del usuario autenticado.                                 |
-| `GET`    | `/notificaciones/stream`    | 🎟️ ticket SSE | Abre el stream SSE de notificaciones en tiempo real. Requiere`?ticket={uuid}` en lugar de JWT.        |
-
----
-
-### Dashboard Profesional de Apoyo `/api/home-profesional`
-
-| Método | Ruta                                  | Auth          | Descripción                                                                                                                 |
-| ------- | ------------------------------------- | ------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| `GET` | `/home-profesional/actualizaciones` | 👤 Secretaria | Lista los cambios recientes en perfiles académicos (módulo, fecha, académico) para el dashboard del Profesional de Apoyo. |
-
----
-
-## 7. Frontend — Estructura y páginas
-
-### Rutas y acceso por rol
-
-| Ruta                                  | Componente                   | Rol requerido | Descripción                                                                             |
-| ------------------------------------- | ---------------------------- | ------------- | ---------------------------------------------------------------------------------------- |
-| `/`                                 | `Login.jsx`                | Público      | Formulario de inicio de sesión (RUT + contraseña)                                      |
-| `/academico/dashboard`              | `Dashboard.jsx`            | Academico     | Bandeja de notificaciones recibidas del Profesional de Apoyo                             |
-| `/academico/perfil`                 | `Perfil.jsx`               | Academico     | Edición del perfil personal: nombres, contacto, grado académico, titulaciones, correos |
-| `/academico/publicaciones`          | `Publicaciones.jsx`        | Academico     | CRUD de publicaciones en revistas indexadas                                              |
-| `/academico/libros`                 | `Libros.jsx`               | Academico     | CRUD de libros publicados                                                                |
-| `/academico/cap-libro`              | `CapLibro.jsx`             | Academico     | CRUD de capítulos de libro                                                              |
-| `/academico/tesis`                  | `Tesis.jsx`                | Academico     | CRUD de tesis dirigidas por nivel (Magíster / Doctorado)                                |
-| `/academico/investigacion`          | `Investigacion.jsx`        | Academico     | CRUD de proyectos de investigación                                                      |
-| `/academico/patente`                | `Patente.jsx`              | Academico     | CRUD de patentes                                                                         |
-| `/academico/proyectos-intervencion` | `ProyectoIntervencion.jsx` | Academico     | CRUD de proyectos de intervención                                                       |
-| `/academico/consultorias`           | `Consultorias.jsx`         | Academico     | CRUD de consultorías                                                                    |
-| `/secretaria/dashboard`             | `Dashboard.jsx`            | Secretaria    | Actividad reciente: qué académico actualizó qué módulo y cuándo                    |
-| `/secretaria/fichas`                | `Ficha-Academicas.jsx`     | Secretaria    | Listado de académicos con acceso rápido a perfiles y exportación                      |
-| `/secretaria/fichas/:id`            | `EditarFicha.jsx`          | Secretaria    | Perfil completo y edición de la producción de un académico                            |
-| `/secretaria/reportes`              | `ReportesSecretaria.jsx`   | Secretaria    | Reporte agregado por programa con promedios; exportación a Excel                        |
-| `/secretaria/notificaciones`        | `Notificaciones.jsx`       | Secretaria    | Envío de notificaciones globales o dirigidas; gestión de enviadas                      |
-| `/admin/dashboard`                  | `Dashboard.jsx`            | Admin         | Panel principal del administrador                                                        |
-| `/admin/usuarios`                   | `Usuarios.jsx`             | Admin         | CRUD de usuarios, asignación de roles y programas, cambio de contraseña                |
-| `/admin/roles`                      | `Roles.jsx`                | Admin         | Gestión de roles del sistema y tipos de rol académico                                  |
-
-### Protección de rutas
-
-`ProtectedRoute.jsx` verifica la existencia de un token válido en `localStorage` antes de renderizar cualquier página protegida. Si no existe o ha expirado, redirige a `/` con el parámetro `?expired=1`.
-
-### Cliente HTTP (`fetcher.js`)
-
-Todas las peticiones al servidor pasan por `fetcher.js`, que provee:
-
-- Cabecera `Authorization: Bearer {token}` automática en cada petición.
-- Intercepción de respuestas `401`: intenta refrescar el token con `POST /auth/refresh` antes de reintentar la petición original.
-- Si el refresh falla, limpia `localStorage` y redirige al login con `?expired=1&redirect={rutaActual}`.
-- Validación de redirect para prevenir open redirects.
-
----
-
-## 8. Hooks compartidos
-
-Los hooks se ubican en `Frontend/src/shared/hooks/`.
-
-### `usePagination(data, perPage = 10)`
-
-Gestiona paginación del lado del cliente para tablas.
-
-```js
-const { pageRows, page, setPage, total, totalPages, perPage } = usePagination(rows);
-```
-
-| Retorno        | Tipo       | Descripción                                    |
-| -------------- | ---------- | ----------------------------------------------- |
-| `pageRows`   | `Array`  | Subconjunto de elementos para la página actual |
-| `page`       | `number` | Página actual (comienza en 1)                  |
-| `setPage`    | `fn`     | Cambia la página activa                        |
-| `total`      | `number` | Total de elementos                              |
-| `totalPages` | `number` | Total de páginas                               |
-| `perPage`    | `number` | Elementos por página                           |
-
-Se resetea automáticamente a la página 1 cuando cambia el array `data`.
-
----
-
-### `useMobile(breakpoint = 768)`
-
-Detecta si el viewport es menor al breakpoint indicado.
-
-```js
-const isMobile = useMobile(); // true si window.innerWidth < 768
-```
-
-Registra un listener en `resize` y lo limpia al desmontar.
-
----
-
-### `useConfirm()`
-
-Provee estado para el modal de confirmación reutilizable.
-
-```js
-const { confirmState, confirm, closeConfirm } = useConfirm();
-
-// Uso:
-confirm({
-  title: "¿Eliminar registro?",
-  message: "Esta acción no se puede deshacer.",
-  confirmText: "Eliminar",
-  onConfirm: async () => { await deleteItem(id); },
-});
-```
-
----
-
-### `useSessionExpiry({ warningMs, onWarning })`
-
-Calcula el tiempo restante del JWT activo y llama a `onWarning` 2 minutos antes de que expire, para mostrar el modal de advertencia de sesión.
-
----
-
-### `useNotificacionesSSE(onNotificacion)`
-
-Gestiona la conexión SSE de notificaciones en tiempo real:
-
-1. Solicita un ticket al backend (`POST /auth/sse-ticket`).
-2. Abre un `EventSource` con el ticket en la URL.
-3. Invoca el callback `onNotificacion` al recibir cada evento.
-4. Cierra la conexión al desmontar el componente.
-
----
-
-## 9. Componentes compartidos
-
-Los componentes se ubican en `Frontend/src/shared/components/`.
-
-### Navegación
-
-| Componente      | Descripción                                                                                                                                                 |
-| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Sidebar.jsx` | Menú lateral con navegación adaptada al rol del usuario. En móvil actúa como drawer con overlay. Acepta props`collapsed`, `mobileOpen`, `onClose`. |
-| `Topbar.jsx`  | Barra superior con logo, nombre de usuario, rol y botón de cierre de sesión. En móvil oculta elementos no esenciales.                                     |
-
-### UI general
-
-| Componente            | Props principales                                                  | Descripción                                                                                                              |
-| --------------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
-| `Pagination.jsx`    | `page`, `totalPages`, `total`, `perPage`, `onPageChange` | Controles de paginación con ventana deslizante de 5 páginas y contador de registros. Se oculta si hay una sola página. |
-| `Toast.jsx`         | `show`, `message`, `type`, `onClose`                       | Notificación temporal tipo snackbar (success / error / info).                                                            |
-| `ActionButtons.jsx` | `onEdit`, `onDelete`                                           | Botones de acción (editar / eliminar) para filas de tabla.                                                               |
-| `BtnCreate.jsx`     | `label`, `onClick`, `disabled`                               | Botón primario "Nuevo registro".                                                                                         |
-
-### Modales
-
-| Componente                 | Descripción                                                                                                                   |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `FormModal.jsx`          | Contenedor genérico para formularios modales. Acepta`title`, `onSubmit`, `onClose`, `submitText`, `submitDisabled`. |
-| `ConfirmModal.jsx`       | Modal de confirmación para acciones destructivas. Se integra con`useConfirm()`.                                             |
-| `SessionExpiryModal.jsx` | Modal de advertencia de expiración de sesión. Ofrece renovar sesión o cerrar sesión.                                       |
-
-### Inputs de formulario
-
-| Componente                    | Descripción                                                             |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `AutoresInput.jsx`          | Campo de texto para lista de autores (separados por coma o punto y coma) |
-| `AutorPrincipalInput.jsx`   | Campo para el autor o autora principal                                   |
-| `TituloInput.jsx`           | Campo de título con sanitización                                       |
-| `YearInput.jsx`             | Selector de año con rango configurable                                  |
-| `IssnInput.jsx`             | Campo de ISSN con formato validado                                       |
-| `EstadoSelect.jsx`          | Selector de estado: Aceptado, En revisión, Publicado                    |
-| `EditorialInput.jsx`        | Campo para nombre de editorial                                           |
-| `LugarInput.jsx`            | Campo para lugar de publicación                                         |
-| `PeriodoEjecucionInput.jsx` | Campo para período de ejecución de proyectos                           |
-| `RespaldoInput.jsx`         | Campo para URL de verificación o enlace a Google Drive                  |
+### Grupos de tablas
+
+| Grupo                             | Tablas                                                                                                                                              | Descripción                                                                                                     |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Usuarios y roles                  | `usuario`, `rol`, `rol_academico`, `programa`, `usuario_programa`, `grado_academico`, `titulacion`, `mail`                          | Cuentas, roles del sistema, tipo de participación académica y datos de perfil.                                 |
+| Producción científica           | `publicaciones`, `categoria`, `libro`, `cap_libro`, `tesis`, `investigacion`, `patente`, `proyectos_intervencion`, `consultorias` | Registros de producción de cada académico. Todas con`CASCADE DELETE` sobre `usuario_id`.                   |
+| Reportes                          | `reporte_academico`, `reporte_promedios`, `reporte_wos_global`                                                                                | Métricas y promedios agregados por programa y tipo académico, usados en acreditación.                         |
+| Notificaciones                    | `notificacion`, `notificacion_destinatario`, `notificacion_global_leido`                                                                      | Notificaciones globales o dirigidas, con estado de lectura y de envío por correo.                               |
+| Correo organizacional y seguridad | `correo_organizacional`, `verificacion_correo`, `password_reset_token`, `dominio_permitido`                                                 | Registro y verificación del correo institucional, tokens de recuperación de contraseña y dominios permitidos. |
+| Sistema                           | `configuracion_sistema`, `email_logs`                                                                                                           | Parámetros configurables (remitente, expiraciones, límites) y auditoría de cada correo enviado.               |
+
+Para el detalle columna por columna de cada tabla, revisa directamente el esquema en [`database/Dump20260728.sql`](database/Dump20260728.sql).

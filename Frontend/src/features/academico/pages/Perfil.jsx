@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getPerfilAcademico, updatePerfilAcademico } from "@/features/academico/services/perfil.service.js";
+import CorreoOrganizacionalCard from "@/shared/components/ui/CorreoOrganizacionalCard.jsx";
 
 const TITULACION_EMPTY = { titulo: "", institucion_titulacion: "", pais_titulacion: "", ano_titulacion: "" };
 const CORREO_EMPTY     = { mail: "" };
@@ -135,6 +136,8 @@ export default function PerfilAcademico() {
           </div>
         </div>
       </div>
+
+      <CorreoOrganizacionalCard />
 
       {/* INFORMACIÓN LABORAL */}
       <div className="perfil-card">

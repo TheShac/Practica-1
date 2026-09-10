@@ -1,18 +1,18 @@
 import { Router }               from 'express';
 // import { auth, authorizeRoles } from '../../middlewares/auth.js';
 
-import reporteRoutes        from '../../modules/profesional-apoyo/reporte/reporte.routes.js';
-import fichaRoutes          from '../../modules/profesional-apoyo/ficha/ficha.routes.js';
-import dashboardRoutes      from '../../modules/profesional-apoyo/dashboard/dashboard.routes.js';
+import reporteRoutes        from '#src/modules/profesional-apoyo/reporte/reporte.routes.js';
+import fichaRoutes          from '#src/modules/profesional-apoyo/ficha/ficha.routes.js';
+import dashboardRoutes      from '#src/modules/profesional-apoyo/dashboard/dashboard.routes.js';
 
-import { secretariaRouter as tesisSecretariaRouter }         from '../../modules/tesis/tesis.routes.js';
-import { secretariaRouter as publicacionesSecretariaRouter } from '../../modules/publicaciones/publicacion.routes.js';
-import { secretariaRouter as libroSecretariaRouter }         from '../../modules/libros/libro/libro.routes.js';
-import { secretariaRouter as capLibroSecretariaRouter }      from '../../modules/libros/cap-libro/cap.libro.routes.js';
-import { secretariaRouter as investigacionSecretariaRouter } from '../../modules/investigacion/investigacion.routes.js';
-import { secretariaRouter as patenteSecretariaRouter }       from '../../modules/patente/patente.routes.js';
-import { secretariaRouter as proyectoSecretariaRouter }      from '../../modules/proyectos-intervenciones/proyecto.intervencion.routes.js';
-import { secretariaRouter as consultoriasRouter }            from '../../modules/consultorias/consultorias.routes.js';
+import { secretariaRouter as tesisSecretariaRouter }         from '#src/modules/produccion-cientifica/tesis/tesis.routes.js';
+import { secretariaRouter as publicacionesSecretariaRouter } from '#src/modules/produccion-cientifica/publicaciones/publicacion.routes.js';
+import { secretariaRouter as libroSecretariaRouter }         from '#src/modules/produccion-cientifica/libros/libro/libro.routes.js';
+import { secretariaRouter as capLibroSecretariaRouter }      from '#src/modules/produccion-cientifica/libros/cap-libro/cap.libro.routes.js';
+import { secretariaRouter as investigacionSecretariaRouter } from '#src/modules/produccion-cientifica/investigacion/investigacion.routes.js';
+import { secretariaRouter as patenteSecretariaRouter }       from '#src/modules/produccion-cientifica/patente/patente.routes.js';
+import { secretariaRouter as proyectoSecretariaRouter }      from '#src/modules/produccion-cientifica/proyectos-intervenciones/proyecto.intervencion.routes.js';
+import { secretariaRouter as consultoriasRouter }            from '#src/modules/produccion-cientifica/consultorias/consultorias.routes.js';
     
 const router = Router();
 

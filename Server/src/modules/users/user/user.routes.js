@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { auth, authorizeRoles } from '../../../middlewares/auth.js';
+import { auth, authorizeRoles } from '#src/middlewares/auth.js';
 import {
   getAllUsers, getUser, createUserHandler,
   updateUserHandler, updatePasswordHandler, deleteUserHandler,

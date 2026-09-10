@@ -1,6 +1,6 @@
 import { loginService, refreshTokenService, loginGoogleService, getUsuarioActualService } from './auth.service.js';
-import { createSSETicket }   from '../../../core/sseTicketStore.js';
-import { revokeUserTokens }  from '../../../core/tokenRevocationStore.js';
+import { createSSETicket }   from '#src/core/sseTicketStore.js';
+import { revokeUserTokens }  from '#src/core/tokenRevocationStore.js';
 import passport from './google.strategy.js';
 
 const COOKIE_OPTS = {

@@ -6,8 +6,8 @@ import academicoPortal        from './portals/academico.routes.js';
 import profesionalApoyoPortal from './portals/profesional-apoyo.routes.js';
 
 // Recurso compartido entre académico y secretaria
-import categoriaRoutes from '../modules/categorias/categoria.routes.js';
-import notificacionRoutes from '../modules/profesional-apoyo/notificacion/notificacion.routes.js';
+import categoriaRoutes from '#src/modules/produccion-cientifica/categorias/categoria.routes.js';
+import notificacionRoutes from '#src/modules/profesional-apoyo/notificacion/notificacion.routes.js';
 
 const router = Router();
 

@@ -2,6 +2,9 @@ import { Navigate, Route, Routes } from "react-router-dom";
  
 import Login          from "@/pages/Login.jsx";
 import GoogleSuccess  from "@/pages/GoogleSuccess.jsx";
+import ForgotPassword from "@/pages/ForgotPassword.jsx";
+import ResetPassword  from "@/pages/ResetPassword.jsx";
+import VerificarCorreo from "@/pages/VerificarCorreo.jsx";
 import ProtectedRoute from "@/core/auth/ProtectedRoute.jsx";
  
 // ── Layouts ───────────────────────────────────────────────
@@ -32,12 +35,16 @@ import Notificaciones           from "@/features/profesional-apoyo/pages/Notific
 import AdminDashboard from "@/features/admin/pages/Dashboard.jsx";
 import AdminUsuarios  from "@/features/admin/pages/Usuarios.jsx";
 import AdminRoles     from "@/features/admin/pages/Roles.jsx";
+import Configuracion  from "@/features/admin/pages/Configuracion.jsx";
 
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Login />} />
       <Route path="/auth/google/success" element={<GoogleSuccess />} />
+      <Route path="/olvide-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verificar-correo" element={<ProtectedRoute> <VerificarCorreo /> </ProtectedRoute>} />
 
       {/* ACADEMICO */}
       <Route
@@ -91,6 +98,7 @@ export default function App() {
         <Route path="dashboard"  element={<AdminDashboard />} />
         <Route path="usuarios"   element={<AdminUsuarios />} />
         <Route path="roles"      element={<AdminRoles />} />
+        <Route path="configuracion" element={<Configuracion />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
